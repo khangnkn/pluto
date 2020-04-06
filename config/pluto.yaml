@@ -2,3 +2,7 @@ service:
   name: PLUTO MANAGEMENT SERVICE
   production: true
   port: 8080
+
+database:
+  schema: mysql
+  url: root:root@localhost:3307/pluto?parseTime=true
