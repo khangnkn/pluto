@@ -12,3 +12,7 @@ type repository struct {
 func NewRepository() *repository {
 	return &repository{}
 }
+
+func (r *repository) GetAll() ([]tool.Tool, error) {
+
+}

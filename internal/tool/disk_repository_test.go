@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/sebdah/goldie/v2"
+
 	gomocket "github.com/Selvatico/go-mocket"
 	"github.com/jinzhu/gorm"
-	"github.com/sebdah/goldie/v2"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -20,6 +21,10 @@ type diskRepoTest struct {
 
 	gormDB *gorm.DB
 	sqlDb  *sql.DB
+}
+
+func TestDiskRepo(t *testing.T) {
+	suite.Run(t, new(diskRepoTest))
 }
 
 func (r *diskRepoTest) SetupTest() {
@@ -37,6 +42,7 @@ func (r *diskRepoTest) SetupTest() {
 	}
 
 	r.gormDB = db
+	r.gd = goldie.New(t)
 }
 
 func (r *diskRepoTest) TearDownTest() {
@@ -45,6 +51,18 @@ func (r *diskRepoTest) TearDownTest() {
 	gomocket.Catcher.Reset()
 }
 
-func TestDiskRepository_GetAll(t *testing.T) {
-
+func (r *diskRepoTest) TestDiskRepository_GetAll() {
+	gomocket.Catcher.NewMock().
+		WithQuery("SELECT * FROM `tools`  WHERE `tools`.`deleted_at` IS NULL").
+		WithReply([]map[string]interface{}{
+			{
+				"id":   1,
+				"name": "rectangle",
+			},
+		})
+	repo := NewDiskRepository(r.gormDB)
+	tools, err := repo.GetAll()
+	r.NoError(err)
+	r.NotNil(tools)
+	r.gd.AssertJson(r.T(), "get_all_successfully", tools)
 }
