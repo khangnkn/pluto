@@ -3,27 +3,33 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"github.com/nkhang/pluto/internal/ping"
+	"github.com/nkhang/pluto/internal/toolapi"
 	"github.com/nkhang/pluto/pkg/logger"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
-	"log"
 )
 
-type Param struct {
+type params struct {
 	fx.In
 
-	Router *gin.Engine
+	Router         *gin.Engine
+	ToolRepository toolapi.Repository
 }
 
-func initializer(l fx.Lifecycle, p Param) {
+func initializer(l fx.Lifecycle, p params) {
+	g := p.Router.Group("/pluto/api/v1/tools")
+	toolapi.NewService(p.ToolRepository).Register(g)
 	l.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
 				port := viper.GetInt("service.port")
 				s := ping.NewService()
-				s.Register(p.Router)
+
+				s.Register(g)
 				go func() {
 					addr := fmt.Sprintf(":%d", port)
 					err := p.Router.Run(addr)

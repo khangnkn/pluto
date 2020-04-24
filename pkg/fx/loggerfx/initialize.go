@@ -6,6 +6,6 @@ import (
 )
 
 func initializer() {
-	viper.GetBool("service.production")
-	logger.Initlialize(true)
+	prod := viper.GetBool("service.production")
+	logger.Initlialize(prod)
 }

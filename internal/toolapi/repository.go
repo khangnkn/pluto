@@ -1,18 +1,24 @@
 package toolapi
 
-import "github.com/nkhang/pluto/internal/tool"
+import (
+	"github.com/nkhang/pluto/internal/tool"
+)
 
 type ToolRepository interface {
 	GetAll() ([]tool.Tool, error)
 }
+
+type Repository ToolRepository
 type repository struct {
-	toolRepo ToolRepository
+	toolRepo Repository
 }
 
-func NewRepository() *repository {
-	return &repository{}
+func NewRepository(r ToolRepository) *repository {
+	return &repository{
+		toolRepo: r,
+	}
 }
 
 func (r *repository) GetAll() ([]tool.Tool, error) {
-
+	return r.toolRepo.GetAll()
 }
