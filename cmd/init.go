@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nkhang/pluto/internal/ping"
+	"github.com/nkhang/pluto/internal/projectapi"
 	"github.com/nkhang/pluto/internal/toolapi"
 	"github.com/nkhang/pluto/pkg/logger"
 	"github.com/spf13/viper"
@@ -16,20 +17,23 @@ import (
 type params struct {
 	fx.In
 
-	Router         *gin.Engine
-	ToolRepository toolapi.Repository
+	Router            *gin.Engine
+	ToolRepository    toolapi.Repository
+	ProjectRepository projectapi.Repository
 }
 
 func initializer(l fx.Lifecycle, p params) {
-	g := p.Router.Group("/pluto/api/v1/tools")
-	toolapi.NewService(p.ToolRepository).Register(g)
+	toolRoutes := p.Router.Group("/pluto/api/v1/tools")
+	toolapi.NewService(p.ToolRepository).Register(toolRoutes)
+	projectRoutes := p.Router.Group("/pluto/api/v1/projects")
+	projectapi.NewService(p.ProjectRepository).Register(projectRoutes)
 	l.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
 				port := viper.GetInt("service.port")
 				s := ping.NewService()
 
-				s.Register(g)
+				s.Register(toolRoutes)
 				go func() {
 					addr := fmt.Sprintf(":%d", port)
 					err := p.Router.Run(addr)

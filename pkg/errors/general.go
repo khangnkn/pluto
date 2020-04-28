@@ -1,6 +1,7 @@
 package errors
 
 const (
-	Unknown ErrorType = iota
-	Success
+	Success ErrorType = 1 - iota
+	Unknown
+	BadRequest
 )

@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/nkhang/pluto/internal/fx/projectapifx"
 	"github.com/nkhang/pluto/internal/fx/toolapifx"
-	"github.com/nkhang/pluto/internal/fx/toolrepositoryfx"
 	"github.com/nkhang/pluto/pkg/fx/configfx"
 	"github.com/nkhang/pluto/pkg/fx/dbfx"
 	"github.com/nkhang/pluto/pkg/fx/ginfx"
@@ -17,8 +17,8 @@ func main() {
 		loggerfx.Invoke,
 		dbfx.Module,
 		redisfx.Module,
-		toolrepositoryfx.Module,
 		toolapifx.Module,
+		projectapifx.Module,
 		ginfx.Module,
 		fx.Invoke(initializer),
 	).Run()
