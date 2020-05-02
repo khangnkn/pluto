@@ -33,6 +33,9 @@ func Infof(template string, args ...interface{}) {
 func Error(args ...interface{}) {
 	lg.Error(args)
 }
+func Errorf(template string, args ...interface{}) {
+	lg.Errorf(template, args)
+}
 
 func Panic(args ...interface{}) {
 	lg.Panic(args)

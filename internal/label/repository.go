@@ -1,13 +1,50 @@
 package label
 
+import (
+	"github.com/nkhang/pluto/internal/rediskey"
+	"github.com/nkhang/pluto/pkg/cache"
+	"github.com/nkhang/pluto/pkg/errors"
+	"github.com/nkhang/pluto/pkg/logger"
+)
+
+type Repository interface {
+	GetByProjectId(pID uint64) ([]Label, error)
+}
+
 type repository struct {
-	disk *diskRepository
+	dbRepo    dbRepository
+	cacheRepo cache.Cache
 }
 
-func NewRepository(d *diskRepository) *repository {
-	return &repository{disk: d}
+func NewRepository(d dbRepository, c cache.Cache) *repository {
+	return &repository{
+		dbRepo:    d,
+		cacheRepo: c,
+	}
 }
 
-func (d *repository) GetByProjectId(projectId uint64) ([]Label, error) {
-	return d.disk.GetByProjectID(projectId)
+func (r *repository) GetByProjectId(pID uint64) ([]Label, error) {
+	var labels = make([]Label, 0)
+	k := rediskey.LabelsByProject(pID)
+	err := r.cacheRepo.Get(k, &labels)
+	if err == nil {
+		logger.Infof("cache hit for labels by project [%d]", pID)
+		return labels, nil
+	}
+	if errors.Type(err) == errors.CacheNotFound {
+		logger.Infof("cache miss for labels by project [%d]", pID)
+	} else {
+		logger.Infof("errors getting labels for project [%d]", pID)
+	}
+	labels, err = r.dbRepo.GetByProjectID(pID)
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		err := r.cacheRepo.Set(k, &labels)
+		if err != nil {
+			logger.Error(err)
+		}
+	}()
+	return labels, nil
 }

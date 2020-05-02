@@ -7,7 +7,8 @@ import (
 )
 
 type DiskRepository interface {
-	Get(id uint64) (Project, error)
+	Get(wID uint64, pID uint64) (Project, error)
+	GetByWorkspaceID(wID uint64) ([]Project, error)
 }
 
 type diskRepository struct {
@@ -18,9 +19,9 @@ func NewDiskRepository(db *gorm.DB) *diskRepository {
 	return &diskRepository{db: db}
 }
 
-func (r *diskRepository) Get(id uint64) (Project, error) {
+func (r *diskRepository) Get(wID uint64, pID uint64) (Project, error) {
 	var p Project
-	result := r.db.First(&p, id)
+	result := r.db.Where(fieldWorkspaceID+" = ?", wID).First(&p, pID)
 	if result.RecordNotFound() {
 		return Project{}, errors.ProjectNotFound.NewWithMessage("project not found")
 	}
@@ -28,4 +29,13 @@ func (r *diskRepository) Get(id uint64) (Project, error) {
 		return Project{}, errors.ProjectQueryError.Wrap(err, "query project error")
 	}
 	return p, nil
+}
+
+func (r *diskRepository) GetByWorkspaceID(id uint64) ([]Project, error) {
+	var projects = make([]Project, 0)
+	err := r.db.Where(fieldWorkspaceID+" = ?", id).Find(&projects).Error
+	if err != nil {
+		return nil, errors.ProjectQueryError.NewWithMessage("error getting project of workspace")
+	}
+	return projects, nil
 }

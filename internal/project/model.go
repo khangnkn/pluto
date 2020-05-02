@@ -5,6 +5,10 @@ import (
 	"github.com/nkhang/pluto/pkg/gorm"
 )
 
+const (
+	fieldWorkspaceID = "workspace_id"
+)
+
 type Project struct {
 	gorm.Model
 	Title       string

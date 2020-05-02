@@ -16,7 +16,7 @@ func NewService(r Repository) *service {
 	}
 }
 
-func (s *service) Register(router gin.IRoutes) {
+func (s *service) Register(router gin.IRouter) {
 	router.GET("/", ginwrapper.Wrap(s.allTools))
 }
 

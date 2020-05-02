@@ -1,24 +1,29 @@
 package toolapi
 
-import (
-	"github.com/nkhang/pluto/internal/tool"
-)
+import "github.com/nkhang/pluto/internal/tool"
 
-type ToolRepository interface {
-	GetAll() ([]tool.Tool, error)
+type Repository interface {
+	GetAll() ([]ToolResponse, error)
 }
 
-type Repository ToolRepository
 type repository struct {
-	toolRepo Repository
+	toolRepo tool.Repository
 }
 
-func NewRepository(r ToolRepository) *repository {
+func NewRepository(r tool.Repository) *repository {
 	return &repository{
 		toolRepo: r,
 	}
 }
 
-func (r *repository) GetAll() ([]tool.Tool, error) {
-	return r.toolRepo.GetAll()
+func (r *repository) GetAll() ([]ToolResponse, error) {
+	tools, err := r.toolRepo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	responses := make([]ToolResponse, len(tools))
+	for i := range tools {
+		responses[i] = ToToolResponse(tools[i])
+	}
+	return responses, nil
 }

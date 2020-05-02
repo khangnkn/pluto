@@ -5,17 +5,21 @@ import (
 	"github.com/nkhang/pluto/pkg/errors"
 )
 
-type diskRepository struct {
+type DbRepository interface {
+	GetAll() ([]Tool, error)
+}
+
+type dbRepository struct {
 	db *gorm.DB
 }
 
-func NewDiskRepository(db *gorm.DB) *diskRepository {
-	return &diskRepository{
+func NewDiskRepository(db *gorm.DB) *dbRepository {
+	return &dbRepository{
 		db: db,
 	}
 }
 
-func (d *diskRepository) GetAll() ([]Tool, error) {
+func (d *dbRepository) GetAll() ([]Tool, error) {
 	t := make([]Tool, 0)
 	err := d.db.Model(&Tool{}).Find(&t).Error
 	if len(t) == 0 {
