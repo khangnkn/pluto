@@ -4,7 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 
 	"github.com/nkhang/pluto/internal/label"
-	"github.com/nkhang/pluto/internal/labelapi"
+	"github.com/nkhang/pluto/internal/label/labelapi"
 	"github.com/nkhang/pluto/pkg/cache"
 	"github.com/nkhang/pluto/pkg/gin"
 )

@@ -31,9 +31,9 @@ func (r *diskRepository) Get(wID uint64, pID uint64) (Project, error) {
 	return p, nil
 }
 
-func (r *diskRepository) GetByWorkspaceID(id uint64) ([]Project, error) {
+func (r *diskRepository) GetByWorkspaceID(wID uint64) ([]Project, error) {
 	var projects = make([]Project, 0)
-	err := r.db.Where(fieldWorkspaceID+" = ?", id).Find(&projects).Error
+	err := r.db.Where(fieldWorkspaceID+" = ?", wID).Find(&projects).Error
 	if err != nil {
 		return nil, errors.ProjectQueryError.NewWithMessage("error getting project of workspace")
 	}

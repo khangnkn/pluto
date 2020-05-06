@@ -12,6 +12,7 @@ const (
 type Label struct {
 	gorm.Model
 	Name      string
+	Color     string
 	ProjectID uint64
 	ToolID    uint64
 	Tool      tool.Tool `gorm:"foreignkey:ToolID;association_foreignkey:ID"`

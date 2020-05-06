@@ -27,8 +27,5 @@ func (d *diskRepository) GetByProjectID(projectID uint64) ([]Label, error) {
 	if err != nil {
 		return nil, errors.LabelQueryError.NewWithMessage("label query error")
 	}
-	if len(l) == 0 {
-		return nil, errors.LabelRecordNotFound.NewWithMessage("label not found")
-	}
 	return l, nil
 }

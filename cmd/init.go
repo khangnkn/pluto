@@ -10,10 +10,11 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
 
+	"github.com/nkhang/pluto/internal/dataset"
 	"github.com/nkhang/pluto/internal/label"
 	"github.com/nkhang/pluto/internal/project"
 	"github.com/nkhang/pluto/internal/tool"
-	"github.com/nkhang/pluto/internal/toolapi"
+	"github.com/nkhang/pluto/internal/tool/toolapi"
 	"github.com/nkhang/pluto/internal/workspace"
 	pgin "github.com/nkhang/pluto/pkg/gin"
 	"github.com/nkhang/pluto/pkg/logger"
@@ -58,6 +59,7 @@ func initializer(l fx.Lifecycle, p params) {
 
 func migrate(db *gorm.DB) {
 	db.AutoMigrate(&tool.Tool{})
+	db.AutoMigrate(&dataset.Dataset{})
 	db.AutoMigrate(&label.Label{})
 	db.AutoMigrate(&project.Project{})
 	db.AutoMigrate(&workspace.Workspace{})

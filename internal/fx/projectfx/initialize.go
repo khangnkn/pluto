@@ -6,7 +6,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/nkhang/pluto/internal/project"
-	"github.com/nkhang/pluto/internal/projectapi"
+	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/pkg/cache"
 	"github.com/nkhang/pluto/pkg/gin"
 )
@@ -27,10 +27,11 @@ func provideAPIRepository(r project.Repository) projectapi.Repository {
 type params struct {
 	fx.In
 
-	Repository   projectapi.Repository
-	LabelService gin.IEngine `name:"LabelService"`
+	Repository     projectapi.Repository
+	LabelService   gin.IEngine `name:"LabelService"`
+	DatasetService gin.IEngine `name:"DatasetService"`
 }
 
 func provideService(p params) gin.IEngine {
-	return projectapi.NewService(p.Repository, p.LabelService)
+	return projectapi.NewService(p.Repository, p.LabelService, p.DatasetService)
 }

@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 
-	"github.com/nkhang/pluto/internal/workspaceapi"
+	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
 	"github.com/nkhang/pluto/pkg/errors"
 	pgin "github.com/nkhang/pluto/pkg/gin"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
@@ -12,18 +12,20 @@ import (
 )
 
 type service struct {
-	repository   Repository
-	labelService pgin.IEngine
+	repository     Repository
+	labelService   pgin.IEngine
+	datasetService pgin.IEngine
 }
 
 const (
 	FieldProjectID = "projectId"
 )
 
-func NewService(r Repository, labelService pgin.IEngine) *service {
+func NewService(r Repository, labelService, datasetService pgin.IEngine) *service {
 	return &service{
-		repository:   r,
-		labelService: labelService,
+		repository:     r,
+		labelService:   labelService,
+		datasetService: datasetService,
 	}
 }
 
@@ -32,6 +34,8 @@ func (s *service) Register(router gin.IRouter) {
 	router.GET("/:"+FieldProjectID, ginwrapper.Wrap(s.get))
 	labelRouter := router.Group("/:" + FieldProjectID + "/labels")
 	s.labelService.Register(labelRouter)
+	datasetRouter := router.Group("/:" + FieldProjectID + "/datasets")
+	s.datasetService.Register(datasetRouter)
 }
 
 func (s *service) getAll(c *gin.Context) ginwrapper.Response {

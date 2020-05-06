@@ -5,7 +5,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/nkhang/pluto/internal/workspace"
-	"github.com/nkhang/pluto/internal/workspaceapi"
+	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
 	"github.com/nkhang/pluto/pkg/cache"
 	"github.com/nkhang/pluto/pkg/gin"
 )

@@ -5,7 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 
 	"github.com/nkhang/pluto/internal/tool"
-	"github.com/nkhang/pluto/internal/toolapi"
+	"github.com/nkhang/pluto/internal/tool/toolapi"
 	"github.com/nkhang/pluto/pkg/cache"
 	"github.com/nkhang/pluto/pkg/gin"
 )
