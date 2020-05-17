@@ -6,7 +6,7 @@ import (
 )
 
 type LabelRequest struct {
-	ProjectID uint64 `json:"project_id" form:"project_id"`
+	ProjectID uint64 `form:"project_id" binding:"required"`
 }
 
 type LabelResponse struct {

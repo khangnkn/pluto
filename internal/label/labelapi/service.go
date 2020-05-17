@@ -2,11 +2,10 @@ package labelapi
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 
-	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
+	"github.com/nkhang/pluto/pkg/logger"
 )
 
 type service struct {
@@ -20,18 +19,19 @@ func NewService(r Repository) *service {
 }
 
 func (s *service) Register(router gin.IRouter) {
-	router.GET("/", ginwrapper.Wrap(s.getByProjectID))
+	router.GET("", ginwrapper.Wrap(s.getByProjectID))
 }
 
 func (s *service) getByProjectID(c *gin.Context) ginwrapper.Response {
-	pIDStr := c.Param(projectapi.FieldProjectID)
-	pID, err := cast.ToUint64E(pIDStr)
+	req := LabelRequest{}
+	err := c.ShouldBindQuery(&req)
 	if err != nil {
+		logger.Error(err)
 		return ginwrapper.Response{
-			Error: errors.BadRequest.Wrap(err, "cannot get project ID"),
+			Error: errors.BadRequest.NewWithMessage("error binding request"),
 		}
 	}
-	responses, err := s.repository.GetByProject(pID)
+	responses, err := s.repository.GetByProject(req.ProjectID)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,

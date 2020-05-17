@@ -8,19 +8,19 @@ import (
 	"github.com/nkhang/pluto/pkg/errors"
 )
 
-type dbRepository interface {
+type DBRepository interface {
 	GetByProjectID(projectID uint64) ([]Label, error)
 }
 
-type diskRepository struct {
+type dbRepository struct {
 	db *gorm.DB
 }
 
-func NewDiskRepository(db *gorm.DB) *diskRepository {
-	return &diskRepository{db: db}
+func NewDiskRepository(db *gorm.DB) *dbRepository {
+	return &dbRepository{db: db}
 }
 
-func (d *diskRepository) GetByProjectID(projectID uint64) ([]Label, error) {
+func (d *dbRepository) GetByProjectID(projectID uint64) ([]Label, error) {
 	l := make([]Label, 0)
 	query := fmt.Sprint(fieldProjectID, " = ?")
 	err := d.db.Where(query, projectID).Preload("Tool").Find(&l).Error

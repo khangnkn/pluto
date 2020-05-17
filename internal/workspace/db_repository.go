@@ -8,6 +8,7 @@ import (
 
 type DBRepository interface {
 	Get(id uint64) (Workspace, error)
+	GetByUserID(userID uint64) ([]Workspace, error)
 }
 
 type dbRepository struct {
@@ -29,4 +30,22 @@ func (r *dbRepository) Get(id uint64) (Workspace, error) {
 		return Workspace{}, errors.WorkspaceQueryError.Wrap(err, "workspace query error")
 	}
 	return w, nil
+}
+
+func (r *dbRepository) GetByUserID(userID uint64) ([]Workspace, error) {
+	var workspaces = make([]Workspace, 0)
+	var perms = make([]WorkspacePermission, 0)
+	err := r.db.Debug().Where("user_id = ?", userID).Find(&perms).Error
+	if err != nil {
+		return nil, errors.WorkspaceQueryError.Wrap(err, "workspace query error")
+	}
+	for _, perm := range perms {
+		var w Workspace
+		err := r.db.Model(&perm).Association("Workspace").Find(&w).Error
+		if err != nil {
+			return nil, errors.WorkspaceQueryError.Wrap(err, "workspace query error")
+		}
+		workspaces = append(workspaces, w)
+	}
+	return workspaces, nil
 }

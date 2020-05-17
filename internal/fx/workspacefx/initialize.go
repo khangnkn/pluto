@@ -24,10 +24,9 @@ func provideWorkspaceAPIRepository(r workspace.Repository) workspaceapi.Reposito
 
 type params struct {
 	fx.In
-	Repository    workspaceapi.Repository
-	ProjectRouter gin.IEngine `name:"ProjectService"`
+	Repository workspaceapi.Repository
 }
 
 func provideWorkspaceService(p params) gin.IEngine {
-	return workspaceapi.NewService(p.Repository, p.ProjectRouter)
+	return workspaceapi.NewService(p.Repository)
 }

@@ -9,6 +9,7 @@ import (
 
 type Repository interface {
 	Get(id uint64) (Workspace, error)
+	GetByUserID(userID uint64) ([]Workspace, error)
 }
 
 type repository struct {
@@ -42,4 +43,25 @@ func (r *repository) Get(id uint64) (Workspace, error) {
 	}
 	logger.Infof("getting workspace [%d] successfully", id)
 	return w, nil
+}
+
+func (r *repository) GetByUserID(userID uint64) ([]Workspace, error) {
+	var workspaces = make([]Workspace, 0)
+	k := rediskey.WorkspacesByUserID(userID)
+	err := r.cacheRepo.Get(k, &workspaces)
+	if err == nil {
+		return workspaces, nil
+	}
+	if errors.Type(err) == errors.CacheNotFound {
+		logger.Infof("cache miss for user %d", userID)
+	} else {
+		logger.Errorf("error getting cache workspaces for user %d", userID)
+	}
+	workspaces, err = r.dbRepo.GetByUserID(userID)
+	if err != nil {
+		logger.Error("error getting workspaces from database", err)
+		return nil, err
+	}
+	logger.Infof("getting workspace for user %d successfully", userID)
+	return workspaces, nil
 }

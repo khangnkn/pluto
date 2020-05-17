@@ -12,11 +12,11 @@ type Repository interface {
 }
 
 type repository struct {
-	dbRepo    dbRepository
+	dbRepo    DBRepository
 	cacheRepo cache.Cache
 }
 
-func NewRepository(d dbRepository, c cache.Cache) *repository {
+func NewRepository(d DBRepository, c cache.Cache) *repository {
 	return &repository{
 		dbRepo:    d,
 		cacheRepo: c,

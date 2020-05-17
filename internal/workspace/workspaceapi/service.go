@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/nkhang/pluto/pkg/errors"
-	pgin "github.com/nkhang/pluto/pkg/gin"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
 )
 
@@ -14,21 +13,18 @@ const (
 )
 
 type service struct {
-	repository     Repository
-	projectService pgin.IEngine
+	repository Repository
 }
 
-func NewService(r Repository, pS pgin.IEngine) *service {
+func NewService(r Repository) *service {
 	return &service{
-		repository:     r,
-		projectService: pS,
+		repository: r,
 	}
 }
 
 func (s *service) Register(router gin.IRouter) {
+	router.GET("/", ginwrapper.Wrap(s.getByUserID))
 	router.GET("/:"+FieldWorkspaceID, ginwrapper.Wrap(s.get))
-	projectRouter := router.Group("/:" + FieldWorkspaceID + "/projects")
-	s.projectService.Register(projectRouter)
 }
 
 func (s *service) get(c *gin.Context) ginwrapper.Response {
@@ -48,5 +44,25 @@ func (s *service) get(c *gin.Context) ginwrapper.Response {
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("Successfully"),
 		Data:  w,
+	}
+}
+
+func (s *service) getByUserID(c *gin.Context) ginwrapper.Response {
+	var req GetByUserIDRequest
+	err := c.ShouldBindQuery(&req)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.NewWithMessage("error binding user_id"),
+		}
+	}
+	workspaces, err := s.repository.GetByUserID(req.UserID)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+		Data:  workspaces,
 	}
 }

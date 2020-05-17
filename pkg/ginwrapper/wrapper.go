@@ -11,6 +11,12 @@ type Response struct {
 	Data     interface{}
 }
 
+type response struct {
+	ReturnCode    int         `json:"returncode"`
+	ReturnMessage string      `json:"returnmessage"`
+	Data          interface{} `json:"data,omitempty"`
+}
+
 type GinHandlerFunc func(c *gin.Context) Response
 
 func Wrap(fn GinHandlerFunc) gin.HandlerFunc {
@@ -29,9 +35,10 @@ func Report(c *gin.Context, code int, err error, data interface{}) {
 	if !ok {
 		e = errors.Unknown.NewWithMessage("Unknown error")
 	}
-	c.JSON(code, gin.H{
-		"returncode":    e.Code,
-		"returnmessage": e.Message,
-		"data":          data,
-	})
+	returnObj := response{
+		ReturnCode:    int(e.Code),
+		ReturnMessage: e.Message,
+		Data:          data,
+	}
+	c.JSON(code, returnObj)
 }

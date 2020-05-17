@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/nkhang/pluto/internal/fx/datasetfx"
+	"github.com/nkhang/pluto/internal/fx/imagefx"
 	"github.com/nkhang/pluto/internal/fx/labelfx"
 	"github.com/nkhang/pluto/internal/fx/projectfx"
 	"github.com/nkhang/pluto/internal/fx/toolfx"
@@ -22,6 +23,7 @@ func main() {
 		redisfx.Module,
 		toolfx.Module,
 		labelfx.Module,
+		imagefx.Module,
 		datasetfx.Module,
 		projectfx.Module,
 		workspacefx.Module,
