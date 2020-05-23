@@ -1,8 +1,14 @@
 package imageapi
 
 import (
+	gimage "image"
+	_ "image/png"
+	_ "image/jpeg"
+	"mime/multipart"
+
 	"github.com/nkhang/pluto/internal/image"
 	"github.com/nkhang/pluto/pkg/errors"
+	"github.com/nkhang/pluto/pkg/logger"
 )
 
 const (
@@ -11,6 +17,7 @@ const (
 
 type Repository interface {
 	GetByDatasetID(dID uint64, offset, limit int) ([]ImageResponse, error)
+	UploadRequest(dID uint64, file *multipart.FileHeader) error
 }
 
 type repository struct {
@@ -34,4 +41,20 @@ func (r *repository) GetByDatasetID(dID uint64, offset, limit int) ([]ImageRespo
 		responses[i] = ToImageResponse(images[i])
 	}
 	return responses, nil
+}
+
+func (r *repository) UploadRequest(dID uint64, header *multipart.FileHeader) error {
+	file, err := header.Open()
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	image, t, err := gimage.Decode(file)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Info(t)
+	logger.Info(image.Bounds().Dx, image.Bounds().Dy)
+	return nil
 }

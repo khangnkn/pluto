@@ -1,6 +1,10 @@
 package imageapi
 
-import "github.com/nkhang/pluto/internal/image"
+import (
+	"mime/multipart"
+
+	"github.com/nkhang/pluto/internal/image"
+)
 
 type ImageRequestQuery struct {
 	DatasetID uint64 `form:"dataset_id"`
@@ -8,11 +12,16 @@ type ImageRequestQuery struct {
 	Limit     int    `form:"limit"`
 }
 
+type UpdloadRequest struct {
+	FileHeader *multipart.FileHeader `form:"file"`
+	Name       string                `form:"name"`
+}
+
 type ImageResponse struct {
 	ID     uint64
 	URL    string
-	Width  uint32
-	Height uint32
+	Width  int
+	Height int
 }
 
 func ToImageResponse(i image.Image) ImageResponse {
@@ -22,5 +31,4 @@ func ToImageResponse(i image.Image) ImageResponse {
 		Width:  i.Width,
 		Height: i.Height,
 	}
-
 }

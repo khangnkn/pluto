@@ -1,12 +1,13 @@
 # IDE
 .idea
+.vscode
 # Binaries for programs and plugins
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-
+cmd/__debug_bin
 # Test binary, built with `go test -c`
 *.test
 

@@ -9,6 +9,7 @@ import (
 type DBRepository interface {
 	Get(id uint64) (Image, error)
 	GetByDataset(dID uint64, offset, limit int) (imgs []Image, err error)
+	CreateImage(name string, w, h int, dataset_id uint64) (Image, error)
 }
 
 type dbRepository struct {
@@ -42,4 +43,18 @@ func (r *dbRepository) GetByDataset(dID uint64, offset, limit int) (images []Ima
 		return
 	}
 	return
+}
+
+func (r *dbRepository) CreateImage(name string, w, h int, dataset_id uint64) (Image, error) {
+	img := Image{
+		URL:       name,
+		Width:     w,
+		Height:    h,
+		DatasetID: dataset_id,
+	}
+	err := r.db.Save(&img).Error
+	if err != nil {
+		return Image{}, errors.ImageErrorCreating.NewWithMessage("error creating image")
+	}
+	return img, nil
 }

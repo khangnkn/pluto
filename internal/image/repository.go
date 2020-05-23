@@ -10,6 +10,7 @@ import (
 type Repository interface {
 	Get(id uint64) (Image, error)
 	GetByDataset(dID uint64, offset, limit int) (imgs []Image, err error)
+	CreateImage(name string, w, h int, dataset_id uint64) (Image, error)
 }
 
 type repository struct {
@@ -72,4 +73,8 @@ func (r *repository) GetByDataset(dID uint64, offset, limit int) (images []Image
 		}
 	}()
 	return
+}
+
+func (r *repository) CreateImage(name string, w, h int, dataset_id uint64) (Image, error) {
+	return r.dbRepo.CreateImage(name, w, h, dataset_id)
 }

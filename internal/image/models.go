@@ -5,7 +5,8 @@ import "github.com/nkhang/pluto/pkg/gorm"
 type Image struct {
 	gorm.Model
 	URL       string
-	Width     uint32
-	Height    uint32
+	Width     int
+	Height    int
+	Size      uint64
 	DatasetID uint64
 }
