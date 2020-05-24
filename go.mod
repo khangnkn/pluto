@@ -12,6 +12,7 @@ require (
 	github.com/jinzhu/gorm v1.9.12
 	github.com/ltpquang/zbumper v1.0.3 // indirect
 	github.com/manifoldco/promptui v0.7.0 // indirect
+	github.com/minio/minio-go/v6 v6.0.55 // indirect
 	github.com/parnurzeal/gorequest v0.2.16 // indirect
 	github.com/pascaldekloe/name v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1
