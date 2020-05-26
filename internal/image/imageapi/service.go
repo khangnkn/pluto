@@ -41,23 +41,17 @@ func (s *service) getByDataset(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) uploadByDataset(c *gin.Context) ginwrapper.Response {
-	var req UpdloadRequest
-	file, err := c.FormFile("file")
-	if err != nil {
-		return ginwrapper.Response{
-			Error: errors.BadRequest.NewWithMessage("error getting image"),
-		}
-	}
-	err = c.ShouldBind(&req)
+	var req UploadRequest
+	err := c.ShouldBind(&req)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: errors.BadRequest.NewWithMessage("error binding request"),
 		}
 	}
-	err = s.repository.UploadRequest(1, file)
+	err = s.repository.UploadRequest(req.DatasetID, req.FileHeader)
 	if err != nil {
 		return ginwrapper.Response{
-			Error: errors.DatasetQueryError.Wrap(err, "error reading file"),
+			Error: errors.ImageErrorCreating.Wrap(err, "error reading file"),
 		}
 	}
 	return ginwrapper.Response{

@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/minio/minio-go"
+	"github.com/nkhang/pluto/pkg/logger"
 )
 
 type minioClient struct {
@@ -30,6 +30,13 @@ func (c *minioClient) Put(collection, filename string, reader io.Reader, size in
 }
 
 func (c *minioClient) PutImage(collection, filename string, reader io.Reader, size int64) (int64, error) {
+	if ok, _ := c.client.BucketExists(collection); !ok {
+		logger.Infof("making bucket %s", collection)
+		err := c.client.MakeBucket(collection, "ap-southeast-1")
+		if err != nil {
+			panic(err)
+		}
+	}
 	b := make([]byte, size)
 	n, err := reader.Read(b)
 	if err != nil || n == 0 {

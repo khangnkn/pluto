@@ -6,19 +6,22 @@ require (
 	github.com/Selvatico/go-mocket v1.0.7
 	github.com/alvaroloes/enumer v1.1.2 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
+	github.com/coreos/etcd v3.3.22+incompatible
 	github.com/gin-gonic/gin v1.6.2
+	github.com/go-ini/ini v1.56.0 // indirect
 	github.com/go-redis/redis v6.15.7+incompatible
 	github.com/golangci/golangci-lint v1.27.0 // indirect
 	github.com/jinzhu/gorm v1.9.12
 	github.com/ltpquang/zbumper v1.0.3 // indirect
 	github.com/manifoldco/promptui v0.7.0 // indirect
+	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/minio/minio-go/v6 v6.0.55 // indirect
 	github.com/parnurzeal/gorequest v0.2.16 // indirect
 	github.com/pascaldekloe/name v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/sebdah/goldie/v2 v2.2.0
 	github.com/sergi/go-diff v1.1.0 // indirect
-	github.com/spf13/cast v1.3.0
+	github.com/spf13/cast v1.3.1
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.5.1

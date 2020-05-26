@@ -1,14 +1,19 @@
 package imageapi
 
 import (
+	"bytes"
+	"fmt"
 	gimage "image"
-	_ "image/png"
 	_ "image/jpeg"
+	_ "image/png"
+	"io"
 	"mime/multipart"
 
+	"github.com/nkhang/pluto/internal/dataset"
 	"github.com/nkhang/pluto/internal/image"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/logger"
+	"github.com/nkhang/pluto/pkg/objectstorage"
 )
 
 const (
@@ -21,11 +26,17 @@ type Repository interface {
 }
 
 type repository struct {
-	repo image.Repository
+	repo        image.Repository
+	datasetRepo dataset.Repository
+	storage     objectstorage.ObjectStorage
 }
 
-func NewRepository(r image.Repository) *repository {
-	return &repository{repo: r}
+func NewRepository(r image.Repository, s objectstorage.ObjectStorage, d dataset.Repository) *repository {
+	return &repository{
+		repo:        r,
+		storage:     s,
+		datasetRepo: d,
+	}
 }
 
 func (r *repository) GetByDatasetID(dID uint64, offset, limit int) ([]ImageResponse, error) {
@@ -48,13 +59,34 @@ func (r *repository) UploadRequest(dID uint64, header *multipart.FileHeader) err
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	image, t, err := gimage.Decode(file)
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			logger.Error(err)
+		}
+	}()
+
+	var buf bytes.Buffer
+	reader := io.TeeReader(file, &buf)
+
+	img, _, err := gimage.Decode(reader)
 	if err != nil {
-		logger.Error(err)
+		logger.Error("error decode image", err)
+		return nil
+	}
+
+	collection := fmt.Sprintf("pluto-bucket-%d", dID)
+	n, err := r.storage.PutImage(collection, header.Filename, &buf, header.Size)
+	if err != nil {
+		logger.Error("error putting to object storage", err)
 		return err
 	}
-	logger.Info(t)
-	logger.Info(image.Bounds().Dx, image.Bounds().Dy)
-	return nil
+	logger.Infof("put image to object storage with %d bytes", n)
+
+	w := img.Bounds().Max.X
+	h := img.Bounds().Max.Y
+	size := header.Size
+	name := header.Filename
+	_, err = r.repo.CreateImage(name, w, h, size, dID)
+	return err
 }

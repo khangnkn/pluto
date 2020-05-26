@@ -12,6 +12,7 @@ import (
 	"github.com/nkhang/pluto/pkg/fx/ginfx"
 	"github.com/nkhang/pluto/pkg/fx/loggerfx"
 	"github.com/nkhang/pluto/pkg/fx/redisfx"
+	"github.com/nkhang/pluto/pkg/fx/storagefx"
 	"go.uber.org/fx"
 )
 
@@ -27,6 +28,7 @@ func main() {
 		datasetfx.Module,
 		projectfx.Module,
 		workspacefx.Module,
+		storagefx.Module,
 		ginfx.Module,
 		fx.Invoke(initializer),
 	).Run()

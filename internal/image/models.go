@@ -7,6 +7,6 @@ type Image struct {
 	URL       string
 	Width     int
 	Height    int
-	Size      uint64
+	Size      int64
 	DatasetID uint64
 }

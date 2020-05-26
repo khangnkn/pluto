@@ -9,3 +9,9 @@ database:
 
 redis:
   url: localhost:6379
+
+minio:
+  endpoint: play.min.io
+  accesskey: Q3AM3UQ867SPQQA43P2F
+  secretkey: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG
+  usessl: tru
