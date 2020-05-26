@@ -4,6 +4,7 @@ import (
 	"mime/multipart"
 
 	"github.com/nkhang/pluto/internal/image"
+	"github.com/nkhang/pluto/pkg/util/clock"
 )
 
 type ImageRequestQuery struct {
@@ -18,19 +19,28 @@ type UploadRequest struct {
 }
 
 type ImageResponse struct {
-	ID     uint64 `json:"id"`
-	URL    string `json:"url"`
-	Width  int    `json:"width"`
-	Height int    `json:"height"`
-	Size   int64  `json:"size"`
+	ID        uint64 `json:"id"`
+	CreatedAt int64  `json:"created_at"`
+	Title     string `json:"title"`
+	URL       string `json:"url"`
+	Width     int    `json:"width"`
+	Height    int    `json:"height"`
+	Size      int64  `json:"size"`
+}
+
+type Config struct {
+	Scheme   string
+	Endpoint string
 }
 
 func ToImageResponse(i image.Image) ImageResponse {
 	return ImageResponse{
-		ID:     i.ID,
-		URL:    i.URL,
-		Width:  i.Width,
-		Height: i.Height,
-		Size:   i.Size,
+		ID:        i.ID,
+		CreatedAt: clock.UnixMillisecondFromTime(i.CreatedAt),
+		Title:     i.Title,
+		URL:       i.URL,
+		Width:     i.Width,
+		Height:    i.Height,
+		Size:      i.Size,
 	}
 }

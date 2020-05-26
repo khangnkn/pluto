@@ -26,6 +26,10 @@ func ImageByDatasetID(dID uint64, offset, limit int) string {
 	return fmt.Sprintf("pluto:image:dataset:id:%d:offset:%d:limit:%d", dID, offset, limit)
 }
 
+func ImageByDatasetIDAllKeys(dID uint64) string {
+	return fmt.Sprintf("pluto:image:dataset:id:%d:*", dID)
+}
+
 func ProjectByID(wID, pID uint64) string {
 	return fmt.Sprintf("pluto:project:wid:%d:pid:%d", wID, pID)
 }

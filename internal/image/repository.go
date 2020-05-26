@@ -10,7 +10,8 @@ import (
 type Repository interface {
 	Get(id uint64) (Image, error)
 	GetByDataset(dID uint64, offset, limit int) (imgs []Image, err error)
-	CreateImage(name string, w, h int, size int64, dataset_id uint64) (Image, error)
+	CreateImage(title, url string, w, h int, size int64, dataset_id uint64) (Image, error)
+	InvalidateDatasetImage(dID uint64) error
 }
 
 type repository struct {
@@ -75,6 +76,17 @@ func (r *repository) GetByDataset(dID uint64, offset, limit int) (images []Image
 	return
 }
 
-func (r *repository) CreateImage(name string, w, h int, size int64, dataset_id uint64) (Image, error) {
-	return r.dbRepo.CreateImage(name, w, h, size, dataset_id)
+func (r *repository) CreateImage(title, url string, w, h int, size int64, dataset_id uint64) (Image, error) {
+	return r.dbRepo.CreateImage(title, url, w, h, size, dataset_id)
+}
+
+func (r *repository) InvalidateDatasetImage(dID uint64) error {
+	pattern := rediskey.ImageByDatasetIDAllKeys(dID)
+	keys, err := r.cacheRepo.Keys(pattern)
+	if err != nil {
+		logger.Error("error getting all keys from redis", err)
+		return err
+	}
+	logger.Infof("the following keys will be deleted: %v", keys)
+	return r.cacheRepo.Del(keys...)
 }

@@ -9,7 +9,7 @@ import (
 type DBRepository interface {
 	Get(id uint64) (Image, error)
 	GetByDataset(dID uint64, offset, limit int) (imgs []Image, err error)
-	CreateImage(name string, w, h int, size int64, dataset_id uint64) (Image, error)
+	CreateImage(title, url string, w, h int, size int64, dataset_id uint64) (Image, error)
 }
 
 type dbRepository struct {
@@ -45,9 +45,10 @@ func (r *dbRepository) GetByDataset(dID uint64, offset, limit int) (images []Ima
 	return
 }
 
-func (r *dbRepository) CreateImage(name string, w, h int, size int64, dataset_id uint64) (Image, error) {
+func (r *dbRepository) CreateImage(title, url string, w, h int, size int64, dataset_id uint64) (Image, error) {
 	img := Image{
-		URL:       name,
+		URL:       url,
+		Title:     title,
 		Width:     w,
 		Height:    h,
 		Size:      size,

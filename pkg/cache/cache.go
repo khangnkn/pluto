@@ -12,6 +12,8 @@ import (
 type Cache interface {
 	Get(key string, target interface{}) error
 	Set(key string, target interface{}) error
+	Del(key ...string) error
+	Keys(pattern string) ([]string, error)
 }
 
 type client struct {
@@ -51,4 +53,20 @@ func (c *client) Set(key string, data interface{}) error {
 		return errors.CacheSetError.Wrap(err, "cannot set cache")
 	}
 	return nil
+}
+
+func (c *client) Del(key ...string) error {
+	err := c.cmd.Del(key...).Err()
+	if err != nil {
+		return errors.CacheDeleteError.Wrap(err, "cannot del keys")
+	}
+	return nil
+}
+
+func (c *client) Keys(pattern string) ([]string, error) {
+	s, err := c.cmd.Keys(pattern).Result()
+	if err != nil {
+		return nil, errors.CacheKeysError.Wrap(err, "cannot get key pattern")
+	}
+	return s, nil
 }

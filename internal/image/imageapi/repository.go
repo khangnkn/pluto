@@ -8,6 +8,9 @@ import (
 	_ "image/png"
 	"io"
 	"mime/multipart"
+	"net/url"
+
+	"github.com/spf13/viper"
 
 	"github.com/nkhang/pluto/internal/dataset"
 	"github.com/nkhang/pluto/internal/image"
@@ -29,13 +32,19 @@ type repository struct {
 	repo        image.Repository
 	datasetRepo dataset.Repository
 	storage     objectstorage.ObjectStorage
+	conf        Config
 }
 
 func NewRepository(r image.Repository, s objectstorage.ObjectStorage, d dataset.Repository) *repository {
+	var conf = Config{
+		Scheme:   viper.GetString("minio.scheme"),
+		Endpoint: viper.GetString("minio.endpoint"),
+	}
 	return &repository{
 		repo:        r,
 		storage:     s,
 		datasetRepo: d,
+		conf:        conf,
 	}
 }
 
@@ -86,7 +95,18 @@ func (r *repository) UploadRequest(dID uint64, header *multipart.FileHeader) err
 	w := img.Bounds().Max.X
 	h := img.Bounds().Max.Y
 	size := header.Size
-	name := header.Filename
-	_, err = r.repo.CreateImage(name, w, h, size, dID)
+	title := header.Filename
+	u := r.getImageURL(collection, title)
+	_, err = r.repo.CreateImage(title, u, w, h, size, dID)
+	go func() {
+		err := r.repo.InvalidateDatasetImage(dID)
+		if err != nil {
+			logger.Error("cannot invalidate dataset images", err)
+		}
+	}()
 	return err
+}
+
+func (r *repository) getImageURL(collection, title string) string {
+	return fmt.Sprintf("%s://%s/%s/%s", r.conf.Scheme, r.conf.Endpoint, collection, url.PathEscape(title))
 }
