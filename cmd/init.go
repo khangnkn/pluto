@@ -69,7 +69,8 @@ func migrate(db *gorm.DB) {
 	db.AutoMigrate(&dataset.Dataset{})
 	db.AutoMigrate(&label.Label{})
 	db.AutoMigrate(&project.Project{})
+	db.AutoMigrate(&project.Permission{})
 	db.AutoMigrate(&workspace.Workspace{})
-	db.AutoMigrate(&workspace.WorkspacePermission{})
+	db.AutoMigrate(&workspace.Permission{})
 	db.AutoMigrate(&image.Image{})
 }

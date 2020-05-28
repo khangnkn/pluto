@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	FieldWorkspaceID = "workspaceId"
+	FieldWorkspaceID = "workspace_id"
 )
 
 type service struct {

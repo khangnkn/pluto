@@ -7,8 +7,9 @@ import (
 )
 
 type DiskRepository interface {
-	Get(wID uint64, pID uint64) (Project, error)
+	Get(pID uint64) (Project, error)
 	GetByWorkspaceID(wID uint64) ([]Project, error)
+	GetProjectPermission(pID uint64) ([]Permission, error)
 }
 
 type diskRepository struct {
@@ -19,9 +20,9 @@ func NewDiskRepository(db *gorm.DB) *diskRepository {
 	return &diskRepository{db: db}
 }
 
-func (r *diskRepository) Get(wID uint64, pID uint64) (Project, error) {
+func (r *diskRepository) Get(pID uint64) (Project, error) {
 	var p Project
-	result := r.db.Where(fieldWorkspaceID+" = ?", wID).First(&p, pID)
+	result := r.db.First(&p, pID)
 	if result.RecordNotFound() {
 		return Project{}, errors.ProjectNotFound.NewWithMessage("project not found")
 	}
@@ -38,4 +39,13 @@ func (r *diskRepository) GetByWorkspaceID(wID uint64) ([]Project, error) {
 		return nil, errors.ProjectQueryError.NewWithMessage("error getting project of workspace")
 	}
 	return projects, nil
+}
+
+func (r *diskRepository) GetProjectPermission(pID uint64) ([]Permission, error) {
+	var perms = make([]Permission, 0)
+	err := r.db.Where("workspace_id = ?", pID).Find(&perms).Error
+	if err != nil {
+		return nil, errors.ProjectQueryError.Wrap(err, "cannot query project permissions for project")
+	}
+	return perms, nil
 }

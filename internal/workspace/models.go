@@ -11,11 +11,16 @@ type Workspace struct {
 	Title       string
 	Description string
 	Projects    []project.Project
-	Perm        []WorkspacePermission
+	Perm        []Permission
 }
-type WorkspacePermission struct {
+
+type Permission struct {
 	gorm.Model
 	WorkspaceID uint64
 	Workspace   Workspace `gorm:"association_save_reference:false"`
 	UserID      uint64
+}
+
+func (Permission) TableName() string {
+	return "workspace_permissions"
 }

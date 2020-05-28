@@ -34,7 +34,7 @@ func (r *dbRepository) Get(id uint64) (Workspace, error) {
 
 func (r *dbRepository) GetByUserID(userID uint64) ([]Workspace, error) {
 	var workspaces = make([]Workspace, 0)
-	var perms = make([]WorkspacePermission, 0)
+	var perms = make([]Permission, 0)
 	err := r.db.Debug().Where("user_id = ?", userID).Find(&perms).Error
 	if err != nil {
 		return nil, errors.WorkspaceQueryError.Wrap(err, "workspace query error")

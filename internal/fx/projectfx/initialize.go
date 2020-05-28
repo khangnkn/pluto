@@ -5,6 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"go.uber.org/fx"
 
+	"github.com/nkhang/pluto/internal/dataset"
 	"github.com/nkhang/pluto/internal/project"
 	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/pkg/cache"
@@ -20,8 +21,8 @@ func provideRepository(r project.DiskRepository, client redis.UniversalClient) p
 	return project.NewRepository(r, c)
 }
 
-func provideAPIRepository(r project.Repository) projectapi.Repository {
-	return projectapi.NewRepository(r)
+func provideAPIRepository(r project.Repository, dr dataset.Repository) projectapi.Repository {
+	return projectapi.NewRepository(r, dr)
 }
 
 type params struct {

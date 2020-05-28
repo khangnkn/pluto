@@ -25,23 +25,23 @@ func (r *repository) Get(dID uint64) (d Dataset, err error) {
 	k := rediskey.DatasetByID(dID)
 	err = r.cacheRepo.Get(k, &d)
 	if err == nil {
-		logger.Infof("cache hit getting dataset [%d]", dID)
+		logger.Infof("cache hit getting dataset %d", dID)
 		return d, nil
 	}
 	if errors.Type(err) == errors.CacheNotFound {
-		logger.Infof("cache miss getting dataset [%d]", dID)
+		logger.Infof("cache miss getting dataset %d", dID)
 	} else {
-		logger.Errorf("error getting dataset [%d] from cache", dID)
+		logger.Errorf("error getting dataset %d from cache", dID)
 	}
 	d, err = r.dbRepo.Get(dID)
 	if err != nil {
-		logger.Error("error getting dataset [%d] from database", dID)
+		logger.Error("error getting dataset %d from database", dID)
 		return Dataset{}, err
 	}
 	go func() {
 		err := r.cacheRepo.Set(k, &d)
 		if err != nil {
-			logger.Error("error set dataset [%d] to cache", dID)
+			logger.Error("error set dataset %d to cache", dID)
 		}
 	}()
 	return d, nil
@@ -52,23 +52,23 @@ func (r *repository) GetByProject(pID uint64) ([]Dataset, error) {
 	k := rediskey.DatasetByProject(pID)
 	err := r.cacheRepo.Get(k, &ds)
 	if err == nil {
-		logger.Infof("cache hit getting datasets of project [%d]", pID)
+		logger.Infof("cache hit getting datasets of project %d", pID)
 		return ds, nil
 	}
 	if errors.Type(err) == errors.CacheNotFound {
-		logger.Infof("cache miss getting datasets of project [%d]", pID)
+		logger.Infof("cache miss getting datasets of project %d", pID)
 	} else {
-		logger.Errorf("error getting datasets of project [%d] from cache", pID)
+		logger.Errorf("error getting datasets of project %d from cache", pID)
 	}
 	ds, err = r.dbRepo.GetByProject(pID)
 	if err != nil {
-		logger.Error("error getting datasets of projects [%d] from database", pID)
+		logger.Error("error getting datasets of projects %d from database", pID)
 		return nil, err
 	}
 	go func() {
 		err := r.cacheRepo.Set(k, &ds)
 		if err != nil {
-			logger.Error("error set datasets of projects [%d] to cache", pID)
+			logger.Error("error set datasets of projects %d to cache", pID)
 		}
 	}()
 	return ds, nil

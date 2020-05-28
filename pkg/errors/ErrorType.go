@@ -1,5 +1,7 @@
 package errors
 
+import "fmt"
+
 type ErrorType int
 
 func Type(ce error) ErrorType {
@@ -10,6 +12,14 @@ func Type(ce error) ErrorType {
 }
 
 func (e ErrorType) NewWithMessage(msg string) CustomError {
+	return CustomError{
+		Code:    e,
+		Message: msg,
+	}
+}
+
+func (e ErrorType) NewWithMessageF(tmpl string, args ...interface{}) CustomError {
+	msg := fmt.Sprintf(tmpl, args...)
 	return CustomError{
 		Code:    e,
 		Message: msg,

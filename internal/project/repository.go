@@ -8,8 +8,9 @@ import (
 )
 
 type Repository interface {
-	Get(wID uint64, pID uint64) (Project, error)
+	Get(pID uint64) (Project, error)
 	GetByWorkspaceID(id uint64) ([]Project, error)
+	GetProjectPermission(pID uint64) ([]Permission, error)
 }
 
 type repository struct {
@@ -24,19 +25,20 @@ func NewRepository(r DiskRepository, c cache.Cache) *repository {
 	}
 }
 
-func (r *repository) Get(wID uint64, pID uint64) (Project, error) {
+func (r *repository) Get(pID uint64) (Project, error) {
 	var p Project
-	k := rediskey.ProjectByID(wID, pID)
+	k := rediskey.ProjectByID(pID)
 	err := r.cache.Get(k, &p)
 	if err == nil {
+		logger.Infof("cache hit for getting project %d", pID)
 		return p, nil
 	}
 	if errors.Type(err) != errors.CacheNotFound {
 		logger.Error("error getting project from cache", err)
 	} else {
-		logger.Infof("cache miss for getting project: %+v", p)
+		logger.Infof("cache miss for getting project %d", pID)
 	}
-	p, err = r.disk.Get(wID, pID)
+	p, err = r.disk.Get(pID)
 	if err != nil {
 		return p, err
 	}
@@ -57,9 +59,9 @@ func (r *repository) GetByWorkspaceID(id uint64) ([]Project, error) {
 		return projects, nil
 	}
 	if errors.Type(err) == errors.CacheNotFound {
-		logger.Infof("cache miss for getting projects for workspace [%d]", id)
+		logger.Infof("cache miss for getting projects for workspace %d", id)
 	} else {
-		logger.Errorf("cannot get projects for workspace [%d]", id)
+		logger.Errorf("cannot get projects for workspace %d", id)
 	}
 	projects, err = r.disk.GetByWorkspaceID(id)
 	if err != nil {
@@ -72,4 +74,8 @@ func (r *repository) GetByWorkspaceID(id uint64) ([]Project, error) {
 		}
 	}()
 	return projects, nil
+}
+
+func (r *repository) GetProjectPermission(pID uint64) ([]Permission, error) {
+	return r.disk.GetProjectPermission(pID)
 }
