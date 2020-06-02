@@ -9,7 +9,6 @@ RUN ls -la
 
 FROM scratch
 WORKDIR /root/
-COPY --from=builder /src/config/pluto.yaml .
 COPY --from=builder /src/pluto .
 EXPOSE 8083
 ENTRYPOINT ["./pluto"]
