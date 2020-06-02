@@ -1,6 +1,8 @@
 package main
 
 import (
+	"go.uber.org/fx"
+
 	"github.com/nkhang/pluto/internal/fx/datasetfx"
 	"github.com/nkhang/pluto/internal/fx/imagefx"
 	"github.com/nkhang/pluto/internal/fx/labelfx"
@@ -10,16 +12,14 @@ import (
 	"github.com/nkhang/pluto/pkg/fx/configfx"
 	"github.com/nkhang/pluto/pkg/fx/dbfx"
 	"github.com/nkhang/pluto/pkg/fx/ginfx"
-	"github.com/nkhang/pluto/pkg/fx/loggerfx"
 	"github.com/nkhang/pluto/pkg/fx/redisfx"
 	"github.com/nkhang/pluto/pkg/fx/storagefx"
-	"go.uber.org/fx"
 )
 
 func main() {
 	fx.New(
 		configfx.Initialize("pluto"),
-		loggerfx.Invoke,
+		// loggerfx.Invoke,
 		dbfx.Module,
 		redisfx.Module,
 		toolfx.Module,
