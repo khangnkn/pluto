@@ -9,6 +9,7 @@ import (
 type Repository interface {
 	GetByID(pID uint64) (ProjectResponse, error)
 	GetByWorkspaceID(id uint64) ([]ProjectResponse, error)
+	Create(p CreateProjectParams) error
 }
 
 type repository struct {
@@ -42,6 +43,11 @@ func (r *repository) GetByWorkspaceID(id uint64) ([]ProjectResponse, error) {
 		responses[i] = r.convertResponse(projects[i])
 	}
 	return responses, nil
+}
+
+func (r *repository) Create(p CreateProjectParams) error {
+	_, err := r.repository.CreateProject(p.Title, p.Desc)
+	return err
 }
 
 func (r *repository) convertResponse(p project.Project) ProjectResponse {

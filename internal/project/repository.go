@@ -11,14 +11,15 @@ type Repository interface {
 	Get(pID uint64) (Project, error)
 	GetByWorkspaceID(id uint64) ([]Project, error)
 	GetProjectPermission(pID uint64) ([]Permission, error)
+	CreateProject(title, desc string) (Project, error)
 }
 
 type repository struct {
-	disk  DiskRepository
+	disk  DBRepository
 	cache cache.Cache
 }
 
-func NewRepository(r DiskRepository, c cache.Cache) *repository {
+func NewRepository(r DBRepository, c cache.Cache) *repository {
 	return &repository{
 		disk:  r,
 		cache: c,
@@ -74,6 +75,10 @@ func (r *repository) GetByWorkspaceID(id uint64) ([]Project, error) {
 		}
 	}()
 	return projects, nil
+}
+
+func (r *repository) CreateProject(title, desc string) (Project, error) {
+	return r.disk.CreateProject(title, desc)
 }
 
 func (r *repository) GetProjectPermission(pID uint64) ([]Permission, error) {

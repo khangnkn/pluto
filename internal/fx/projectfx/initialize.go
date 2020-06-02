@@ -12,11 +12,11 @@ import (
 	"github.com/nkhang/pluto/pkg/gin"
 )
 
-func provideProjectDBRepository(db *gorm.DB) project.DiskRepository {
+func provideProjectDBRepository(db *gorm.DB) project.DBRepository {
 	return project.NewDiskRepository(db)
 }
 
-func provideRepository(r project.DiskRepository, client redis.UniversalClient) project.Repository {
+func provideRepository(r project.DBRepository, client redis.UniversalClient) project.Repository {
 	c := cache.New(client)
 	return project.NewRepository(r, c)
 }

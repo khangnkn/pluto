@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  # redis cache
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379"
+    networks:
+      - usanno
+    volumes:
+      - redis:/data
+  # database mysql
+  db:
+    image: mysql:5.7
+    ports:
+      - "3306"
+    networks:
+      - usanno
+    volumes:
+      - mysql:/var/lib/mysql
+  # minio object storage
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9090:9090"
+    environment:
+      MINIO_ACCESS_KEY: pluto 
+      MINIO_SECRET_KEY: dhQk@3sl 
+    volumes:
+      - data_1:/data1
+      - data_2:/data2
+networks:
+  usanno:
+volumes:
+  data:
+  mysql: /data/mysql/
+  redis: /data/redis/

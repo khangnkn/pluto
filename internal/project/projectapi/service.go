@@ -17,7 +17,7 @@ type service struct {
 }
 
 const (
-	FieldProjectID = "projectId"
+	FieldProjectID = "project_id"
 )
 
 func NewService(r Repository, labelService, datasetService pgin.IEngine) *service {
@@ -30,6 +30,7 @@ func NewService(r Repository, labelService, datasetService pgin.IEngine) *servic
 
 func (s *service) Register(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getAll))
+	router.POST("", ginwrapper.Wrap(s.create))
 	router.GET("/:"+FieldProjectID, ginwrapper.Wrap(s.get))
 }
 
@@ -78,7 +79,20 @@ func (s *service) get(c *gin.Context) ginwrapper.Response {
 	}
 }
 
-func getWorkspaceParams(c *gin.Context) (uint64, error) {
-	wsIdStr := c.Param(FieldProjectID)
-	return cast.ToUint64E(wsIdStr)
+func (s *service) create(c *gin.Context) ginwrapper.Response {
+	var req CreateProjectParams
+	if err := c.ShouldBind(&req); err != nil {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.Wrap(err, "cannot bind request params"),
+		}
+	}
+	err := s.repository.Create(req)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+	}
 }

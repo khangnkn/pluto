@@ -1,6 +1,8 @@
 package redisfx
 
 import (
+	"log"
+
 	"github.com/go-redis/redis"
 	"github.com/spf13/viper"
 
@@ -8,7 +10,8 @@ import (
 )
 
 func provideRedisClient() (redis.UniversalClient, error) {
-	addr := viper.GetString("redis.address")
+	addr := viper.GetString("redis.url")
+	log.Print(addr)
 	client := redis.NewClient(&redis.Options{
 		Addr: addr,
 	})
