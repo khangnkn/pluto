@@ -21,7 +21,7 @@ func Initialize(filename string) fx.Option {
 
 		viper.SetConfigName(filename)
 		viper.SetConfigType("yaml")
-		viper.AddConfigPath(".")
+		// viper.AddConfigPath(".")
 		viper.AddConfigPath("./config/")
 		err := viper.ReadInConfig()
 		if err != nil {
