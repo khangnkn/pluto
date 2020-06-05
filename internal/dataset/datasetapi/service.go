@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	fieldDatasetID = "datasetId"
+	fieldDatasetID = "dataset_id"
 )
 
 type service struct {
@@ -24,8 +24,10 @@ func NewService(r Repository) *service {
 }
 
 func (s *service) Register(router gin.IRouter) {
-	router.GET("/", ginwrapper.Wrap(s.getByProjectID))
-	router.GET("/:"+fieldDatasetID, ginwrapper.Wrap(s.getByID))
+	router.GET("", ginwrapper.Wrap(s.getByProjectID))
+	router.GET("/detail/:"+fieldDatasetID, ginwrapper.Wrap(s.getByID))
+	router.POST("/clone", ginwrapper.Wrap(s.clone))
+	router.POST("/", ginwrapper.Wrap(s.create))
 }
 
 func (s *service) getByID(c *gin.Context) ginwrapper.Response {
@@ -49,7 +51,7 @@ func (s *service) getByID(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) getByProjectID(c *gin.Context) ginwrapper.Response {
-	pIDStr := c.Param(projectapi.FieldProjectID)
+	pIDStr := c.Query(projectapi.FieldProjectID)
 	pID, err := cast.ToUint64E(pIDStr)
 	if err != nil {
 		return ginwrapper.Response{
@@ -65,5 +67,36 @@ func (s *service) getByProjectID(c *gin.Context) ginwrapper.Response {
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("Success"),
 		Data:  datasets,
+	}
+}
+
+func (s *service) create(c *gin.Context) ginwrapper.Response {
+	var req CreateDatasetRequest
+	if err := c.ShouldBind(&req); err != nil {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.Wrap(err, "cannot bind request"),
+		}
+	}
+	err := s.repository.CreateDataset(req.Title, req.Description, req.ProjectID)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+	}
+}
+
+func (s *service) clone(c *gin.Context) ginwrapper.Response {
+	var req CloneDatasetRequest
+	if err := c.ShouldBind(&req); err != nil {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.Wrap(err, "cannot bind request"),
+		}
+	}
+	s.repository.CloneDataset(req.ProjectID, req.DatasetIDs)
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
 	}
 }

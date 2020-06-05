@@ -29,6 +29,7 @@ type params struct {
 	ToolRepository   toolapi.Repository
 	WorkspaceService pgin.IEngine `name:"WorkspaceService"`
 	ProjectService   pgin.IEngine `name:"ProjectService"`
+	DatasetService   pgin.IEngine `name:"DatasetService"`
 	LabelService     pgin.IEngine `name:"LabelService"`
 	ToolService      pgin.IEngine `name:"ToolService"`
 	ImageService     pgin.IEngine `name:"ImageService"`
@@ -40,6 +41,7 @@ func initializer(l fx.Lifecycle, p params) {
 	p.ToolService.Register(router.Group("/tools"))
 	p.LabelService.Register(router.Group("/labels"))
 	p.ProjectService.Register(router.Group("/projects"))
+	p.DatasetService.Register(router.Group("/datasets"))
 	p.WorkspaceService.Register(router.Group("/workspaces"))
 	p.ImageService.Register(router.Group("/images"))
 	l.Append(

@@ -25,6 +25,7 @@ require (
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.5.1
+	github.com/t-tiger/gorm-bulk-insert/v2 v2.0.1
 	github.com/vektra/mockery v1.1.2 // indirect
 	github.com/zalando/go-keyring v0.0.0-20200121091418-667557018717 // indirect
 	go.uber.org/fx v1.11.0

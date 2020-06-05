@@ -4,11 +4,22 @@ import (
 	"github.com/nkhang/pluto/internal/dataset"
 )
 
+type CreateDatasetRequest struct {
+	Title       string `form:"title"`
+	Description string `form:"description"`
+	ProjectID   uint64 `form:"project_id"`
+}
+
+type CloneDatasetRequest struct {
+	ProjectID  uint64   `form:"project_id"`
+	DatasetIDs []uint64 `form:"dataset_ids"`
+}
+
 type DatasetResponse struct {
-	ID          uint64
-	Title       string
-	Description string
-	ProjectID   uint64
+	ID          uint64 `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	ProjectID   uint64 `json:"project_id"`
 }
 
 func ToDatasetResponse(d dataset.Dataset) DatasetResponse {
@@ -16,5 +27,6 @@ func ToDatasetResponse(d dataset.Dataset) DatasetResponse {
 		ID:          d.ID,
 		Title:       d.Title,
 		Description: d.Description,
+		ProjectID:   d.ProjectID,
 	}
 }

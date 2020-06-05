@@ -19,7 +19,6 @@ import (
 func main() {
 	fx.New(
 		configfx.Initialize("pluto"),
-		// loggerfx.Invoke,
 		dbfx.Module,
 		redisfx.Module,
 		toolfx.Module,

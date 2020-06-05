@@ -73,3 +73,25 @@ func (r *repository) GetByProject(pID uint64) ([]Dataset, error) {
 	}()
 	return ds, nil
 }
+
+func (r *repository) CreateDataset(title, description string, pID uint64) (Dataset, error) {
+	k := rediskey.DatasetByProject(pID)
+	go func() {
+		err := r.cacheRepo.Del(k)
+		if err != nil {
+			logger.Infof("cannot invalidate cache for all dataset by project %d", pID)
+		}
+	}()
+	return r.dbRepo.CreateDataset(title, description, pID)
+}
+
+func (r *repository) DeleteDataset(ID uint64) error {
+	k := rediskey.DatasetByID(ID)
+	go func() {
+		err := r.cacheRepo.Del(k)
+		if err != nil {
+			logger.Errorf("cannot delete dataset %d from cache", ID)
+		}
+	}()
+	return r.dbRepo.DeleteDataset(ID)
+}

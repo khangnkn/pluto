@@ -5,4 +5,5 @@ const (
 	ImageQueryError
 	ImageTooManyRequest
 	ImageErrorCreating
+	ImageErrorBulkCreating
 )
