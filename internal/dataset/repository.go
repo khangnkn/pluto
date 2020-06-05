@@ -35,7 +35,6 @@ func (r *repository) Get(dID uint64) (d Dataset, err error) {
 	}
 	d, err = r.dbRepo.Get(dID)
 	if err != nil {
-		logger.Error("error getting dataset %d from database", dID)
 		return Dataset{}, err
 	}
 	go func() {

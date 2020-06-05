@@ -7,6 +7,7 @@ import (
 	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
+	"github.com/nkhang/pluto/pkg/logger"
 )
 
 const (
@@ -95,6 +96,7 @@ func (s *service) clone(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.Wrap(err, "cannot bind request"),
 		}
 	}
+	logger.Info("start cloning project")
 	s.repository.CloneDataset(req.ProjectID, req.DatasetIDs)
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("success"),

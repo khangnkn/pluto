@@ -29,6 +29,7 @@ func (r *dbRepository) Get(dID uint64) (d Dataset, err error) {
 	result := r.db.First(&d, dID)
 	if result.RecordNotFound() {
 		err = errors.DatasetNotFound.NewWithMessage("dataset not found")
+		return
 	}
 	if err = result.Error; err != nil {
 		err = errors.DatasetQueryError.Wrap(err, "dataset query error")

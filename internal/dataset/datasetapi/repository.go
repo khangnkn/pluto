@@ -18,9 +18,10 @@ type repository struct {
 	imgRepo    image.Repository
 }
 
-func NewRepository(r dataset.Repository) *repository {
+func NewRepository(r dataset.Repository, imgRepo image.Repository) *repository {
 	return &repository{
 		repository: r,
+		imgRepo:    imgRepo,
 	}
 }
 
