@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "initialize.go",
+        "module.go",
+    ],
+    importpath = "github.com/nkhang/pluto/internal/fx/datasetfx",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/dataset:go_default_library",
+        "//internal/dataset/datasetapi:go_default_library",
+        "//internal/image:go_default_library",
+        "//pkg/cache:go_default_library",
+        "//pkg/gin:go_default_library",
+        "@com_github_jinzhu_gorm//:go_default_library",
+        "@org_uber_go_fx//:go_default_library",
+    ],
+)

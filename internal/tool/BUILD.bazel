@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "disk_repository.go",
+        "model.go",
+        "repository.go",
+    ],
+    importpath = "github.com/nkhang/pluto/internal/tool",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/rediskey:go_default_library",
+        "//pkg/cache:go_default_library",
+        "//pkg/errors:go_default_library",
+        "//pkg/gorm:go_default_library",
+        "//pkg/logger:go_default_library",
+        "@com_github_jinzhu_gorm//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["disk_repository_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = [
+        "@com_github_jinzhu_gorm//:go_default_library",
+        "@com_github_sebdah_goldie_v2//:go_default_library",
+        "@com_github_selvatico_go_mocket//:go_default_library",
+        "@com_github_stretchr_testify//suite:go_default_library",
+    ],
+)

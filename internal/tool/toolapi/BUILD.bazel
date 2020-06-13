@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "models.go",
+        "repository.go",
+        "service.go",
+    ],
+    importpath = "github.com/nkhang/pluto/internal/tool/toolapi",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/tool:go_default_library",
+        "//pkg/errors:go_default_library",
+        "//pkg/ginwrapper:go_default_library",
+        "@com_github_gin_gonic_gin//:go_default_library",
+    ],
+)

@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "init.go",
+        "main.go",
+    ],
+    importpath = "github.com/nkhang/pluto/cmd",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//internal/dataset:go_default_library",
+        "//internal/fx/datasetfx:go_default_library",
+        "//internal/fx/imagefx:go_default_library",
+        "//internal/fx/labelfx:go_default_library",
+        "//internal/fx/projectfx:go_default_library",
+        "//internal/fx/toolfx:go_default_library",
+        "//internal/fx/workspacefx:go_default_library",
+        "//internal/image:go_default_library",
+        "//internal/label:go_default_library",
+        "//internal/project:go_default_library",
+        "//internal/tool:go_default_library",
+        "//internal/tool/toolapi:go_default_library",
+        "//internal/workspace:go_default_library",
+        "//pkg/fx/configfx:go_default_library",
+        "//pkg/fx/dbfx:go_default_library",
+        "//pkg/fx/ginfx:go_default_library",
+        "//pkg/fx/redisfx:go_default_library",
+        "//pkg/fx/storagefx:go_default_library",
+        "//pkg/gin:go_default_library",
+        "//pkg/logger:go_default_library",
+        "@com_github_gin_gonic_gin//:go_default_library",
+        "@com_github_jinzhu_gorm//:go_default_library",
+        "@com_github_spf13_viper//:go_default_library",
+        "@org_uber_go_fx//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "cmd",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

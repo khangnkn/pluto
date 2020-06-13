@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "CustomError.go",
+        "ErrorType.go",
+        "cache.go",
+        "dataset.go",
+        "general.go",
+        "image.go",
+        "label.go",
+        "project.go",
+        "tool.go",
+        "workspace.go",
+    ],
+    importpath = "github.com/nkhang/pluto/pkg/errors",
+    visibility = ["//visibility:public"],
+)

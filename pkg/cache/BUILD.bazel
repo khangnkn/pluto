@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cache.go",
+        "option.go",
+    ],
+    importpath = "github.com/nkhang/pluto/pkg/cache",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errors:go_default_library",
+        "//pkg/json:go_default_library",
+        "@com_github_go_redis_redis//:go_default_library",
+    ],
+)

@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "minio.go",
+        "objectstorage.go",
+    ],
+    importpath = "github.com/nkhang/pluto/pkg/objectstorage",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/logger:go_default_library",
+        "@com_github_minio_minio_go//:go_default_library",
+    ],
+)

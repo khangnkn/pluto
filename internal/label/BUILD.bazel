@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "disk_repository.go",
+        "model.go",
+        "repository.go",
+    ],
+    importpath = "github.com/nkhang/pluto/internal/label",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/rediskey:go_default_library",
+        "//internal/tool:go_default_library",
+        "//pkg/cache:go_default_library",
+        "//pkg/errors:go_default_library",
+        "//pkg/gorm:go_default_library",
+        "//pkg/logger:go_default_library",
+        "@com_github_jinzhu_gorm//:go_default_library",
+    ],
+)

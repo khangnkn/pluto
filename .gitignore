@@ -16,3 +16,5 @@ cmd/__debug_bin
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+# Build artifacts
+bazel-*

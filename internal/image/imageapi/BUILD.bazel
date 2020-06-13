@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "models.go",
+        "repository.go",
+        "service.go",
+    ],
+    importpath = "github.com/nkhang/pluto/internal/image/imageapi",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/dataset:go_default_library",
+        "//internal/image:go_default_library",
+        "//pkg/errors:go_default_library",
+        "//pkg/ginwrapper:go_default_library",
+        "//pkg/logger:go_default_library",
+        "//pkg/objectstorage:go_default_library",
+        "//pkg/util/clock:go_default_library",
+        "@com_github_gin_gonic_gin//:go_default_library",
+        "@com_github_spf13_viper//:go_default_library",
+    ],
+)
