@@ -12,9 +12,9 @@ const (
 type Role int32
 
 const (
-	Labeler Role = iota
+	Manager Role = iota + 1
+	Labeler
 	Reviewer
-	Manager
 )
 
 type Project struct {

@@ -9,6 +9,7 @@ import (
 type DBRepository interface {
 	Get(id uint64) (Workspace, error)
 	GetByUserID(userID uint64) ([]Workspace, error)
+	Create(userID uint64, title, description string) error
 }
 
 type dbRepository struct {
@@ -48,4 +49,25 @@ func (r *dbRepository) GetByUserID(userID uint64) ([]Workspace, error) {
 		workspaces = append(workspaces, w)
 	}
 	return workspaces, nil
+}
+
+func (r *dbRepository) Create(userID uint64, title, description string) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var w = Workspace{
+			Title:       title,
+			Description: description,
+		}
+		if err := r.db.Save(&w).Error; err != nil {
+			return errors.WorkspaceErrorCreating.Wrap(err, "cannot create workspace")
+		}
+		var perm = Permission{
+			WorkspaceID: w.ID,
+			Role:        Admin,
+			UserID:      userID,
+		}
+		if err := r.db.Save(&perm).Error; err != nil {
+			return errors.WorkspaceErrorCreating.Wrap(err, "cannot create workspace")
+		}
+		return nil
+	})
 }

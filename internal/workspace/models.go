@@ -5,6 +5,13 @@ import (
 	"github.com/nkhang/pluto/pkg/gorm"
 )
 
+type Role int32
+
+const (
+	Admin Role = iota + 1
+	Member
+)
+
 type Workspace struct {
 	gorm.Model
 	WorkspaceID uint64
@@ -18,6 +25,7 @@ type Permission struct {
 	gorm.Model
 	WorkspaceID uint64
 	Workspace   Workspace `gorm:"association_save_reference:false"`
+	Role        Role
 	UserID      uint64
 }
 

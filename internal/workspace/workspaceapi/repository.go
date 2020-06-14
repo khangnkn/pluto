@@ -5,6 +5,7 @@ import "github.com/nkhang/pluto/internal/workspace"
 type Repository interface {
 	GetByID(id uint64) (WorkspaceInfoResponse, error)
 	GetByUserID(userID uint64) ([]WorkspaceInfoResponse, error)
+	CreateWorkspace(p CreateWorkspaceRequest) error
 }
 
 type repository struct {
@@ -33,4 +34,8 @@ func (r *repository) GetByUserID(userID uint64) ([]WorkspaceInfoResponse, error)
 		responses[i] = toWorkspaceInfoResponse(w[i])
 	}
 	return responses, nil
+}
+
+func (r *repository) CreateWorkspace(p CreateWorkspaceRequest) error {
+	return r.workspaceRepository.Create(p.UserID, p.Title, p.Description)
 }

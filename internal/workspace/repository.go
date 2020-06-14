@@ -10,6 +10,7 @@ import (
 type Repository interface {
 	Get(id uint64) (Workspace, error)
 	GetByUserID(userID uint64) ([]Workspace, error)
+	Create(userID uint64, title, description string) error
 }
 
 type repository struct {
@@ -64,4 +65,8 @@ func (r *repository) GetByUserID(userID uint64) ([]Workspace, error) {
 	}
 	logger.Infof("getting workspace for user %d successfully", userID)
 	return workspaces, nil
+}
+
+func (r *repository) Create(userID uint64, title, description string) error {
+	return r.dbRepo.Create(userID, title, description)
 }

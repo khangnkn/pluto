@@ -24,6 +24,7 @@ func NewService(r Repository) *service {
 
 func (s *service) Register(router gin.IRouter) {
 	router.GET("/", ginwrapper.Wrap(s.getByUserID))
+	router.POST("/", ginwrapper.Wrap(s.create))
 	router.GET("/:"+FieldWorkspaceID, ginwrapper.Wrap(s.get))
 }
 
@@ -64,5 +65,22 @@ func (s *service) getByUserID(c *gin.Context) ginwrapper.Response {
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("success"),
 		Data:  workspaces,
+	}
+}
+
+func (s *service) create(c *gin.Context) ginwrapper.Response {
+	var req CreateWorkspaceRequest
+	if err := c.ShouldBind(&req); err != nil {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.Wrap(err, "cannot bind create workspace body"),
+		}
+	}
+	if err := s.repository.CreateWorkspace(req); err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
 	}
 }
