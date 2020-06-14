@@ -37,6 +37,6 @@ awk -F${fs} '{
    for (i in vname) {if (i > indent) {delete vname[i]}}
    if (length($3) > 0) {
       vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
-      printf("%s_%s%s: %s\n", toupper("'${prefix}'"),toupper(vn), toupper($2), $3);
+      printf("%s_%s%s=%s\n", toupper("'${prefix}'"),toupper(vn), toupper($2), $3);
    }
 }'

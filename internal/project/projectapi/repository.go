@@ -46,8 +46,19 @@ func (r *repository) GetByWorkspaceID(id uint64) ([]ProjectResponse, error) {
 }
 
 func (r *repository) Create(p CreateProjectParams) error {
-	_, err := r.repository.CreateProject(p.Title, p.Desc)
-	return err
+	_, err := r.repository.CreateProject(p.WorkspaceID, p.Title, p.Desc)
+	if err != nil {
+		return err
+	}
+	go func() {
+		err := r.repository.InvalidateProjectsByWorkspaceID(p.WorkspaceID)
+		if err != nil {
+			logger.Errorf("error invalidate cache for projects by workspace %d, error %v", p.WorkspaceID, err)
+			return
+		}
+		logger.Infof("invalidate cache for projects by workspace %d successfully", p.WorkspaceID)
+	}()
+	return nil
 }
 
 func (r *repository) convertResponse(p project.Project) ProjectResponse {

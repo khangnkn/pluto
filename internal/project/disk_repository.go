@@ -10,7 +10,7 @@ type DBRepository interface {
 	Get(pID uint64) (Project, error)
 	GetByWorkspaceID(wID uint64) ([]Project, error)
 	GetProjectPermission(pID uint64) ([]Permission, error)
-	CreateProject(title, desc string) (Project, error)
+	CreateProject(wID uint64, title, desc string) (Project, error)
 }
 
 type dbRepository struct {
@@ -42,8 +42,9 @@ func (r *dbRepository) GetByWorkspaceID(wID uint64) ([]Project, error) {
 	return projects, nil
 }
 
-func (r *dbRepository) CreateProject(title, desc string) (Project, error) {
+func (r *dbRepository) CreateProject(wID uint64, title, desc string) (Project, error) {
 	var p = Project{
+		WorkspaceID: wID,
 		Title:       title,
 		Description: desc,
 	}
@@ -56,7 +57,7 @@ func (r *dbRepository) CreateProject(title, desc string) (Project, error) {
 
 func (r *dbRepository) GetProjectPermission(pID uint64) ([]Permission, error) {
 	var perms = make([]Permission, 0)
-	err := r.db.Where("workspace_id = ?", pID).Find(&perms).Error
+	err := r.db.Where("project_id = ?", pID).Find(&perms).Error
 	if err != nil {
 		return nil, errors.ProjectPermissionQueryError.Wrap(err, "cannot query project permissions for project")
 	}

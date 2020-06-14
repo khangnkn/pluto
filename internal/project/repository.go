@@ -11,7 +11,8 @@ type Repository interface {
 	Get(pID uint64) (Project, error)
 	GetByWorkspaceID(id uint64) ([]Project, error)
 	GetProjectPermission(pID uint64) ([]Permission, error)
-	CreateProject(title, desc string) (Project, error)
+	CreateProject(wID uint64, title, desc string) (Project, error)
+	InvalidateProjectsByWorkspaceID(id uint64) error
 }
 
 type repository struct {
@@ -57,6 +58,7 @@ func (r *repository) GetByWorkspaceID(id uint64) ([]Project, error) {
 	k := rediskey.ProjectByWorkspaceID(id)
 	err := r.cache.Get(k, &projects)
 	if err == nil {
+		logger.Infof("cache hit for getting projects for workspace %d", id)
 		return projects, nil
 	}
 	if errors.Type(err) == errors.CacheNotFound {
@@ -77,10 +79,37 @@ func (r *repository) GetByWorkspaceID(id uint64) ([]Project, error) {
 	return projects, nil
 }
 
-func (r *repository) CreateProject(title, desc string) (Project, error) {
-	return r.disk.CreateProject(title, desc)
+func (r *repository) CreateProject(wID uint64, title, desc string) (Project, error) {
+	return r.disk.CreateProject(wID, title, desc)
 }
 
 func (r *repository) GetProjectPermission(pID uint64) ([]Permission, error) {
-	return r.disk.GetProjectPermission(pID)
+	var perms []Permission
+	k := rediskey.ProjectPermissionByID(pID)
+	err := r.cache.Get(k, &perms)
+	if err == nil {
+		logger.Infof("cache hit for getting permissions of projects %d", pID)
+		return perms, nil
+	}
+	if errors.Type(err) == errors.CacheNotFound {
+		logger.Infof("cache miss for getting permissions of projects %d", pID)
+	} else {
+		logger.Errorf("cannot get permissions of projects %d", pID)
+	}
+	perms, err = r.disk.GetProjectPermission(pID)
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		err := r.cache.Set(k, &perms)
+		if err != nil {
+			logger.Error(err)
+		}
+	}()
+	return perms, nil
+}
+
+func (r *repository) InvalidateProjectsByWorkspaceID(id uint64) error {
+	k := rediskey.ProjectByWorkspaceID(id)
+	return r.cache.Del(k)
 }

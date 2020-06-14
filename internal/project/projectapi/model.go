@@ -7,8 +7,9 @@ type GetProjectParam struct {
 }
 
 type CreateProjectParams struct {
-	Title string `form:"title" json:"title"`
-	Desc  string `form:"desc" json:"desc"`
+	WorkspaceID uint64 `form:"workspace_id" json:"workspace_id"`
+	Title       string `form:"title" json:"title"`
+	Desc        string `form:"desc" json:"desc"`
 }
 
 type ProjectResponse struct {

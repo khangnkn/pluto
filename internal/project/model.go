@@ -19,6 +19,7 @@ const (
 
 type Project struct {
 	gorm.Model
+	WorkspaceID uint64
 	Title       string
 	Description string
 	Labels      []label.Label
