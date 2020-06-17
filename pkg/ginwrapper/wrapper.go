@@ -12,8 +12,8 @@ type Response struct {
 }
 
 type response struct {
-	ReturnCode    int         `json:"returncode"`
-	ReturnMessage string      `json:"returnmessage"`
+	ReturnCode    int         `json:"status"`
+	ReturnMessage string      `json:"msg"`
 	Data          interface{} `json:"data,omitempty"`
 }
 
