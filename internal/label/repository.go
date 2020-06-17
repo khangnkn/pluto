@@ -9,6 +9,7 @@ import (
 
 type Repository interface {
 	GetByProjectId(pID uint64) ([]Label, error)
+	CreateLabel(name, color string, projectID, toolID uint64) error
 }
 
 type repository struct {
@@ -47,4 +48,13 @@ func (r *repository) GetByProjectId(pID uint64) ([]Label, error) {
 		}
 	}()
 	return labels, nil
+}
+func (r *repository) CreateLabel(name, color string, projectID, toolID uint64) error {
+	k := rediskey.LabelsByProject(projectID)
+	go func() {
+		if err := r.cacheRepo.Del(k); err != nil {
+			logger.Errorf("cannot invalidate all tools for project %d, error %s", projectID, err.Error())
+		}
+	}()
+	return r.dbRepo.CreateLabel(name, color, projectID, toolID)
 }

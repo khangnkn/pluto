@@ -20,6 +20,7 @@ func NewService(r Repository) *service {
 
 func (s *service) Register(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getByProjectID))
+	router.POST("", ginwrapper.Wrap(s.create))
 }
 
 func (s *service) getByProjectID(c *gin.Context) ginwrapper.Response {
@@ -40,5 +41,23 @@ func (s *service) getByProjectID(c *gin.Context) ginwrapper.Response {
 	return ginwrapper.Response{
 		Data:  responses,
 		Error: errors.Success.NewWithMessage("Success"),
+	}
+}
+
+func (s *service) create(c *gin.Context) ginwrapper.Response {
+	var req CreateLabelRequest
+	if err := c.ShouldBind(&req); err != nil {
+		logger.Error("error binding request", err)
+		return ginwrapper.Response{
+			Error: errors.BadRequest.NewWithMessageF("error binding request. error %d", err),
+		}
+	}
+	if err := s.repository.CreateLabel(req); err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
 	}
 }

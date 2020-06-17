@@ -2,7 +2,6 @@ package label
 
 import (
 	"fmt"
-
 	"github.com/jinzhu/gorm"
 
 	"github.com/nkhang/pluto/pkg/errors"
@@ -10,6 +9,7 @@ import (
 
 type DBRepository interface {
 	GetByProjectID(projectID uint64) ([]Label, error)
+	CreateLabel(name, color string, projectID, toolID uint64) error
 }
 
 type dbRepository struct {
@@ -28,4 +28,18 @@ func (d *dbRepository) GetByProjectID(projectID uint64) ([]Label, error) {
 		return nil, errors.LabelQueryError.NewWithMessage("label query error")
 	}
 	return l, nil
+}
+
+func (d *dbRepository) CreateLabel(name, color string, projectID, toolID uint64) error {
+	l := Label{
+		Name:     name,
+		Color:    color,
+		ProjectID: projectID,
+		ToolID:    toolID,
+	}
+	err := d.db.Create(&l).Error
+	if err != nil {
+		return errors.LabelCannotCreate.Wrap(err, "cannot create label")
+	}
+	return nil
 }

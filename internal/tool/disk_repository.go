@@ -22,9 +22,6 @@ func NewDiskRepository(db *gorm.DB) *dbRepository {
 func (d *dbRepository) GetAll() ([]Tool, error) {
 	t := make([]Tool, 0)
 	err := d.db.Model(&Tool{}).Find(&t).Error
-	if len(t) == 0 {
-		return nil, errors.ToolNoRecord.NewWithMessage("no record found")
-	}
 	if err != nil {
 		return nil, errors.ToolQueryError.Wrap(err, "cannot query all tools")
 	}
