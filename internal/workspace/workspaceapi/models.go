@@ -11,7 +11,7 @@ type GetByUserIDRequest struct {
 type CreateWorkspaceRequest struct {
 	UserID      uint64 `form:"user_id" json:"user_id" binding:"required"`
 	Title       string `form:"title" json:"title"`
-	Description string `form:"title" json:"description"`
+	Description string `form:"description" json:"description"`
 }
 
 type WorkspaceInfoResponse struct {
