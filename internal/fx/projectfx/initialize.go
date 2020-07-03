@@ -1,7 +1,6 @@
 package projectfx
 
 import (
-	"github.com/go-redis/redis"
 	"github.com/jinzhu/gorm"
 	"go.uber.org/fx"
 
@@ -16,8 +15,7 @@ func provideProjectDBRepository(db *gorm.DB) project.DBRepository {
 	return project.NewDiskRepository(db)
 }
 
-func provideRepository(r project.DBRepository, client redis.UniversalClient) project.Repository {
-	c := cache.New(client)
+func provideRepository(r project.DBRepository, c cache.Cache) project.Repository {
 	return project.NewRepository(r, c)
 }
 

@@ -2,6 +2,7 @@ package redisfx
 
 import (
 	"log"
+	"time"
 
 	"github.com/go-redis/redis"
 	"github.com/spf13/viper"
@@ -20,5 +21,5 @@ func provideRedisClient() (redis.UniversalClient, error) {
 }
 
 func provideCacheRepository(client redis.UniversalClient) cache.Cache {
-	return cache.New(client)
+	return cache.New(client, cache.WithExpireTime(time.Hour))
 }

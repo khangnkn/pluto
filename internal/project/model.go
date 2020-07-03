@@ -13,8 +13,7 @@ type Role int32
 
 const (
 	Manager Role = iota + 1
-	Labeler
-	Reviewer
+	Member
 )
 
 type Project struct {

@@ -7,7 +7,6 @@ import (
 	"github.com/nkhang/pluto/pkg/errors"
 	pgin "github.com/nkhang/pluto/pkg/gin"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
-	"github.com/nkhang/pluto/pkg/logger"
 )
 
 type service struct {
@@ -32,6 +31,7 @@ func (s *service) Register(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getAll))
 	router.POST("", ginwrapper.Wrap(s.create))
 	router.GET("/:"+FieldProjectID, ginwrapper.Wrap(s.get))
+	router.POST("/:"+FieldProjectID+"/perm", ginwrapper.Wrap(s.createPerm))
 }
 
 func (s *service) getAll(c *gin.Context) ginwrapper.Response {
@@ -41,9 +41,8 @@ func (s *service) getAll(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.NewWithMessage("error binding params"),
 		}
 	}
-	responses, err := s.repository.GetByWorkspaceID(req.WorkspaceID)
+	responses, err := s.repository.GetList(req)
 	if err != nil {
-		logger.Error(err)
 		return ginwrapper.Response{
 			Error: err,
 		}
@@ -87,6 +86,32 @@ func (s *service) create(c *gin.Context) ginwrapper.Response {
 		}
 	}
 	err := s.repository.Create(req)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+	}
+}
+
+func (s *service) createPerm(c *gin.Context) ginwrapper.Response {
+	var req CreatePermParams
+	idStr := c.Param(FieldProjectID)
+	pID, err := cast.ToUint64E(idStr)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.Wrap(err, "cannot get project id"),
+		}
+	}
+	if err := c.ShouldBind(&req); err != nil {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.NewWithMessage("error binding request params"),
+		}
+	}
+	req.ProjectID = pID
+	err = s.repository.CreatePerm(req)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
