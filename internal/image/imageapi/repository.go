@@ -64,6 +64,10 @@ func (r *repository) GetByDatasetID(dID uint64, offset, limit int) ([]ImageRespo
 }
 
 func (r *repository) UploadRequest(dID uint64, header *multipart.FileHeader) error {
+	dataset, err := r.datasetRepo.Get(dID)
+	if err != nil {
+		return err
+	}
 	file, err := header.Open()
 	if err != nil {
 		return err
@@ -84,8 +88,9 @@ func (r *repository) UploadRequest(dID uint64, header *multipart.FileHeader) err
 		return nil
 	}
 
-	collection := fmt.Sprintf("pluto-bucket-%d", dID)
-	n, err := r.storage.PutImage(collection, header.Filename, &buf, header.Size)
+	collection := fmt.Sprintf("pluto-bucket-%d", dataset.ProjectID)
+	title := fmt.Sprintf("dataset-%d/%s", dID, header.Filename)
+	n, err := r.storage.PutImage(collection, title, &buf, header.Size)
 	if err != nil {
 		logger.Error("error putting to object storage", err)
 		return err
@@ -95,7 +100,6 @@ func (r *repository) UploadRequest(dID uint64, header *multipart.FileHeader) err
 	w := img.Bounds().Max.X
 	h := img.Bounds().Max.Y
 	size := header.Size
-	title := header.Filename
 	u := r.getImageURL(collection, title)
 	_, err = r.repo.CreateImage(title, u, w, h, size, dID)
 	go func() {

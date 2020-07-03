@@ -26,8 +26,8 @@ func NewService(r Repository) *service {
 
 func (s *service) Register(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getByProjectID))
-	router.GET("/detail/:"+fieldDatasetID, ginwrapper.Wrap(s.getByID))
-	router.POST("/clone", ginwrapper.Wrap(s.clone))
+	router.GET("/:"+fieldDatasetID, ginwrapper.Wrap(s.getByID))
+	router.POST("/:"+fieldDatasetID+"/clone", ginwrapper.Wrap(s.clone))
 	router.POST("/", ginwrapper.Wrap(s.create))
 }
 
@@ -96,9 +96,22 @@ func (s *service) clone(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.Wrap(err, "cannot bind request"),
 		}
 	}
+	dIDStr := c.Param(fieldDatasetID)
+	dID, err := cast.ToUint64E(dIDStr)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.Wrap(err, "cannot get dataset id"),
+		}
+	}
 	logger.Info("start cloning project")
-	s.repository.CloneDataset(req.ProjectID, req.DatasetIDs)
+	cloned, err := s.repository.CloneDataset(req.ProjectID, dID)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("success"),
+		Data:  ToDatasetResponse(cloned),
 	}
 }

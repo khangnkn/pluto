@@ -49,7 +49,9 @@ func (r *dbRepository) GetByDataset(dID uint64, offset, limit int) (images []Ima
 }
 
 func (r *dbRepository) GetAllByDataset(dID uint64) (images []Image, err error) {
-	err = r.db.Where("dataset_id = ?", dID).Find(&images).Error
+	err = r.db.Where("dataset_id = ?", dID).
+		Find(&images).
+		Order("status asc").Error
 	if err != nil {
 		err = errors.ImageQueryError.Wrap(err, "images query error")
 		return

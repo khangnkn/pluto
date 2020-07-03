@@ -85,6 +85,9 @@ func (r *repository) CreateImage(title, url string, w, h int, size int64, datase
 func (r *repository) InvalidateDatasetImage(dID uint64) error {
 	pattern := rediskey.ImageByDatasetIDAllKeys(dID)
 	keys, err := r.cacheRepo.Keys(pattern)
+	if len(keys) == 0 {
+		return nil
+	}
 	if err != nil {
 		logger.Error("error getting all keys from redis", err)
 		return err

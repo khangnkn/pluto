@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/nkhang/pluto/internal/task"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
@@ -33,6 +35,7 @@ type params struct {
 	LabelService     pgin.IEngine `name:"LabelService"`
 	ToolService      pgin.IEngine `name:"ToolService"`
 	ImageService     pgin.IEngine `name:"ImageService"`
+	TaskService      pgin.IEngine `name:"TaskService"`
 }
 
 func initializer(l fx.Lifecycle, p params) {
@@ -44,6 +47,7 @@ func initializer(l fx.Lifecycle, p params) {
 	p.DatasetService.Register(router.Group("/datasets"))
 	p.WorkspaceService.Register(router.Group("/workspaces"))
 	p.ImageService.Register(router.Group("/images"))
+	p.TaskService.Register(router.Group("/tasks"))
 	l.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
@@ -75,4 +79,15 @@ func migrate(db *gorm.DB) {
 	db.AutoMigrate(&workspace.Workspace{})
 	db.AutoMigrate(&workspace.Permission{})
 	db.AutoMigrate(&image.Image{})
+	db.AutoMigrate(&task.Task{})
+	db.AutoMigrate(&task.Detail{})
+	db.AutoMigrate(&task.Detail{TaskID: 1})
+	db.AutoMigrate(&task.Detail{TaskID: 2})
+	db.AutoMigrate(&task.Detail{TaskID: 3})
+	db.AutoMigrate(&task.Detail{TaskID: 4})
+	db.AutoMigrate(&task.Detail{TaskID: 5})
+	db.AutoMigrate(&task.Detail{TaskID: 6})
+	db.AutoMigrate(&task.Detail{TaskID: 7})
+	db.AutoMigrate(&task.Detail{TaskID: 8})
+	db.AutoMigrate(&task.Detail{TaskID: 9})
 }

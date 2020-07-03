@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/nkhang/pluto/internal/fx/taskfx"
 	"go.uber.org/fx"
 
 	"github.com/nkhang/pluto/internal/fx/datasetfx"
@@ -23,6 +24,7 @@ func main() {
 		redisfx.Module,
 		toolfx.Module,
 		labelfx.Module,
+		taskfx.Module,
 		imagefx.Module,
 		datasetfx.Module,
 		projectfx.Module,

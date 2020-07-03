@@ -11,8 +11,7 @@ type CreateDatasetRequest struct {
 }
 
 type CloneDatasetRequest struct {
-	ProjectID  uint64   `form:"project_id"`
-	DatasetIDs []uint64 `form:"dataset_ids"`
+	ProjectID uint64 `form:"project_id"`
 }
 
 type DatasetResponse struct {

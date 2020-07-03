@@ -12,7 +12,7 @@ redis:
 
 minio:
   scheme: http
-  endpoint: 68.183.231.225:9000
+  endpoint: localhost:9000
   accesskey: pluto
   secretkey: dhQk@3sl
   usessl: false
