@@ -1,6 +1,9 @@
 package project
 
 import (
+	"math/rand"
+	"time"
+
 	"github.com/jinzhu/gorm"
 	"github.com/nkhang/pluto/pkg/logger"
 
@@ -47,10 +50,13 @@ func (r *dbRepository) GetByWorkspaceID(wID uint64) ([]Project, error) {
 }
 
 func (r *dbRepository) CreateProject(wID uint64, title, desc string) (Project, error) {
+	rand.Seed(time.Now().Unix())
+	index := rand.Int()
 	var p = Project{
 		WorkspaceID: wID,
 		Title:       title,
 		Description: desc,
+		Color:       Color[index%len(Color)],
 	}
 	err := r.db.Create(&p).Error
 	if err != nil {

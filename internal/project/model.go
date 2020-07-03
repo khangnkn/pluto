@@ -16,11 +16,20 @@ const (
 	Member
 )
 
+var Color = []string{
+	"#4773AA",
+	"#E4888B",
+	"#7CB287",
+	"#FBDB88",
+	"#5FC7E3",
+}
+
 type Project struct {
 	gorm.Model
 	WorkspaceID uint64
 	Title       string
 	Description string
+	Color       string
 	Labels      []label.Label
 }
 

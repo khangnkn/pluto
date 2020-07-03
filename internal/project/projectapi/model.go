@@ -30,6 +30,7 @@ type ProjectResponse struct {
 	ID           uint64 `json:"id"`
 	Title        string `json:"title"`
 	Description  string `json:"description"`
+	Color        string `json:"color"`
 	DatasetCount int    `json:"dataset_count"`
 	MemberCount  int    `json:"member_count"`
 }
