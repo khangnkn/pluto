@@ -24,11 +24,14 @@ var Color = []string{
 	"#5FC7E3",
 }
 
+var defaultImage = "https://media3.s-nbcnews.com/j/newscms/2019_33/2203981/171026-better-coffee-boost-se-329p_67dfb6820f7d3898b5486975903c2e51.fit-760w.jpg"
+
 type Project struct {
 	gorm.Model
 	WorkspaceID uint64
 	Title       string
 	Description string
+	Thumbnail   string
 	Color       string
 	Labels      []label.Label
 }
