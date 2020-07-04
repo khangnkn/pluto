@@ -4,6 +4,7 @@ import "github.com/nkhang/pluto/pkg/cache"
 
 type Repository interface {
 	CreateTask(assigner, labeler, reviewer, datasetID uint64, images []uint64) error
+	//GetImages(id uint64)
 }
 
 type repository struct {

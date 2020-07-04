@@ -2,6 +2,7 @@ package labelapi
 
 import (
 	"github.com/nkhang/pluto/internal/label"
+	"github.com/nkhang/pluto/internal/tool/toolapi"
 )
 
 type LabelRequest struct {
@@ -16,10 +17,10 @@ type CreateLabelRequest struct {
 }
 
 type LabelResponse struct {
-	ID    uint64 `json:"id"`
-	Name  string `json:"name"`
-	Color string `json:"color"`
-	Tool  string `json:"tool"`
+	ID    uint64               `json:"id"`
+	Name  string               `json:"name"`
+	Color string               `json:"color"`
+	Tool  toolapi.ToolResponse `json:"tool"`
 }
 
 func ToLabelResponse(l label.Label) LabelResponse {
@@ -27,6 +28,6 @@ func ToLabelResponse(l label.Label) LabelResponse {
 		ID:    l.ID,
 		Name:  l.Name,
 		Color: l.Color,
-		Tool:  l.Tool.Name,
+		Tool:  toolapi.ToToolResponse(l.Tool),
 	}
 }
