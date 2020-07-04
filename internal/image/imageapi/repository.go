@@ -111,8 +111,8 @@ func (r *repository) createImage(d dataset.Dataset, h *multipart.FileHeader) err
 		return nil
 	}
 
-	title := fmt.Sprintf("%s/%d/%s", d.Project.Dir, d.ID, h.Filename)
-	n, err := r.storage.PutImage(r.conf.BucketName, title, &buf, h.Size)
+	path := fmt.Sprintf("%s/%d/%s", d.Project.Dir, d.ID, h.Filename)
+	n, err := r.storage.PutImage(r.conf.BucketName, path, &buf, h.Size)
 	if err != nil {
 		logger.Error("error putting to object storage", err)
 		return err
@@ -122,7 +122,7 @@ func (r *repository) createImage(d dataset.Dataset, h *multipart.FileHeader) err
 	width := img.Bounds().Max.X
 	height := img.Bounds().Max.Y
 	size := h.Size
-	u := r.getImageURL(r.conf.BucketName, title)
-	_, err = r.repo.CreateImage(title, u, width, height, size, d.ID)
+	u := r.getImageURL(r.conf.BucketName, path)
+	_, err = r.repo.CreateImage(h.Filename, u, width, height, size, d.ID)
 	return err
 }
