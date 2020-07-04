@@ -25,7 +25,7 @@ const (
 
 type Repository interface {
 	GetByDatasetID(dID uint64, offset, limit int) ([]ImageResponse, error)
-	UploadRequest(dID uint64, file *multipart.FileHeader) error
+	UploadRequest(dID uint64, file []*multipart.FileHeader) []error
 }
 
 type repository struct {
@@ -40,6 +40,7 @@ func NewRepository(r image.Repository, s objectstorage.ObjectStorage, d dataset.
 		Scheme:     viper.GetString("minio.scheme"),
 		Endpoint:   viper.GetString("minio.endpoint"),
 		BucketName: viper.GetString("minio.bucketname"),
+		BasePath:   viper.GetString("minio.basepath"),
 	}
 	return &repository{
 		repo:        r,
@@ -64,19 +65,40 @@ func (r *repository) GetByDatasetID(dID uint64, offset, limit int) ([]ImageRespo
 	return responses, nil
 }
 
-func (r *repository) UploadRequest(dID uint64, header *multipart.FileHeader) error {
-	dataset, err := r.datasetRepo.Get(dID)
+func (r *repository) UploadRequest(dID uint64, headers []*multipart.FileHeader) []error {
+	errs := make([]error, 0)
+	d, err := r.datasetRepo.Get(dID)
 	if err != nil {
-		return err
+		return append(errs, err)
 	}
-	file, err := header.Open()
+	for _, header := range headers {
+		err := r.createImage(d, header)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	go func() {
+		err := r.repo.InvalidateDatasetImage(dID)
+		if err != nil {
+			logger.Error("cannot invalidate dataset images", err)
+		}
+	}()
+	return errs
+}
+
+func (r *repository) getImageURL(collection, title string) string {
+	return fmt.Sprintf("%s://%s/%s/%s", r.conf.Scheme, r.conf.BasePath, collection, url.PathEscape(title))
+}
+
+func (r *repository) createImage(d dataset.Dataset, h *multipart.FileHeader) error {
+	file, err := h.Open()
 	if err != nil {
 		return err
 	}
 	defer func() {
 		err := file.Close()
 		if err != nil {
-			logger.Error(err)
+			logger.Error("error closing file", err)
 		}
 	}()
 
@@ -89,29 +111,18 @@ func (r *repository) UploadRequest(dID uint64, header *multipart.FileHeader) err
 		return nil
 	}
 
-	collection := dataset.Project.Dir
-	title := fmt.Sprintf("%s/dataset-%d/%s", collection, dID, header.Filename)
-	n, err := r.storage.PutImage(r.conf.BucketName, title, &buf, header.Size)
+	title := fmt.Sprintf("%s/%d/%s", d.Project.Dir, d.ID, h.Filename)
+	n, err := r.storage.PutImage(r.conf.BucketName, title, &buf, h.Size)
 	if err != nil {
 		logger.Error("error putting to object storage", err)
 		return err
 	}
 	logger.Infof("put image to object storage with %d bytes", n)
 
-	w := img.Bounds().Max.X
-	h := img.Bounds().Max.Y
-	size := header.Size
+	width := img.Bounds().Max.X
+	height := img.Bounds().Max.Y
+	size := h.Size
 	u := r.getImageURL(r.conf.BucketName, title)
-	_, err = r.repo.CreateImage(title, u, w, h, size, dID)
-	go func() {
-		err := r.repo.InvalidateDatasetImage(dID)
-		if err != nil {
-			logger.Error("cannot invalidate dataset images", err)
-		}
-	}()
+	_, err = r.repo.CreateImage(title, u, width, height, size, d.ID)
 	return err
-}
-
-func (r *repository) getImageURL(collection, title string) string {
-	return fmt.Sprintf("%s://%s/%s/%s", r.conf.Scheme, r.conf.Endpoint, collection, url.PathEscape(title))
 }

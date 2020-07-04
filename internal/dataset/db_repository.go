@@ -57,6 +57,10 @@ func (r *dbRepository) CreateDataset(title, description string, pID uint64) (Dat
 	if err != nil {
 		return Dataset{}, errors.DatasetCannotCreate.Wrap(err, "cannot create dataset")
 	}
+	err = r.db.Preload("Project").First(&d, d.ID).Error
+	if err != nil {
+		return d, errors.DatasetCannotCreate.Wrap(err, "cannot create dataset")
+	}
 	return d, nil
 }
 

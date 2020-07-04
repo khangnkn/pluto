@@ -14,8 +14,8 @@ type ImageRequestQuery struct {
 }
 
 type UploadRequest struct {
-	FileHeader *multipart.FileHeader `form:"file"`
-	DatasetID  uint64                `form:"dataset_id"`
+	FileHeader []*multipart.FileHeader `form:"file"`
+	DatasetID  uint64                  `form:"dataset_id"`
 }
 
 type ImageResponse struct {
@@ -32,6 +32,7 @@ type Config struct {
 	Scheme     string
 	Endpoint   string
 	BucketName string
+	BasePath   string
 }
 
 func ToImageResponse(i image.Image) ImageResponse {

@@ -2,7 +2,6 @@ package imageapi
 
 import (
 	"github.com/gin-gonic/gin"
-
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
 )
@@ -48,10 +47,11 @@ func (s *service) uploadByDataset(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.NewWithMessage("error binding request"),
 		}
 	}
-	err = s.repository.UploadRequest(req.DatasetID, req.FileHeader)
-	if err != nil {
+	errs := s.repository.UploadRequest(req.DatasetID, req.FileHeader)
+	if len(errs) != 0 {
 		return ginwrapper.Response{
 			Error: errors.ImageErrorCreating.Wrap(err, "error reading file"),
+			Data:  errs,
 		}
 	}
 	return ginwrapper.Response{

@@ -78,7 +78,7 @@ func (s *service) create(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.Wrap(err, "cannot bind request"),
 		}
 	}
-	err := s.repository.CreateDataset(req.Title, req.Description, req.ProjectID)
+	dataset, err := s.repository.CreateDataset(req.Title, req.Description, req.ProjectID)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -86,6 +86,7 @@ func (s *service) create(c *gin.Context) ginwrapper.Response {
 	}
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("success"),
+		Data:  dataset,
 	}
 }
 
@@ -112,6 +113,6 @@ func (s *service) clone(c *gin.Context) ginwrapper.Response {
 	}
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("success"),
-		Data:  ToDatasetResponse(cloned),
+		Data:  cloned,
 	}
 }

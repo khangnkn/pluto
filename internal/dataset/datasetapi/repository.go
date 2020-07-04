@@ -9,8 +9,8 @@ import (
 type Repository interface {
 	GetByID(dID uint64) (DatasetResponse, error)
 	GetByProjectID(pID uint64) ([]DatasetResponse, error)
-	CreateDataset(title, description string, pID uint64) error
-	CloneDataset(projectID uint64, datasetID uint64) (cloned dataset.Dataset, err error)
+	CreateDataset(title, description string, pID uint64) (DatasetResponse, error)
+	CloneDataset(projectID uint64, datasetID uint64) (DatasetResponse, error)
 }
 
 type repository struct {
@@ -45,26 +45,29 @@ func (r *repository) GetByProjectID(pID uint64) ([]DatasetResponse, error) {
 	return responses, nil
 }
 
-func (r *repository) CreateDataset(title, description string, pID uint64) error {
-	_, err := r.repository.CreateDataset(title, description, pID)
-	return err
+func (r *repository) CreateDataset(title, description string, pID uint64) (DatasetResponse, error) {
+	d, err := r.repository.CreateDataset(title, description, pID)
+	if err != nil {
+		return DatasetResponse{}, err
+	}
+	return ToDatasetResponse(d), nil
 }
 
-func (r *repository) CloneDataset(projectID uint64, datasetID uint64) (cloned dataset.Dataset, err error) {
+func (r *repository) CloneDataset(projectID uint64, datasetID uint64) (DatasetResponse, error) {
 	origin, err := r.repository.Get(datasetID)
 	if err != nil {
 		logger.Errorf("error getting dataset %d, error %v", datasetID, err)
-		return
+		return DatasetResponse{}, err
 	}
 	images, err := r.imgRepo.GetAllImageByDataset(datasetID)
 	if err != nil {
 		logger.Error("getting all image error", err)
-		return
+		return DatasetResponse{}, nil
 	}
-	cloned, err = r.repository.CreateDataset(origin.Title, origin.Description, projectID)
+	cloned, err := r.repository.CreateDataset(origin.Title, origin.Description, projectID)
 	if err != nil {
 		logger.Errorf("cannot creating dataset")
-		return
+		return DatasetResponse{}, err
 	}
 	logger.Info("clone dataset successfully", cloned)
 	err = r.imgRepo.BulkInsert(images, cloned.ID)
@@ -76,7 +79,7 @@ func (r *repository) CloneDataset(projectID uint64, datasetID uint64) (cloned da
 				logger.Errorf("cannot delete uncompleted dataset %d, error", cloned.ID, err)
 			}
 		}()
-		return
+		return DatasetResponse{}, err
 	}
-	return cloned, nil
+	return ToDatasetResponse(cloned), nil
 }
