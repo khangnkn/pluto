@@ -37,8 +37,9 @@ type repository struct {
 
 func NewRepository(r image.Repository, s objectstorage.ObjectStorage, d dataset.Repository) *repository {
 	var conf = Config{
-		Scheme:   viper.GetString("minio.scheme"),
-		Endpoint: viper.GetString("minio.endpoint"),
+		Scheme:     viper.GetString("minio.scheme"),
+		Endpoint:   viper.GetString("minio.endpoint"),
+		BucketName: viper.GetString("minio.bucketname"),
 	}
 	return &repository{
 		repo:        r,
@@ -88,9 +89,9 @@ func (r *repository) UploadRequest(dID uint64, header *multipart.FileHeader) err
 		return nil
 	}
 
-	collection := fmt.Sprintf("pluto-bucket-%d", dataset.ProjectID)
-	title := fmt.Sprintf("dataset-%d/%s", dID, header.Filename)
-	n, err := r.storage.PutImage(collection, title, &buf, header.Size)
+	collection := dataset.Project.Dir
+	title := fmt.Sprintf("%s/dataset-%d/%s", collection, dID, header.Filename)
+	n, err := r.storage.PutImage(r.conf.BucketName, title, &buf, header.Size)
 	if err != nil {
 		logger.Error("error putting to object storage", err)
 		return err
@@ -100,7 +101,7 @@ func (r *repository) UploadRequest(dID uint64, header *multipart.FileHeader) err
 	w := img.Bounds().Max.X
 	h := img.Bounds().Max.Y
 	size := header.Size
-	u := r.getImageURL(collection, title)
+	u := r.getImageURL(r.conf.BucketName, title)
 	_, err = r.repo.CreateImage(title, u, w, h, size, dID)
 	go func() {
 		err := r.repo.InvalidateDatasetImage(dID)

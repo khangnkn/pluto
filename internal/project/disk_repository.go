@@ -16,7 +16,7 @@ type DBRepository interface {
 	GetProjectPermissions(pID uint64) ([]Permission, error)
 	GetUserPermissions(userID uint64, role Role, offset, limit int) ([]Permission, error)
 	GetPermission(userID, projectID uint64) (Permission, error)
-	CreateProject(wID uint64, title, desc string) (Project, error)
+	CreateProject(wID uint64, title, desc, uid string) (Project, error)
 	CreatePermission(projectID, userID uint64, role Role) (Permission, error)
 }
 
@@ -49,13 +49,15 @@ func (r *dbRepository) GetByWorkspaceID(wID uint64) ([]Project, error) {
 	return projects, nil
 }
 
-func (r *dbRepository) CreateProject(wID uint64, title, desc string) (Project, error) {
+func (r *dbRepository) CreateProject(wID uint64, title, desc, uid string) (Project, error) {
 	rand.Seed(time.Now().Unix())
 	index := rand.Int()
 	var p = Project{
 		WorkspaceID: wID,
 		Title:       title,
 		Description: desc,
+		Dir:         uid,
+		Thumbnail:   defaultImage,
 		Color:       Color[index%len(Color)],
 	}
 	err := r.db.Create(&p).Error

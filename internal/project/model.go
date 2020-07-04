@@ -33,6 +33,7 @@ type Project struct {
 	Description string
 	Thumbnail   string
 	Color       string
+	Dir         string
 	Labels      []label.Label
 }
 

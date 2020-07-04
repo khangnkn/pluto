@@ -101,6 +101,7 @@ func (r *repository) convertResponse(p project.Project) ProjectResponse {
 		ID:           p.ID,
 		Title:        p.Title,
 		Description:  p.Description,
+		Thumbnail:    p.Thumbnail,
 		Color:        p.Color,
 		DatasetCount: datasetCount,
 		MemberCount:  memberCount,

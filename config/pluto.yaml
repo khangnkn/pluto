@@ -12,7 +12,8 @@ redis:
 
 minio:
   scheme: http
-  endpoint: localhost:9000
+  endpoint: 165.22.249.91:9000
   accesskey: pluto
-  secretkey: dhQk@3sl
+  secretkey: dhQk@3slyUi
   usessl: false
+  bucketname: plutos3

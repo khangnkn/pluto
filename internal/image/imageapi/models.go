@@ -29,8 +29,9 @@ type ImageResponse struct {
 }
 
 type Config struct {
-	Scheme   string
-	Endpoint string
+	Scheme     string
+	Endpoint   string
+	BucketName string
 }
 
 func ToImageResponse(i image.Image) ImageResponse {

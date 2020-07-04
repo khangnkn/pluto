@@ -5,6 +5,7 @@ import (
 	"github.com/nkhang/pluto/pkg/cache"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/logger"
+	uuid "github.com/satori/go.uuid"
 )
 
 type Repository interface {
@@ -109,7 +110,8 @@ func (r *repository) GetUserPermissions(userID uint64, role Role, offset, limit 
 }
 
 func (r *repository) CreateProject(wID uint64, title, desc string) (Project, error) {
-	return r.disk.CreateProject(wID, title, desc)
+	uid := uuid.NewV4().String()
+	return r.disk.CreateProject(wID, title, desc, uid)
 }
 
 func (r *repository) GetProjectPermissions(pID uint64) ([]Permission, error) {

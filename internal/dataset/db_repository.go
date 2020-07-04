@@ -26,7 +26,7 @@ func NewDbRepository(db *gorm.DB) *dbRepository {
 }
 
 func (r *dbRepository) Get(dID uint64) (d Dataset, err error) {
-	result := r.db.First(&d, dID)
+	result := r.db.Preload("Project").First(&d, dID)
 	if result.RecordNotFound() {
 		err = errors.DatasetNotFound.NewWithMessage("dataset not found")
 		return

@@ -1,6 +1,9 @@
 package dataset
 
-import "github.com/nkhang/pluto/pkg/gorm"
+import (
+	"github.com/nkhang/pluto/internal/project"
+	"github.com/nkhang/pluto/pkg/gorm"
+)
 
 const (
 	fieldProjectID = "project_id"
@@ -11,4 +14,5 @@ type Dataset struct {
 	Title       string
 	Description string
 	ProjectID   uint64
+	Project     project.Project
 }
