@@ -1,10 +1,12 @@
 package task
 
-import "github.com/nkhang/pluto/pkg/cache"
+import (
+	"github.com/nkhang/pluto/pkg/cache"
+)
 
 type Repository interface {
 	CreateTask(assigner, labeler, reviewer, datasetID uint64, images []uint64) error
-	//GetImages(id uint64)
+	GetTaskDetails(taskID uint64, offset, limit int) ([]Detail, error)
 }
 
 type repository struct {
@@ -25,4 +27,8 @@ func (r *repository) CreateTask(assigner, labeler, reviewer, datasetID uint64, i
 		return err
 	}
 	return r.dbRepo.AddImages(task.ID, images)
+}
+
+func (r *repository) GetTaskDetails(taskID uint64, offset, limit int) ([]Detail, error) {
+	return r.dbRepo.GetTaskDetails(taskID, offset, limit)
 }

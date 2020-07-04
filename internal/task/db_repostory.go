@@ -9,6 +9,7 @@ import (
 type DBRepository interface {
 	CreateTask(assigner, labeler, reviewer, datasetID uint64) (Task, error)
 	AddImages(id uint64, imageIDs []uint64) error
+	GetTaskDetails(taskID uint64, offset, limit int) ([]Detail, error)
 }
 
 type dbRepository struct {
@@ -48,4 +49,19 @@ func (r *dbRepository) AddImages(id uint64, imageIDs []uint64) error {
 		return errors.TaskCannotCreate.Wrap(err, "cannot create tasks")
 	}
 	return nil
+}
+
+func (r *dbRepository) GetTaskDetails(taskID uint64, offset, limit int) ([]Detail, error) {
+	var details []Detail
+	var tableName = Detail{TaskID: taskID}.TableName()
+	err := r.db.Table(tableName).
+		Preload("Image").
+		Where("task_id = ?", taskID).
+		Offset(offset).
+		Limit(limit).
+		Find(&details).Error
+	if err != nil {
+		return nil, errors.TaskDetailCannotGet.NewWithMessage("cannot get task details")
+	}
+	return details, nil
 }

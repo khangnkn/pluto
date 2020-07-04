@@ -1,6 +1,7 @@
 package task
 
 import (
+	"github.com/nkhang/pluto/internal/image"
 	"github.com/nkhang/pluto/pkg/gorm"
 	"github.com/spf13/cast"
 )
@@ -34,6 +35,7 @@ type Detail struct {
 	Status  DetailStatus
 	TaskID  uint64
 	ImageID uint64
+	Image   image.Image
 }
 
 func (d Detail) TableName() string {

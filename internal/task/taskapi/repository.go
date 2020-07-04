@@ -3,10 +3,12 @@ package taskapi
 import (
 	"github.com/nkhang/pluto/internal/image"
 	"github.com/nkhang/pluto/internal/task"
+	"github.com/nkhang/pluto/pkg/util/paging"
 )
 
 type Repository interface {
 	CreateTask(request CreateTaskRequest) error
+	GetTaskDetails(request GetTaskDetailsRequest) ([]TaskDetailResponse, error)
 }
 
 type repository struct {
@@ -34,6 +36,18 @@ func (r *repository) CreateTask(request CreateTaskRequest) error {
 	return r.repository.CreateTask(request.Assigner, request.Labeler, request.Reviewer, request.DatasetID, ids)
 }
 
+func (r *repository) GetTaskDetails(request GetTaskDetailsRequest) ([]TaskDetailResponse, error) {
+	offset, limit := paging.Parse(request.Page, request.PageSize)
+	details, err := r.repository.GetTaskDetails(request.TaskID, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	var responses = make([]TaskDetailResponse, len(details))
+	for i := range details {
+		responses[i] = ToTaskDetailResponse(details[i])
+	}
+	return responses, nil
+}
 func truncate(imgs []image.Image, s int) []image.Image {
 	l := len(imgs)
 	if l <= s {
