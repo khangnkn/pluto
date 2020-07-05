@@ -35,3 +35,8 @@ type ProjectResponse struct {
 	DatasetCount int    `json:"dataset_count"`
 	MemberCount  int    `json:"member_count"`
 }
+
+type GetProjectResponse struct {
+	Total    int               `json:"total"`
+	Projects []ProjectResponse `json:"projects"`
+}

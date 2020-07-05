@@ -41,7 +41,7 @@ func (s *service) getAll(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.NewWithMessage("error binding params"),
 		}
 	}
-	responses, err := s.repository.GetList(req)
+	responses, total, err := s.repository.GetList(req)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -49,7 +49,10 @@ func (s *service) getAll(c *gin.Context) ginwrapper.Response {
 	}
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("Success"),
-		Data:  responses,
+		Data: GetProjectResponse{
+			Total:    total,
+			Projects: responses,
+		},
 	}
 }
 

@@ -10,8 +10,8 @@ import (
 
 type Repository interface {
 	Get(pID uint64) (Project, error)
-	GetByWorkspaceID(id uint64) ([]Project, error)
-	GetUserPermissions(userID uint64, role Role, offset, limit int) ([]Permission, error)
+	GetByWorkspaceID(id uint64, offset, limit int) ([]Project, int, error)
+	GetUserPermissions(userID uint64, role Role, offset, limit int) ([]Permission, int, error)
 	GetProjectPermissions(pID uint64) ([]Permission, error)
 	GetPermission(userID, projectID uint64) (Permission, error)
 	CreateProject(wID uint64, title, desc string) (Project, error)
@@ -58,36 +58,43 @@ func (r *repository) Get(pID uint64) (Project, error) {
 	return p, nil
 }
 
-func (r *repository) GetByWorkspaceID(id uint64) ([]Project, error) {
+func (r *repository) GetByWorkspaceID(id uint64, offset, limit int) ([]Project, int, error) {
 	var projects = make([]Project, 0)
-	k := rediskey.ProjectByWorkspaceID(id)
+	var total int
+	k, totalKey := rediskey.ProjectByWorkspaceID(id, offset, limit)
 	err := r.cache.Get(k, &projects)
-	if err == nil {
+	err2 := r.cache.Get(totalKey, &total)
+	if err == nil && err2 == nil {
 		logger.Infof("cache hit for getting projects for workspace %d", id)
-		return projects, nil
+		return projects, 0, nil
 	}
 	if errors.Type(err) == errors.CacheNotFound {
 		logger.Infof("cache miss for getting projects for workspace %d", id)
 	} else {
 		logger.Errorf("cannot get projects for workspace %d", id)
 	}
-	projects, err = r.disk.GetByWorkspaceID(id)
+	projects, total, err = r.disk.GetByWorkspaceID(id, offset, limit)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	go func() {
 		err := r.cache.Set(k, &projects)
 		if err != nil {
 			logger.Error(err)
 		}
+		err = r.cache.Set(totalKey, &total)
+		if err != nil {
+			logger.Error(err)
+		}
 	}()
-	return projects, nil
+	return projects, total, nil
 }
 
-func (r *repository) GetUserPermissions(userID uint64, role Role, offset, limit int) (p []Permission, err error) {
-	k := rediskey.PermissionsByUserID(userID, int32(role), offset, limit)
+func (r *repository) GetUserPermissions(userID uint64, role Role, offset, limit int) (p []Permission, total int, err error) {
+	k, totalKey := rediskey.PermissionsByUserID(userID, int32(role), offset, limit)
 	err = r.cache.Get(k, &p)
-	if err == nil {
+	err2 := r.cache.Get(totalKey, &total)
+	if err == nil && err2 == nil {
 		logger.Infof("cache hit for getting user project permission, total %d perms", len(p))
 		return
 	}
@@ -96,12 +103,16 @@ func (r *repository) GetUserPermissions(userID uint64, role Role, offset, limit 
 	} else {
 		logger.Infof("error getting user projects. error %s", err.Error())
 	}
-	p, err = r.disk.GetUserPermissions(userID, role, offset, limit)
+	p, total, err = r.disk.GetUserPermissions(userID, role, offset, limit)
 	if err != nil {
 		return
 	}
 	go func() {
 		err := r.cache.Set(k, p)
+		if err != nil {
+			logger.Infof("error setting cache for get user projects")
+		}
+		err = r.cache.Set(totalKey, total)
 		if err != nil {
 			logger.Infof("error setting cache for get user projects")
 		}
@@ -145,8 +156,14 @@ func (r *repository) CreatePermission(projectID, userID uint64, role Role) (Perm
 }
 
 func (r *repository) InvalidateProjectsByWorkspaceID(id uint64) error {
-	k := rediskey.ProjectByWorkspaceID(id)
-	return r.cache.Del(k)
+	pattern := rediskey.ProjectByWorkspaceIDPattern(id)
+	keys, err := r.cache.Keys(pattern)
+	_, totalKey := rediskey.ProjectByWorkspaceID(id, 0, 0)
+	keys = append(keys, totalKey)
+	if err != nil {
+		return err
+	}
+	return r.cache.Del(keys...)
 }
 
 func (r *repository) InvalidatePermissionForUser(userID uint64) error {

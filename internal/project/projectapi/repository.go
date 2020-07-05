@@ -10,7 +10,7 @@ import (
 
 type Repository interface {
 	GetByID(pID uint64) (ProjectResponse, error)
-	GetList(p GetProjectParam) ([]ProjectResponse, error)
+	GetList(p GetProjectParam) ([]ProjectResponse, int, error)
 	Create(p CreateProjectParams) error
 	CreatePerm(p CreatePermParams) error
 }
@@ -35,35 +35,35 @@ func (r *repository) GetByID(pID uint64) (ProjectResponse, error) {
 	return r.convertResponse(p), nil
 }
 
-func (r *repository) GetList(p GetProjectParam) (responses []ProjectResponse, err error) {
+func (r *repository) GetList(p GetProjectParam) (responses []ProjectResponse, total int, err error) {
 	offset, limit := paging.Parse(p.Page, p.PageSize)
 	var projects []project.Project
 	switch p.Source {
 	case SrcAllProject:
-		projects, err = r.repository.GetByWorkspaceID(p.WorkspaceID)
+		projects, total, err = r.repository.GetByWorkspaceID(p.WorkspaceID, offset, limit)
 	case SrcMyProject:
 		var perms []project.Permission
-		perms, err = r.repository.GetUserPermissions(p.UserID, project.Manager, offset, limit)
+		perms, total, err = r.repository.GetUserPermissions(p.UserID, project.Manager, offset, limit)
 		for i := range perms {
 			projects = append(projects, perms[i].Project)
 		}
 	case SrcOtherProject:
 		var perms []project.Permission
-		perms, err = r.repository.GetUserPermissions(p.UserID, project.Member, offset, limit)
+		perms, total, err = r.repository.GetUserPermissions(p.UserID, project.Member, offset, limit)
 		for i := range perms {
 			projects = append(projects, perms[i].Project)
 		}
 	default:
-		return nil, errors.BadRequest.NewWithMessage("invalid src params")
+		return nil, 0, errors.BadRequest.NewWithMessage("invalid src params")
 	}
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	responses = make([]ProjectResponse, len(projects))
 	for i := range projects {
 		responses[i] = r.convertResponse(projects[i])
 	}
-	return responses, nil
+	return responses, total, nil
 }
 
 func (r *repository) Create(p CreateProjectParams) error {

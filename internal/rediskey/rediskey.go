@@ -38,12 +38,23 @@ func ProjectByID(pID uint64) string {
 	return fmt.Sprintf("pluto:project:id:%d", pID)
 }
 
-func ProjectByWorkspaceID(id uint64) string {
-	return fmt.Sprintf("pluto:projects:workspace:id:%d", id)
+func ProjectByWorkspaceID(id uint64, offset, limit int) (string, string) {
+	return fmt.Sprintf("pluto:projects:workspace:id:%d:offset:%d:limit%d", id, offset, limit),
+		fmt.Sprintf("pluto:projects:workspace:id:%d:count", id)
 }
 
-func PermissionsByUserID(id uint64, role int32, offset, limit int) string {
-	return fmt.Sprintf("pluto:project:permissions:userid:%d:role:%d:offset:%d:limit:%d", id, role, offset, limit)
+func ProjectCountAllByWorkspaceID(workspaceID uint64) string {
+	return fmt.Sprintf("pluto:projects:workspace:id:%d:count", workspaceID)
+}
+
+func ProjectByWorkspaceIDPattern(id uint64) string {
+	return fmt.Sprintf("pluto:projects:workspace:id:%d:*", id)
+
+}
+
+func PermissionsByUserID(id uint64, role int32, offset, limit int) (string, string) {
+	return fmt.Sprintf("pluto:project:permissions:userid:%d:role:%d:offset:%d:limit:%d", id, role, offset, limit),
+		fmt.Sprintf("pluto:project:permissions:userid:%d:role:%d:total", id, role)
 }
 
 func ProjectPermissionByUserPattern(userID uint64) string {
