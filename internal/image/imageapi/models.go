@@ -24,6 +24,7 @@ type GetImageRequest struct {
 
 type ImageResponse struct {
 	ID        uint64 `json:"id"`
+	DatasetID uint64 `json:"dataset_id"`
 	CreatedAt int64  `json:"created_at"`
 	Title     string `json:"title"`
 	URL       string `json:"url"`
@@ -42,6 +43,7 @@ type Config struct {
 func ToImageResponse(i image.Image) ImageResponse {
 	return ImageResponse{
 		ID:        i.ID,
+		DatasetID: i.DatasetID,
 		CreatedAt: clock.UnixMillisecondFromTime(i.CreatedAt),
 		Title:     i.Title,
 		URL:       i.URL,
