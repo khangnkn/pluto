@@ -66,7 +66,7 @@ func (r *repository) GetByWorkspaceID(id uint64, offset, limit int) ([]Project, 
 	err2 := r.cache.Get(totalKey, &total)
 	if err == nil && err2 == nil {
 		logger.Infof("cache hit for getting projects for workspace %d", id)
-		return projects, 0, nil
+		return projects, total, nil
 	}
 	if errors.Type(err) == errors.CacheNotFound {
 		logger.Infof("cache miss for getting projects for workspace %d", id)
@@ -168,10 +168,12 @@ func (r *repository) InvalidateProjectsByWorkspaceID(id uint64) error {
 
 func (r *repository) InvalidatePermissionForUser(userID uint64) error {
 	pattern := rediskey.ProjectPermissionByUserPattern(userID)
+	_, totalKey := rediskey.ProjectByWorkspaceID(userID, 0, 0)
 	keys, err := r.cache.Keys(pattern)
 	if err != nil {
 		return err
 	}
+	keys = append(keys, totalKey)
 	return r.cache.Del(keys...)
 }
 
