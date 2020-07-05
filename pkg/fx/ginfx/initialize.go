@@ -1,6 +1,7 @@
 package ginfx
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
@@ -11,5 +12,8 @@ func initializer() (*gin.Engine, gin.IRouter) {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	e := gin.Default()
+	conf := cors.DefaultConfig()
+	conf.AllowOrigins = append(conf.AllowOrigins, "http://localhost:3000")
+	e.Use(cors.New(conf))
 	return e, e
 }
