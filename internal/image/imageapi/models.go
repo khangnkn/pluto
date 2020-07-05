@@ -18,6 +18,10 @@ type UploadRequest struct {
 	DatasetID  uint64                  `form:"dataset_id"`
 }
 
+type GetImageRequest struct {
+	ID uint64 `json:"id"`
+}
+
 type ImageResponse struct {
 	ID        uint64 `json:"id"`
 	CreatedAt int64  `json:"created_at"`

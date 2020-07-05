@@ -24,6 +24,7 @@ const (
 )
 
 type Repository interface {
+	GetImage(request GetImageRequest) (ImageResponse, error)
 	GetByDatasetID(dID uint64, offset, limit int) ([]ImageResponse, error)
 	UploadRequest(dID uint64, file []*multipart.FileHeader) []error
 }
@@ -48,6 +49,14 @@ func NewRepository(r image.Repository, s objectstorage.ObjectStorage, d dataset.
 		datasetRepo: d,
 		conf:        conf,
 	}
+}
+
+func (r *repository) GetImage(request GetImageRequest) (ImageResponse, error) {
+	img, err := r.repo.Get(request.ID)
+	if err != nil {
+		return ImageResponse{}, err
+	}
+	return ToImageResponse(img), nil
 }
 
 func (r *repository) GetByDatasetID(dID uint64, offset, limit int) ([]ImageResponse, error) {

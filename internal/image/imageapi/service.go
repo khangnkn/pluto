@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
+	"github.com/spf13/cast"
 )
 
 type service struct {
@@ -14,9 +15,33 @@ func NewService(r Repository) *service {
 	return &service{repository: r}
 }
 
+const fieldImageID = "image_id"
+
 func (s *service) Register(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getByDataset))
+	router.GET("/:"+fieldImageID, ginwrapper.Wrap(s.get))
 	router.POST("", ginwrapper.Wrap(s.uploadByDataset))
+}
+
+func (s *service) get(c *gin.Context) ginwrapper.Response {
+	idStr := c.Param(fieldImageID)
+	id, err := cast.ToUint64E(idStr)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.Wrap(err, "error binding params"),
+		}
+	}
+	req := GetImageRequest{ID: id}
+	response, err := s.repository.GetImage(req)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+		Data:  response,
+	}
 }
 
 func (s *service) getByDataset(c *gin.Context) ginwrapper.Response {
