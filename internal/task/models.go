@@ -10,24 +10,26 @@ type DetailStatus uint32
 
 const (
 	Unassigned DetailStatus = iota
-	Assigned
+	Draft
 	Labeled
 	Reviewed
 )
 
 var DetailStatusMap = map[DetailStatus]string{
 	Unassigned: "Unassigned",
-	Assigned:   "Assigned",
+	Draft:      "Draft",
 	Labeled:    "Labeled",
 	Reviewed:   "Reviewed",
 }
 
 type Task struct {
 	gorm.Model
-	DatasetID uint64
-	Assigner  uint64
-	Labeler   uint64
-	Reviewer  uint64
+	Title       string
+	Description string
+	DatasetID   uint64
+	Assigner    uint64
+	Labeler     uint64
+	Reviewer    uint64
 }
 
 type Detail struct {

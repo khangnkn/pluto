@@ -4,10 +4,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
+	"github.com/nkhang/pluto/pkg/logger"
 	"github.com/spf13/cast"
 )
 
-const fieldTaskID = "task_id"
+const (
+	fieldTaskID       = "taskId"
+	fieldTaskDetailID = "taskDetailId"
+)
 
 type service struct {
 	repository Repository
@@ -19,6 +23,7 @@ func NewService(r Repository) *service {
 
 func (s *service) Register(router gin.IRouter) {
 	router.POST("/", ginwrapper.Wrap(s.createTask))
+	router.PUT("/:"+fieldTaskID+"/details/:"+fieldTaskDetailID, ginwrapper.Wrap(s.updateTaskDetail))
 	router.GET("/:"+fieldTaskID+"/details", ginwrapper.Wrap(s.getTaskDetails))
 }
 
@@ -63,4 +68,41 @@ func (s *service) getTaskDetails(c *gin.Context) ginwrapper.Response {
 		Error: errors.Success.NewWithMessage("success"),
 		Data:  details,
 	}
+}
+
+func (s *service) updateTaskDetail(c *gin.Context) ginwrapper.Response {
+	var request UpdateTaskDetailRequest
+	detailID, err := extractUint64Param(c, fieldTaskDetailID)
+	if err != nil {
+		return ginwrapper.Response{Error: err}
+	}
+	taskID, err := extractUint64Param(c, fieldTaskID)
+	if err != nil {
+		return ginwrapper.Response{Error: err}
+	}
+	if err := c.ShouldBind(&request); err != nil {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.Wrap(err, "error binding update task detail request"),
+		}
+	}
+	logger.Infof("request %+v", request)
+	response, err := s.repository.UpdateTaskDetail(taskID, detailID, request)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+		Data:  response,
+	}
+}
+
+func extractUint64Param(c *gin.Context, key string) (uint64, error) {
+	val := c.Param(key)
+	res, err := cast.ToUint64E(val)
+	if err != nil {
+		return 0, errors.BadRequest.NewWithMessageF("error getting %s from path", val)
+	}
+	return res, nil
 }

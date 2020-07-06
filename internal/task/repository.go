@@ -7,6 +7,7 @@ import (
 type Repository interface {
 	CreateTask(assigner, labeler, reviewer, datasetID uint64, images []uint64) error
 	GetTaskDetails(taskID uint64, offset, limit int) ([]Detail, error)
+	UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error)
 }
 
 type repository struct {
@@ -31,4 +32,8 @@ func (r *repository) CreateTask(assigner, labeler, reviewer, datasetID uint64, i
 
 func (r *repository) GetTaskDetails(taskID uint64, offset, limit int) ([]Detail, error) {
 	return r.dbRepo.GetTaskDetails(taskID, offset, limit)
+}
+
+func (r *repository) UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error) {
+	return r.dbRepo.UpdateTaskDetail(taskID, detailID, changes)
 }

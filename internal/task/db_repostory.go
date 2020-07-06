@@ -10,6 +10,7 @@ type DBRepository interface {
 	CreateTask(assigner, labeler, reviewer, datasetID uint64) (Task, error)
 	AddImages(id uint64, imageIDs []uint64) error
 	GetTaskDetails(taskID uint64, offset, limit int) ([]Detail, error)
+	UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error)
 }
 
 type dbRepository struct {
@@ -64,4 +65,13 @@ func (r *dbRepository) GetTaskDetails(taskID uint64, offset, limit int) ([]Detai
 		return nil, errors.TaskDetailCannotGet.NewWithMessage("cannot get task details")
 	}
 	return details, nil
+}
+
+func (r *dbRepository) UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error) {
+	var detail = Detail{TaskID: taskID}
+	err := r.db.Model(&detail).Update(changes).Preload("Image").First(&detail, detailID).Error
+	if err != nil {
+		return Detail{}, errors.TaskDetailCannotUpdate.Wrap(err, "cannot update task detail")
+	}
+	return detail, nil
 }

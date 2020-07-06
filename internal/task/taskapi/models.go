@@ -1,7 +1,10 @@
 package taskapi
 
 import (
+	"github.com/nkhang/pluto/internal/dataset/datasetapi"
 	"github.com/nkhang/pluto/internal/image/imageapi"
+	"github.com/nkhang/pluto/internal/label/labelapi"
+	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/internal/task"
 )
 
@@ -19,15 +22,38 @@ type GetTaskDetailsRequest struct {
 	PageSize int    `form:"page_size"`
 }
 
+type UpdateTaskDetailRequest struct {
+	Status uint64 `form:"status" json:"status"`
+}
+
 type TaskDetailResponse struct {
 	ID     uint64                 `json:"id"`
+	Status int32                  `json:"status"`
 	TaskID uint64                 `json:"task_id"`
 	Image  imageapi.ImageResponse `json:"image"`
+}
+
+type TaskResponse struct {
+	ID          uint64 `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Assigner    uint64 `json:"assigner"`
+	Labeler     uint64 `json:"labeler"`
+	Reviewer    uint64 `json:"reviewer"`
+	CreatedAt   uint64 `json:"created_at"`
+}
+
+type PushTaskMessage struct {
+	Project projectapi.ProjectResponse `json:"project"`
+	Dataset datasetapi.DatasetResponse `json:"dataset"`
+	Tasks   []TaskResponse             `json:"tasks"`
+	Labels  []labelapi.LabelResponse   `json:"labels"`
 }
 
 func ToTaskDetailResponse(detail task.Detail) TaskDetailResponse {
 	return TaskDetailResponse{
 		ID:     detail.ID,
+		Status: int32(detail.Status),
 		TaskID: detail.TaskID,
 		Image:  imageapi.ToImageResponse(detail.Image),
 	}

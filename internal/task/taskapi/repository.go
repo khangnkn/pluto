@@ -1,14 +1,21 @@
 package taskapi
 
 import (
+	"encoding/json"
+
+	"github.com/nkhang/pluto/internal/dataset/datasetapi"
 	"github.com/nkhang/pluto/internal/image"
+	"github.com/nkhang/pluto/internal/label/labelapi"
+	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/internal/task"
+	"github.com/nkhang/pluto/internal/tool/toolapi"
 	"github.com/nkhang/pluto/pkg/util/paging"
 )
 
 type Repository interface {
 	CreateTask(request CreateTaskRequest) error
 	GetTaskDetails(request GetTaskDetailsRequest) ([]TaskDetailResponse, error)
+	UpdateTaskDetail(taskID, detailID uint64, request UpdateTaskDetailRequest) (TaskDetailResponse, error)
 }
 
 type repository struct {
@@ -48,6 +55,61 @@ func (r *repository) GetTaskDetails(request GetTaskDetailsRequest) ([]TaskDetail
 	}
 	return responses, nil
 }
+
+func (r *repository) UpdateTaskDetail(taskID, detailID uint64, request UpdateTaskDetailRequest) (TaskDetailResponse, error) {
+	var changes = make(map[string]interface{})
+	b, _ := json.Marshal(&request)
+	_ = json.Unmarshal(b, &changes)
+	detail, err := r.repository.UpdateTaskDetail(taskID, detailID, changes)
+	if err != nil {
+		return TaskDetailResponse{}, err
+	}
+	return ToTaskDetailResponse(detail), nil
+
+}
+
+func pushTaskMessage() PushTaskMessage {
+	msg := PushTaskMessage{
+		Project: projectapi.ProjectResponse{
+			ID:           434,
+			Title:        "fdsfsdf",
+			Description:  "dfsf",
+			Thumbnail:    "fsdf",
+			Color:        "fsdfdfsd",
+			DatasetCount: 6,
+			MemberCount:  4,
+		},
+		Dataset: datasetapi.DatasetResponse{
+			ID:          2342,
+			Title:       "dsfs",
+			Description: "fsf",
+			ProjectID:   5,
+		},
+		Tasks: []TaskResponse{
+			TaskResponse{
+				Title:       "sdfasdf",
+				Description: "sdfasdf",
+				Assigner:    2343244,
+				Labeler:     024,
+				Reviewer:    04234,
+				CreatedAt:   064,
+			},
+		},
+		Labels: []labelapi.LabelResponse{
+			labelapi.LabelResponse{
+				ID:    45634,
+				Name:  "ff",
+				Color: "dgsdfg",
+				Tool: toolapi.ToolResponse{
+					ID:   1,
+					Name: "rect",
+				},
+			},
+		},
+	}
+	return msg
+}
+
 func truncate(imgs []image.Image, s int) []image.Image {
 	l := len(imgs)
 	if l <= s {
