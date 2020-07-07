@@ -6,6 +6,7 @@ import (
 	"github.com/nkhang/pluto/internal/label/labelapi"
 	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/internal/task"
+	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
 )
 
 type CreateTaskRequest struct {
@@ -44,10 +45,11 @@ type TaskResponse struct {
 }
 
 type PushTaskMessage struct {
-	Project projectapi.ProjectResponse `json:"project"`
-	Dataset datasetapi.DatasetResponse `json:"dataset"`
-	Tasks   []TaskResponse             `json:"tasks"`
-	Labels  []labelapi.LabelResponse   `json:"labels"`
+	Workspace workspaceapi.WorkspaceResponse `json:"workspace"`
+	Project   projectapi.ProjectResponse     `json:"project"`
+	Dataset   datasetapi.DatasetResponse     `json:"dataset"`
+	Tasks     []TaskResponse                 `json:"tasks"`
+	Labels    []labelapi.LabelResponse       `json:"labels"`
 }
 
 func ToTaskDetailResponse(detail task.Detail) TaskDetailResponse {

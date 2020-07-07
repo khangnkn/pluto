@@ -3,6 +3,8 @@ package taskapi
 import (
 	"encoding/json"
 
+	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
+
 	"github.com/nkhang/pluto/internal/dataset/datasetapi"
 	"github.com/nkhang/pluto/internal/image"
 	"github.com/nkhang/pluto/internal/label/labelapi"
@@ -70,6 +72,7 @@ func (r *repository) UpdateTaskDetail(taskID, detailID uint64, request UpdateTas
 
 func pushTaskMessage() PushTaskMessage {
 	msg := PushTaskMessage{
+		Workspace: workspaceapi.WorkspaceResponse{},
 		Project: projectapi.ProjectResponse{
 			ID:           434,
 			Title:        "fdsfsdf",

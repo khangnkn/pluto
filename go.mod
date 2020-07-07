@@ -33,5 +33,6 @@ require (
 	go.uber.org/fx v1.11.0
 	go.uber.org/zap v1.14.1
 	golang.org/x/tools/gopls v0.4.1 // indirect
+	google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8
 	moul.io/http2curl v1.0.0 // indirect
 )

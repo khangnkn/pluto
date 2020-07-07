@@ -27,13 +27,14 @@ type CreatePermParams struct {
 }
 
 type ProjectResponse struct {
-	ID           uint64 `json:"id"`
-	Title        string `json:"title"`
-	Description  string `json:"description"`
-	Thumbnail    string `json:"thumbnail"`
-	Color        string `json:"color"`
-	DatasetCount int    `json:"dataset_count"`
-	MemberCount  int    `json:"member_count"`
+	ID             uint64 `json:"id"`
+	Title          string `json:"title"`
+	Description    string `json:"description"`
+	Thumbnail      string `json:"thumbnail"`
+	Color          string `json:"color"`
+	DatasetCount   int    `json:"dataset_count"`
+	MemberCount    int    `json:"member_count"`
+	ProjectManager uint64 `json:"project_manager"`
 }
 
 type GetProjectResponse struct {

@@ -8,8 +8,9 @@ import (
 
 type DBRepository interface {
 	Get(id uint64) (Workspace, error)
-	GetByUserID(userID uint64) ([]Workspace, error)
-	Create(userID uint64, title, description string) error
+	GetByUserID(userID uint64, role Role, offset, limit int) ([]Workspace, int, error)
+	GetPermissionByWorkspaceID(workspaceID uint64, role Role, offset, limit int) ([]Permission, int, error)
+	Create(userID uint64, title, description string) (Workspace, error)
 }
 
 type dbRepository struct {
@@ -25,7 +26,6 @@ func (r *dbRepository) Get(id uint64) (Workspace, error) {
 	result := r.db.First(&w, id)
 	if result.RecordNotFound() {
 		return Workspace{}, errors.WorkspaceNotFound.NewWithMessage("workspace not found")
-
 	}
 	if err := result.Error; err != nil {
 		return Workspace{}, errors.WorkspaceQueryError.Wrap(err, "workspace query error")
@@ -33,30 +33,56 @@ func (r *dbRepository) Get(id uint64) (Workspace, error) {
 	return w, nil
 }
 
-func (r *dbRepository) GetByUserID(userID uint64) ([]Workspace, error) {
-	var workspaces = make([]Workspace, 0)
+func (r *dbRepository) GetByUserID(userID uint64, role Role, offset, limit int) ([]Workspace, int, error) {
+	var count int
 	var perms = make([]Permission, 0)
-	err := r.db.Debug().Where("user_id = ?", userID).Find(&perms).Error
+	db := r.db.Model(Permission{}).
+		Where("user_id = ?", userID)
+	if int32(role) != 0 {
+		db = db.Where("role = ?", role)
+	}
+	db = db.Count(&count)
+	if offset != 0 || limit != 0 {
+		db = db.Offset(offset).Limit(limit)
+	}
+	err := db.Preload("Workspace").Find(&perms).Error
 	if err != nil {
-		return nil, errors.WorkspaceQueryError.Wrap(err, "workspace query error")
+		return nil, 0, errors.WorkspaceQueryError.Wrap(err, "workspace query error")
 	}
-	for _, perm := range perms {
-		var w Workspace
-		err := r.db.Model(&perm).Association("Workspace").Find(&w).Error
-		if err != nil {
-			return nil, errors.WorkspaceQueryError.Wrap(err, "workspace query error")
-		}
-		workspaces = append(workspaces, w)
+	var workspaces = make([]Workspace, len(perms))
+	for i := range perms {
+		workspaces[i] = perms[i].Workspace
 	}
-	return workspaces, nil
+	return workspaces, count, nil
 }
 
-func (r *dbRepository) Create(userID uint64, title, description string) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		var w = Workspace{
-			Title:       title,
-			Description: description,
-		}
+func (r *dbRepository) GetPermissionByWorkspaceID(workspaceID uint64, role Role, offset, limit int) ([]Permission, int, error) {
+	var (
+		count int
+		perms = make([]Permission, 0)
+	)
+	db := r.db.Model(Permission{WorkspaceID: workspaceID}).
+		Where("workspace_id = ?", workspaceID)
+	if int32(role) != 0 {
+		db = db.Where("role = ?", role)
+	}
+	db = db.Count(&count)
+	if offset != 0 || limit != 0 {
+		db = db.Offset(offset).Limit(limit)
+	}
+	err := db.Preload("Workspace").Find(&perms).Error
+	if err != nil {
+		return nil, 0, errors.WorkspaceQueryError.Wrap(err, "workspace query error")
+	}
+	return perms, count, nil
+}
+
+func (r *dbRepository) Create(userID uint64, title, description string) (Workspace, error) {
+	var w = Workspace{
+		Title:       title,
+		Description: description,
+	}
+	err := r.db.Transaction(func(tx *gorm.DB) error {
 		if err := r.db.Save(&w).Error; err != nil {
 			return errors.WorkspaceErrorCreating.Wrap(err, "cannot create workspace")
 		}
@@ -70,4 +96,8 @@ func (r *dbRepository) Create(userID uint64, title, description string) error {
 		}
 		return nil
 	})
+	if err != nil {
+		return Workspace{}, err
+	}
+	return w, nil
 }

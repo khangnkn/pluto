@@ -8,13 +8,13 @@ import (
 type Role int32
 
 const (
+	Any   Role = 0
 	Admin Role = iota + 1
 	Member
 )
 
 type Workspace struct {
 	gorm.Model
-	WorkspaceID uint64
 	Title       string
 	Description string
 	Projects    []project.Project

@@ -5,7 +5,10 @@ import (
 )
 
 type GetByUserIDRequest struct {
-	UserID uint64 `form:"user_id" binding:"required"`
+	UserID   uint64 `form:"user_id" binding:"required"`
+	Page     int    `form:"page" binding:"required"`
+	PageSize int    `form:"page_size" binding:"required"`
+	Source   int    `form:"src" binding:"required"`
 }
 
 type CreateWorkspaceRequest struct {
@@ -14,14 +17,22 @@ type CreateWorkspaceRequest struct {
 	Description string `form:"description" json:"description"`
 }
 
-type WorkspaceInfoResponse struct {
-	ID          uint64 `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
+type GetByUserResponse struct {
+	Total      int                 `json:"total"`
+	Workspaces []WorkspaceResponse `json:"workspaces"`
 }
 
-func toWorkspaceInfoResponse(w workspace.Workspace) WorkspaceInfoResponse {
-	return WorkspaceInfoResponse{
+type WorkspaceResponse struct {
+	ID           uint64 `json:"id"`
+	Title        string `json:"title"`
+	Description  string `json:"description"`
+	ProjectCount int    `json:"project_count"`
+	MemberCount  int    `json:"member_count"`
+	Admin        uint64 `json:"admin"`
+}
+
+func toWorkspaceInfoResponse(w workspace.Workspace) WorkspaceResponse {
+	return WorkspaceResponse{
 		ID:          w.ID,
 		Title:       w.Title,
 		Description: w.Description,

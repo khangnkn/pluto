@@ -2,6 +2,7 @@ package workspacefx
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/nkhang/pluto/internal/project"
 	"go.uber.org/fx"
 
 	"github.com/nkhang/pluto/internal/workspace"
@@ -18,8 +19,8 @@ func provideWorkspaceRepository(r workspace.DBRepository, c cache.Cache) workspa
 	return workspace.NewRepository(r, c)
 }
 
-func provideWorkspaceAPIRepository(r workspace.Repository) workspaceapi.Repository {
-	return workspaceapi.NewRepository(r)
+func provideWorkspaceAPIRepository(workspaceRepo workspace.Repository, projectRepo project.Repository) workspaceapi.Repository {
+	return workspaceapi.NewRepository(workspaceRepo, projectRepo)
 }
 
 type params struct {

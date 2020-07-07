@@ -43,7 +43,7 @@ func (s *service) get(c *gin.Context) ginwrapper.Response {
 		}
 	}
 	return ginwrapper.Response{
-		Error: errors.Success.NewWithMessage("Successfully"),
+		Error: errors.Success.NewWithMessage("success"),
 		Data:  w,
 	}
 }
@@ -56,7 +56,7 @@ func (s *service) getByUserID(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.NewWithMessage("error binding user_id"),
 		}
 	}
-	workspaces, err := s.repository.GetByUserID(req.UserID)
+	workspaces, err := s.repository.GetByUserID(req)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -75,12 +75,14 @@ func (s *service) create(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.Wrap(err, "cannot bind create workspace body"),
 		}
 	}
-	if err := s.repository.CreateWorkspace(req); err != nil {
+	response, err := s.repository.CreateWorkspace(req)
+	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
 		}
 	}
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("success"),
+		Data:  response,
 	}
 }
