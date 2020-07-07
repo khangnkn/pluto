@@ -54,18 +54,22 @@ func (r *repository) Get(id uint64) (Workspace, error) {
 }
 
 func (r *repository) GetByUserID(userID uint64, role Role, offset, limit int) ([]Workspace, int, error) {
-	var workspaces = make([]Workspace, 0)
-	k := rediskey.WorkspacesByUserID(userID, int32(role), offset, limit)
+	var (
+		workspaces = make([]Workspace, 0)
+		total      int
+	)
+	k, totalKey := rediskey.WorkspacesByUserID(userID, int32(role), offset, limit)
 	err := r.cacheRepo.Get(k, &workspaces)
-	if err == nil {
-		return workspaces, 0, nil
+	err2 := r.cacheRepo.Get(totalKey, &total)
+	if err == nil && err2 == nil {
+		return workspaces, total, nil
 	}
 	if errors.Type(err) == errors.CacheNotFound {
 		logger.Infof("cache miss for user %d", userID)
 	} else {
 		logger.Errorf("error getting cache workspaces for user %d", userID)
 	}
-	workspaces, total, err := r.dbRepo.GetByUserID(userID, role, offset, limit)
+	workspaces, total, err = r.dbRepo.GetByUserID(userID, role, offset, limit)
 	if err != nil {
 		logger.Error("error getting workspaces from database", err)
 		return nil, 0, err
@@ -76,9 +80,12 @@ func (r *repository) GetByUserID(userID uint64, role Role, offset, limit int) ([
 
 func (r *repository) GetPermission(workspaceID uint64, role Role, offset, limit int) ([]Permission, int, error) {
 	var perms = make([]Permission, 0)
-	k := rediskey.WorkspacesPermissionByWorkspaceID(workspaceID, int32(role), offset, limit)
+	var total int
+	k, totalKey := rediskey.WorkspacesPermissionByWorkspaceID(workspaceID, int32(role), offset, limit)
 	err := r.cacheRepo.Get(k, &perms)
-	if err == nil {
+	err2 := r.cacheRepo.Get(totalKey, &total)
+	if err == nil && err2 == nil {
+		logger.Infof("cache hit getting workspace permission %d", workspaceID)
 		return perms, 0, nil
 	}
 	if errors.Type(err) == errors.CacheNotFound {
@@ -86,11 +93,17 @@ func (r *repository) GetPermission(workspaceID uint64, role Role, offset, limit 
 	} else {
 		logger.Errorf("error getting cache perms for workspace %d", workspaceID)
 	}
-	perms, total, err := r.dbRepo.GetPermissionByWorkspaceID(workspaceID, role, offset, limit)
+	perms, total, err = r.dbRepo.GetPermissionByWorkspaceID(workspaceID, role, offset, limit)
 	if err != nil {
 		logger.Error("error getting perms from database", err)
 		return nil, 0, err
 	}
+	go func() {
+		err := r.cacheRepo.Set(k, &perms)
+		if err != nil {
+			logger.Error(err)
+		}
+	}()
 	logger.Infof("getting permission for workspace %d successfully", workspaceID)
 	return perms, total, nil
 }

@@ -1,15 +1,14 @@
 package workspace
 
 import (
-	"github.com/nkhang/pluto/internal/project"
 	"github.com/nkhang/pluto/pkg/gorm"
 )
 
 type Role int32
 
 const (
-	Any   Role = 0
-	Admin Role = iota + 1
+	Any Role = iota
+	Admin
 	Member
 )
 
@@ -17,8 +16,6 @@ type Workspace struct {
 	gorm.Model
 	Title       string
 	Description string
-	Projects    []project.Project
-	Perm        []Permission
 }
 
 type Permission struct {

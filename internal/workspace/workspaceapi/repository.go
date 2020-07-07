@@ -31,7 +31,8 @@ func (r *repository) GetByID(id uint64) (WorkspaceResponse, error) {
 	if err != nil {
 		return WorkspaceResponse{}, err
 	}
-	return toWorkspaceInfoResponse(w), nil
+	return r.convertResponse(
+		w), nil
 }
 
 func (r *repository) GetByUserID(request GetByUserIDRequest) (GetByUserResponse, error) {
@@ -95,7 +96,7 @@ func (r *repository) convertResponse(w workspace.Workspace) WorkspaceResponse {
 		permissionCount = 0
 	}
 	var admin uint64
-	perm, _, err := r.workspaceRepository.GetPermission(w.ID, workspace.Admin, 0, 1)
+	perm, _, err := r.workspaceRepository.GetPermission(w.ID, workspace.Admin, 0, 0)
 	if err == nil && len(perm) != 0 {
 		admin = perm[0].UserID
 	} else {
