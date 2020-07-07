@@ -11,6 +11,7 @@ type DBRepository interface {
 	GetByUserID(userID uint64, role Role, offset, limit int) ([]Workspace, int, error)
 	GetPermissionByWorkspaceID(workspaceID uint64, role Role, offset, limit int) ([]Permission, int, error)
 	Create(userID uint64, title, description string) (Workspace, error)
+	UpdateWorkspace(workspaceID uint64, changes map[string]interface{}) (Workspace, error)
 }
 
 type dbRepository struct {
@@ -100,4 +101,14 @@ func (r *dbRepository) Create(userID uint64, title, description string) (Workspa
 		return Workspace{}, err
 	}
 	return w, nil
+}
+
+func (r *dbRepository) UpdateWorkspace(workspaceID uint64, changes map[string]interface{}) (Workspace, error) {
+	var workspace Workspace
+	workspace.ID = workspaceID
+	err := r.db.Model(&workspace).Update(changes).First(&workspace, workspaceID).Error
+	if err != nil {
+		return Workspace{}, errors.WorkspaceCannotUpdate.Wrap(err, "cannot update workspace detail")
+	}
+	return workspace, nil
 }

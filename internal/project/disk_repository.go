@@ -13,12 +13,13 @@ import (
 type DBRepository interface {
 	Get(pID uint64) (Project, error)
 	GetByWorkspaceID(wID uint64, offset, limit int) ([]Project, int, error)
-	CountAllProject(workspaceID uint64) (int, error)
 	GetProjectPermissions(pID uint64) ([]Permission, error)
 	GetUserPermissions(userID uint64, role Role, offset, limit int) ([]Permission, int, error)
 	GetPermission(userID, projectID uint64) (Permission, error)
 	CreateProject(wID uint64, title, desc, uid string) (Project, error)
 	CreatePermission(projectID, userID uint64, role Role) (Permission, error)
+	UpdateProject(ProjectID uint64, changes map[string]interface{}) (Project, error)
+	Delete(id uint64) error
 }
 
 type dbRepository struct {
@@ -54,15 +55,6 @@ func (r *dbRepository) GetByWorkspaceID(wID uint64, offset, limit int) ([]Projec
 		return nil, 0, errors.ProjectQueryError.NewWithMessage("error getting project of workspace")
 	}
 	return projects, total, nil
-}
-
-func (r *dbRepository) CountAllProject(workspaceID uint64) (int, error) {
-	var count int
-	err := r.db.Model(Project{}).Count(&count).Error
-	if err != nil {
-		return 0, errors.ProjectCreatingError.Wrap(err, "cannot count all projects")
-	}
-	return count, nil
 }
 
 func (r *dbRepository) CreateProject(wID uint64, title, desc, uid string) (Project, error) {
@@ -138,4 +130,35 @@ func (r *dbRepository) GetPermission(userID, projectID uint64) (Permission, erro
 		return Permission{}, errors.ProjectPermissionQueryError.NewWithMessage("error query project permission")
 	}
 	return perm, nil
+}
+
+func (r *dbRepository) UpdateProject(ProjectID uint64, changes map[string]interface{}) (Project, error) {
+	var project Project
+	project.ID = ProjectID
+	err := r.db.Model(&project).Update(changes).First(&project, ProjectID).Error
+	if err != nil {
+		return Project{}, errors.ProjectCannotUpdate.Wrap(err, "cannot update project detail")
+	}
+	return project, nil
+}
+
+func (r *dbRepository) Delete(id uint64) error {
+	var p Project
+	p.ID = id
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		err := tx.Delete(&p).Error
+		if err != nil {
+			return err
+		}
+		err = tx.Where("project_id = ?", id).Delete(&Permission{}).Error
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	err = r.db.Delete(&p).Error
+	if err != nil {
+		return errors.ProjectCannotDelete.Wrap(err, "cannot delete project")
+	}
+	return nil
 }

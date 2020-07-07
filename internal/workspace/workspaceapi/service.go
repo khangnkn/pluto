@@ -2,6 +2,7 @@ package workspaceapi
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/nkhang/pluto/pkg/util/idextractor"
 	"github.com/spf13/cast"
 
 	"github.com/nkhang/pluto/pkg/errors"
@@ -9,7 +10,7 @@ import (
 )
 
 const (
-	FieldWorkspaceID = "workspace_id"
+	FieldWorkspaceID = "workspaceId"
 )
 
 type service struct {
@@ -26,6 +27,7 @@ func (s *service) Register(router gin.IRouter) {
 	router.GET("/", ginwrapper.Wrap(s.getByUserID))
 	router.POST("/", ginwrapper.Wrap(s.create))
 	router.GET("/:"+FieldWorkspaceID, ginwrapper.Wrap(s.get))
+	router.PUT("/:"+FieldWorkspaceID, ginwrapper.Wrap(s.update))
 }
 
 func (s *service) get(c *gin.Context) ginwrapper.Response {
@@ -84,5 +86,30 @@ func (s *service) create(c *gin.Context) ginwrapper.Response {
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("success"),
 		Data:  response,
+	}
+}
+
+func (s *service) update(c *gin.Context) ginwrapper.Response {
+	var req UpdateWorkspaceRequest
+	workspaceID, err := idextractor.ExtractUint64Param(c, FieldWorkspaceID)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	if err := c.ShouldBind(&req); err != nil {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.Wrap(err, "cannot bind update request"),
+		}
+	}
+	w, err := s.repository.UpdateWorkspace(workspaceID, req)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+		Data:  w,
 	}
 }

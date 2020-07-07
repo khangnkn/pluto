@@ -18,6 +18,8 @@ type Repository interface {
 	CreatePermission(projectID, userID uint64, role Role) (Permission, error)
 	InvalidateProjectsByWorkspaceID(id uint64) error
 	InvalidatePermissionForUser(userID uint64) error
+	UpdateProject(projectID uint64, changes map[string]interface{}) (Project, error)
+	Delete(id uint64) error
 }
 
 type repository struct {
@@ -179,4 +181,32 @@ func (r *repository) InvalidatePermissionForUser(userID uint64) error {
 
 func (r *repository) GetPermission(userID, projectID uint64) (Permission, error) {
 	return r.disk.GetPermission(userID, projectID)
+}
+
+func (r *repository) UpdateProject(projectID uint64, changes map[string]interface{}) (Project, error) {
+	k := rediskey.ProjectByID(projectID)
+	err := r.cache.Del(k)
+	if err != nil {
+		logger.Error(err)
+	}
+	return r.disk.UpdateProject(projectID, changes)
+}
+
+func (r *repository) Delete(id uint64) error {
+	project, err := r.Get(id)
+	if err != nil {
+		return err
+	}
+	k := rediskey.ProjectByID(id)
+	pattern := rediskey.ProjectByWorkspaceIDPattern(project.WorkspaceID)
+	keys, err := r.cache.Keys(pattern)
+	if err != nil {
+		return errors.ProjectCannotDelete.Wrap(err, "cannot get cache keys")
+	}
+	keys = append(keys, k)
+	err = r.cache.Del(keys...)
+	if err != nil {
+		logger.Error(err)
+	}
+	return r.disk.Delete(id)
 }

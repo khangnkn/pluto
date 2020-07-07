@@ -6,6 +6,8 @@ const (
 	ProjectPermissionQueryError
 	ProjectPermissionNotFound
 	ProjectPermissionExisted
-	ProjectCreatingError
 	ProjectPermissionCreatingError
+	ProjectCreatingError
+	ProjectCannotUpdate
+	ProjectCannotDelete
 )

@@ -20,6 +20,11 @@ type CreateProjectParams struct {
 	Desc        string `form:"desc" json:"desc"`
 }
 
+type UpdateProjectRequest struct {
+	Title       string `form:"title" json:"title,omitempty"`
+	Description string `form:"description" json:"description,omitempty"`
+}
+
 type CreatePermParams struct {
 	ProjectID uint64 `form:"-"`
 	UserID    uint64 `form:"user_id" binding:"required"`

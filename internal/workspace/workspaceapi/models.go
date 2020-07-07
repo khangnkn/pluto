@@ -17,6 +17,11 @@ type CreateWorkspaceRequest struct {
 	Description string `form:"description" json:"description"`
 }
 
+type UpdateWorkspaceRequest struct {
+	Title       string `form:"title" json:"title,omitempty"`
+	Description string `form:"description" json:"description,omitempty"`
+}
+
 type GetByUserResponse struct {
 	Total      int                 `json:"total"`
 	Workspaces []WorkspaceResponse `json:"workspaces"`

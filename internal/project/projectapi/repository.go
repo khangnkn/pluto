@@ -1,6 +1,8 @@
 package projectapi
 
 import (
+	"encoding/json"
+
 	"github.com/nkhang/pluto/internal/dataset"
 	"github.com/nkhang/pluto/internal/project"
 	"github.com/nkhang/pluto/pkg/errors"
@@ -13,6 +15,8 @@ type Repository interface {
 	GetList(p GetProjectParam) ([]ProjectResponse, int, error)
 	Create(p CreateProjectParams) error
 	CreatePerm(p CreatePermParams) error
+	UpdateProject(id uint64, request UpdateProjectRequest) (ProjectResponse, error)
+	DeleteProject(id uint64) error
 }
 
 type repository struct {
@@ -126,4 +130,20 @@ func (r *repository) CreatePerm(p CreatePermParams) error {
 		}
 	}()
 	return nil
+}
+
+func (r *repository) UpdateProject(id uint64, request UpdateProjectRequest) (ProjectResponse, error) {
+	var changes = make(map[string]interface{})
+	b, _ := json.Marshal(&request)
+	_ = json.Unmarshal(b, &changes)
+	logger.Info(changes)
+	w, err := r.repository.UpdateProject(id, changes)
+	if err != nil {
+		return ProjectResponse{}, nil
+	}
+	return r.convertResponse(w), nil
+}
+
+func (r *repository) DeleteProject(id uint64) error {
+	return r.repository.Delete(id)
 }

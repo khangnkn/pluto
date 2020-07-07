@@ -1,6 +1,8 @@
 package workspaceapi
 
 import (
+	"encoding/json"
+
 	"github.com/nkhang/pluto/internal/project"
 	"github.com/nkhang/pluto/internal/workspace"
 	"github.com/nkhang/pluto/pkg/errors"
@@ -12,6 +14,7 @@ type Repository interface {
 	GetByID(id uint64) (WorkspaceResponse, error)
 	GetByUserID(request GetByUserIDRequest) (GetByUserResponse, error)
 	CreateWorkspace(p CreateWorkspaceRequest) (WorkspaceResponse, error)
+	UpdateWorkspace(id uint64, request UpdateWorkspaceRequest) (WorkspaceResponse, error)
 }
 
 type repository struct {
@@ -110,4 +113,16 @@ func (r *repository) convertResponse(w workspace.Workspace) WorkspaceResponse {
 		MemberCount:  permissionCount,
 		Admin:        admin,
 	}
+}
+
+func (r *repository) UpdateWorkspace(id uint64, request UpdateWorkspaceRequest) (WorkspaceResponse, error) {
+	var changes = make(map[string]interface{})
+	b, _ := json.Marshal(&request)
+	_ = json.Unmarshal(b, &changes)
+	logger.Info(changes)
+	w, err := r.workspaceRepository.UpdateWorkspace(id, changes)
+	if err != nil {
+		return WorkspaceResponse{}, nil
+	}
+	return r.convertResponse(w), nil
 }

@@ -13,6 +13,7 @@ type Repository interface {
 	GetPermission(workspaceID uint64, role Role, offset, limit int) ([]Permission, int, error)
 	Create(userID uint64, title, description string) (Workspace, error)
 	InvalidateForUser(userID uint64)
+	UpdateWorkspace(workspaceID uint64, changes map[string]interface{}) (Workspace, error)
 }
 
 type repository struct {
@@ -127,4 +128,13 @@ func (r *repository) InvalidateForUser(userID uint64) {
 		logger.Errorf("error delete keys %v", keys)
 		return
 	}
+}
+
+func (r *repository) UpdateWorkspace(workspaceID uint64, changes map[string]interface{}) (Workspace, error) {
+	k := rediskey.WorkspaceByID(workspaceID)
+	err := r.cacheRepo.Del(k)
+	if err != nil {
+		logger.Error(err)
+	}
+	return r.dbRepo.UpdateWorkspace(workspaceID, changes)
 }

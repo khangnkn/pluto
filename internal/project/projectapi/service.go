@@ -2,6 +2,7 @@ package projectapi
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/nkhang/pluto/pkg/util/idextractor"
 	"github.com/spf13/cast"
 
 	"github.com/nkhang/pluto/pkg/errors"
@@ -16,7 +17,7 @@ type service struct {
 }
 
 const (
-	FieldProjectID = "project_id"
+	FieldProjectID = "projectId"
 )
 
 func NewService(r Repository, labelService, datasetService pgin.IEngine) *service {
@@ -31,6 +32,8 @@ func (s *service) Register(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getAll))
 	router.POST("", ginwrapper.Wrap(s.create))
 	router.GET("/:"+FieldProjectID, ginwrapper.Wrap(s.get))
+	router.PUT("/:"+FieldProjectID, ginwrapper.Wrap(s.update))
+	router.DELETE("/:"+FieldProjectID, ginwrapper.Wrap(s.delete))
 	router.POST("/:"+FieldProjectID+"/perm", ginwrapper.Wrap(s.createPerm))
 }
 
@@ -115,6 +118,48 @@ func (s *service) createPerm(c *gin.Context) ginwrapper.Response {
 	}
 	req.ProjectID = pID
 	err = s.repository.CreatePerm(req)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+	}
+}
+func (s *service) update(c *gin.Context) ginwrapper.Response {
+	var req UpdateProjectRequest
+	projectID, err := idextractor.ExtractUint64Param(c, FieldProjectID)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	if err := c.ShouldBind(&req); err != nil {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.Wrap(err, "cannot bind update request"),
+		}
+	}
+	w, err := s.repository.UpdateProject(projectID, req)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+		Data:  w,
+	}
+}
+
+func (s *service) delete(c *gin.Context) ginwrapper.Response {
+	id, err := idextractor.ExtractUint64Param(c, FieldProjectID)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	err = s.repository.DeleteProject(id)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,

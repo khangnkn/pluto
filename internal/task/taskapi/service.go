@@ -5,6 +5,7 @@ import (
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
 	"github.com/nkhang/pluto/pkg/logger"
+	"github.com/nkhang/pluto/pkg/util/idextractor"
 	"github.com/spf13/cast"
 )
 
@@ -72,11 +73,11 @@ func (s *service) getTaskDetails(c *gin.Context) ginwrapper.Response {
 
 func (s *service) updateTaskDetail(c *gin.Context) ginwrapper.Response {
 	var request UpdateTaskDetailRequest
-	detailID, err := extractUint64Param(c, fieldTaskDetailID)
+	detailID, err := idextractor.ExtractUint64Param(c, fieldTaskDetailID)
 	if err != nil {
 		return ginwrapper.Response{Error: err}
 	}
-	taskID, err := extractUint64Param(c, fieldTaskID)
+	taskID, err := idextractor.ExtractUint64Param(c, fieldTaskID)
 	if err != nil {
 		return ginwrapper.Response{Error: err}
 	}
@@ -96,13 +97,4 @@ func (s *service) updateTaskDetail(c *gin.Context) ginwrapper.Response {
 		Error: errors.Success.NewWithMessage("success"),
 		Data:  response,
 	}
-}
-
-func extractUint64Param(c *gin.Context, key string) (uint64, error) {
-	val := c.Param(key)
-	res, err := cast.ToUint64E(val)
-	if err != nil {
-		return 0, errors.BadRequest.NewWithMessageF("error getting %s from path", val)
-	}
-	return res, nil
 }
