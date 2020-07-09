@@ -3,6 +3,8 @@ package workspaceapi
 import (
 	"encoding/json"
 
+	"github.com/nkhang/pluto/pkg/util/clock"
+
 	"github.com/nkhang/pluto/internal/project"
 	"github.com/nkhang/pluto/internal/workspace"
 	"github.com/nkhang/pluto/pkg/errors"
@@ -107,6 +109,7 @@ func (r *repository) convertResponse(w workspace.Workspace) WorkspaceResponse {
 	}
 	return WorkspaceResponse{
 		ID:           w.ID,
+		Updated:      clock.UnixMillisecondFromTime(w.UpdatedAt),
 		Title:        w.Title,
 		Description:  w.Description,
 		ProjectCount: projectCount,

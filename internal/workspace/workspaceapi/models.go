@@ -29,6 +29,7 @@ type GetByUserResponse struct {
 
 type WorkspaceResponse struct {
 	ID           uint64 `json:"id"`
+	Updated      int64  `json:"updated"`
 	Title        string `json:"title"`
 	Description  string `json:"description"`
 	ProjectCount int    `json:"project_count"`

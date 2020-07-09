@@ -136,7 +136,6 @@ func (r *repository) UpdateProject(id uint64, request UpdateProjectRequest) (Pro
 	var changes = make(map[string]interface{})
 	b, _ := json.Marshal(&request)
 	_ = json.Unmarshal(b, &changes)
-	logger.Info(changes)
 	w, err := r.repository.UpdateProject(id, changes)
 	if err != nil {
 		return ProjectResponse{}, nil
