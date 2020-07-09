@@ -189,7 +189,17 @@ func (r *repository) UpdateProject(projectID uint64, changes map[string]interfac
 	if err != nil {
 		logger.Error(err)
 	}
-	return r.disk.UpdateProject(projectID, changes)
+	project, err := r.disk.UpdateProject(projectID, changes)
+	if err != nil {
+		return project, errors.ProjectCannotUpdate.Wrap(err, "cannot update project")
+	}
+	go func() {
+		err := r.InvalidateProjectsByWorkspaceID(project.WorkspaceID)
+		if err != nil {
+			logger.Error(err)
+		}
+	}()
+	return project, nil
 }
 
 func (r *repository) Delete(id uint64) error {
