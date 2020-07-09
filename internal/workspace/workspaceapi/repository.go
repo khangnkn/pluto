@@ -77,11 +77,19 @@ func (r *repository) GetByUserID(request GetByUserIDRequest) (GetByUserResponse,
 }
 
 func (r *repository) CreateWorkspace(p CreateWorkspaceRequest) (WorkspaceResponse, error) {
-	w, err := r.workspaceRepository.Create(p.UserID, p.Title, p.Description)
+	w, err := r.workspaceRepository.Create(p.Admin, p.Title, p.Description, p.Color)
 	if err != nil {
 		return WorkspaceResponse{}, err
 	}
-	go r.workspaceRepository.InvalidateForUser(p.UserID)
+	err = r.workspaceRepository.CreatePermission(w.ID, p.Members, workspace.Member)
+	if err != nil {
+		logger.Errorf("permission has not been created for workspace %d", w.ID)
+		err2 := r.workspaceRepository.DeleteWorkspace(w.ID)
+		if err2 != nil {
+			return WorkspaceResponse{}, err2
+		}
+		return WorkspaceResponse{}, err
+	}
 	response := r.convertResponse(w)
 	return response, nil
 
@@ -112,6 +120,7 @@ func (r *repository) convertResponse(w workspace.Workspace) WorkspaceResponse {
 		Updated:      clock.UnixMillisecondFromTime(w.UpdatedAt),
 		Title:        w.Title,
 		Description:  w.Description,
+		Color:        w.Color,
 		ProjectCount: projectCount,
 		MemberCount:  permissionCount,
 		Admin:        admin,

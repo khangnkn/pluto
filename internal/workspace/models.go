@@ -16,6 +16,7 @@ type Workspace struct {
 	gorm.Model
 	Title       string
 	Description string
+	Color       string
 }
 
 type Permission struct {

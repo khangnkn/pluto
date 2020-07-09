@@ -12,9 +12,11 @@ type GetByUserIDRequest struct {
 }
 
 type CreateWorkspaceRequest struct {
-	UserID      uint64 `form:"user_id" json:"user_id" binding:"required"`
-	Title       string `form:"title" json:"title"`
-	Description string `form:"description" json:"description"`
+	Title       string   `form:"title" json:"title"`
+	Description string   `form:"description" json:"description"`
+	Color       string   `form:"color" json:"color"`
+	Admin       uint64   `form:"admin" json:"admin" binding:"required"`
+	Members     []uint64 `form:"members" json:"members"`
 }
 
 type UpdateWorkspaceRequest struct {
@@ -32,6 +34,7 @@ type WorkspaceResponse struct {
 	Updated      int64  `json:"updated"`
 	Title        string `json:"title"`
 	Description  string `json:"description"`
+	Color        string `json:"color"`
 	ProjectCount int    `json:"project_count"`
 	MemberCount  int    `json:"member_count"`
 	Admin        uint64 `json:"admin"`

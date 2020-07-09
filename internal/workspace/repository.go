@@ -11,9 +11,12 @@ type Repository interface {
 	Get(id uint64) (Workspace, error)
 	GetByUserID(userID uint64, role Role, offset, limit int) ([]Workspace, int, error)
 	GetPermission(workspaceID uint64, role Role, offset, limit int) ([]Permission, int, error)
-	Create(userID uint64, title, description string) (Workspace, error)
-	InvalidateForUser(userID uint64)
+	CreatePermission(workspaceID uint64, userIDs []uint64, role Role) error
+	Create(userID uint64, title, description, color string) (Workspace, error)
+	InvalidateWorkspacesForUser(userID uint64)
+	InvalidatePermissionsForWorkspace(workspaceID uint64)
 	UpdateWorkspace(workspaceID uint64, changes map[string]interface{}) (Workspace, error)
+	DeleteWorkspace(workspaceID uint64) error
 }
 
 type repository struct {
@@ -109,11 +112,19 @@ func (r *repository) GetPermission(workspaceID uint64, role Role, offset, limit 
 	return perms, total, nil
 }
 
-func (r *repository) Create(userID uint64, title, description string) (Workspace, error) {
-	return r.dbRepo.Create(userID, title, description)
+func (r *repository) Create(userID uint64, title, description, color string) (Workspace, error) {
+
+	w, err := r.dbRepo.Create(userID, title, description, color)
+	if err != nil {
+		return Workspace{}, err
+	}
+	go func() {
+		r.InvalidateWorkspacesForUser(userID)
+	}()
+	return w, nil
 }
 
-func (r *repository) InvalidateForUser(userID uint64) {
+func (r *repository) InvalidateWorkspacesForUser(userID uint64) {
 	pattern := rediskey.WorkspacesByUserIDPattern(userID)
 	keys, err := r.cacheRepo.Keys(pattern)
 	if err != nil {
@@ -130,6 +141,18 @@ func (r *repository) InvalidateForUser(userID uint64) {
 	}
 }
 
+func (r *repository) InvalidatePermissionsForWorkspace(workspaceID uint64) {
+	pattern := rediskey.WorkspacesPermissionByWorkspaceIDPattern(workspaceID)
+	keys, err := r.cacheRepo.Keys(pattern)
+	if err != nil {
+		logger.Errorf("cannot get all workspace permission by workspace id %v", err.Error())
+		return
+	}
+	if err := r.cacheRepo.Del(keys...); err != nil {
+		logger.Errorf("error delete all permission for workspace %d in redis", workspaceID)
+	}
+}
+
 func (r *repository) UpdateWorkspace(workspaceID uint64, changes map[string]interface{}) (Workspace, error) {
 	k := rediskey.WorkspaceByID(workspaceID)
 	err := r.cacheRepo.Del(k)
@@ -137,4 +160,36 @@ func (r *repository) UpdateWorkspace(workspaceID uint64, changes map[string]inte
 		logger.Error(err)
 	}
 	return r.dbRepo.UpdateWorkspace(workspaceID, changes)
+}
+
+func (r *repository) CreatePermission(workspaceID uint64, userIDs []uint64, role Role) error {
+	err := r.dbRepo.CreatePermission(workspaceID, userIDs, role)
+	if err != nil {
+		return err
+	}
+	go func() {
+		r.InvalidatePermissionsForWorkspace(workspaceID)
+		for i := range userIDs {
+			r.InvalidateWorkspacesForUser(userIDs[i])
+		}
+	}()
+	return nil
+}
+
+func (r *repository) DeleteWorkspace(workspaceID uint64) error {
+	perms, _, err := r.GetPermission(workspaceID, Any, 0, 0)
+	if err != nil {
+		return err
+	}
+	err = r.dbRepo.DeleteWorkspace(workspaceID)
+	if err != nil {
+		return err
+	}
+	go func() {
+		r.InvalidatePermissionsForWorkspace(workspaceID)
+		for i := range perms {
+			r.InvalidateWorkspacesForUser(perms[i].UserID)
+		}
+	}()
+	return nil
 }

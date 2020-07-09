@@ -5,4 +5,6 @@ const (
 	WorkspaceQueryError
 	WorkspaceErrorCreating
 	WorkspaceCannotUpdate
+	WorkspacePermissionErrorCreating
+	WorkspaceErrorDeleting
 )

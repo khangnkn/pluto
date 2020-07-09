@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"github.com/jinzhu/gorm"
+	gormbulk "github.com/t-tiger/gorm-bulk-insert/v2"
 
 	"github.com/nkhang/pluto/pkg/errors"
 )
@@ -10,7 +11,9 @@ type DBRepository interface {
 	Get(id uint64) (Workspace, error)
 	GetByUserID(userID uint64, role Role, offset, limit int) ([]Workspace, int, error)
 	GetPermissionByWorkspaceID(workspaceID uint64, role Role, offset, limit int) ([]Permission, int, error)
-	Create(userID uint64, title, description string) (Workspace, error)
+	Create(userID uint64, title, description, color string) (Workspace, error)
+	DeleteWorkspace(workspaceID uint64) error
+	CreatePermission(workspaceID uint64, userIDs []uint64, role Role) error
 	UpdateWorkspace(workspaceID uint64, changes map[string]interface{}) (Workspace, error)
 }
 
@@ -78,10 +81,11 @@ func (r *dbRepository) GetPermissionByWorkspaceID(workspaceID uint64, role Role,
 	return perms, count, nil
 }
 
-func (r *dbRepository) Create(userID uint64, title, description string) (Workspace, error) {
+func (r *dbRepository) Create(userID uint64, title, description, color string) (Workspace, error) {
 	var w = Workspace{
 		Title:       title,
 		Description: description,
+		Color:       color,
 	}
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		if err := r.db.Save(&w).Error; err != nil {
@@ -111,4 +115,34 @@ func (r *dbRepository) UpdateWorkspace(workspaceID uint64, changes map[string]in
 		return Workspace{}, errors.WorkspaceCannotUpdate.Wrap(err, "cannot update workspace detail")
 	}
 	return workspace, nil
+}
+
+func (r *dbRepository) CreatePermission(workspaceID uint64, userIDs []uint64, role Role) error {
+	var perms = make([]interface{}, len(userIDs))
+	for i, userID := range userIDs {
+		perms[i] = Permission{
+			WorkspaceID: workspaceID,
+			Role:        role,
+			UserID:      userID,
+		}
+	}
+	err := gormbulk.BulkInsert(r.db, perms, 1000)
+	if err != nil {
+		return errors.WorkspacePermissionErrorCreating.Wrap(err, "cannot create permissions")
+	}
+	return nil
+}
+
+func (r *dbRepository) DeleteWorkspace(workspaceID uint64) error {
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		err := r.db.Model(&Permission{}).Where("workspace_id = ?", workspaceID).Delete(&Permission{}).Error
+		if err != nil {
+			return err
+		}
+		return r.db.Delete(&Workspace{}, workspaceID).Error
+	})
+	if err != nil {
+		return errors.WorkspaceErrorDeleting.Wrap(err, "cannot delete workspace")
+	}
+	return nil
 }
