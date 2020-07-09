@@ -2,6 +2,7 @@ package workspaceapi
 
 import (
 	"github.com/nkhang/pluto/internal/workspace"
+	"github.com/nkhang/pluto/pkg/util/clock"
 )
 
 type GetByUserIDRequest struct {
@@ -25,25 +26,31 @@ type UpdateWorkspaceRequest struct {
 }
 
 type GetByUserResponse struct {
-	Total      int                 `json:"total"`
-	Workspaces []WorkspaceResponse `json:"workspaces"`
+	Total      int                       `json:"total"`
+	Workspaces []WorkspaceDetailResponse `json:"workspaces"`
 }
 
-type WorkspaceResponse struct {
-	ID           uint64 `json:"id"`
-	Updated      int64  `json:"updated"`
-	Title        string `json:"title"`
-	Description  string `json:"description"`
-	Color        string `json:"color"`
+type WorkspaceDetailResponse struct {
+	WorkspaceResponse
 	ProjectCount int    `json:"project_count"`
 	MemberCount  int    `json:"member_count"`
 	Admin        uint64 `json:"admin"`
 }
 
-func toWorkspaceInfoResponse(w workspace.Workspace) WorkspaceResponse {
+type WorkspaceResponse struct {
+	ID          uint64 `json:"id"`
+	Updated     int64  `json:"updated"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Color       string `json:"color"`
+}
+
+func ToWorkspaceInfoResponse(w workspace.Workspace) WorkspaceResponse {
 	return WorkspaceResponse{
 		ID:          w.ID,
+		Updated:     clock.UnixMillisecondFromTime(w.UpdatedAt),
 		Title:       w.Title,
 		Description: w.Description,
+		Color:       w.Color,
 	}
 }

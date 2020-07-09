@@ -12,7 +12,8 @@ const (
 type Role int32
 
 const (
-	Manager Role = iota + 1
+	Any Role = iota
+	Manager
 	Member
 )
 

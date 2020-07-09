@@ -1,9 +1,12 @@
 package projectapi
 
+import "github.com/nkhang/pluto/internal/workspace/workspaceapi"
+
 const (
-	SrcAllProject = iota + 1
+	SrcAllProjectInWorkspace = iota + 1
 	SrcMyProject
 	SrcOtherProject
+	SrcAllProject
 )
 
 type GetProjectParam struct {
@@ -32,14 +35,15 @@ type CreatePermParams struct {
 }
 
 type ProjectResponse struct {
-	ID             uint64 `json:"id"`
-	Title          string `json:"title"`
-	Description    string `json:"description"`
-	Thumbnail      string `json:"thumbnail"`
-	Color          string `json:"color"`
-	DatasetCount   int    `json:"dataset_count"`
-	MemberCount    int    `json:"member_count"`
-	ProjectManager uint64 `json:"project_manager"`
+	ID             uint64                               `json:"id"`
+	Title          string                               `json:"title"`
+	Description    string                               `json:"description"`
+	Thumbnail      string                               `json:"thumbnail"`
+	Color          string                               `json:"color"`
+	DatasetCount   int                                  `json:"dataset_count"`
+	MemberCount    int                                  `json:"member_count"`
+	ProjectManager uint64                               `json:"project_manager"`
+	Workspace      workspaceapi.WorkspaceDetailResponse `json:"workspace"`
 }
 
 type GetProjectResponse struct {

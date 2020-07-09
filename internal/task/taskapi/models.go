@@ -10,11 +10,17 @@ import (
 )
 
 type CreateTaskRequest struct {
-	DatasetID uint64 `json:"dataset_id" form:"dataset_id" binding:"required"`
-	Assigner  uint64 `json:"assigner" form:"assigner" binding:"required"`
-	Labeler   uint64 `json:"labeler" form:"labeler" binding:"required"`
-	Reviewer  uint64 `json:"reviewer" form:"reviewer" binding:"required"`
-	Quantity  int    `json:"quantity" form:"quantity" binding:"required"`
+	ProjectID uint64         `json:"project_id" form:"project_id"`
+	DatasetID uint64         `json:"dataset_id" form:"dataset_id" binding:"required"`
+	Assigner  uint64         `json:"assigner" form:"assigner" binding:"required"`
+	Labeler   uint64         `json:"labeler" form:"labeler" binding:"required"`
+	Quantity  int            `json:"quantity" form:"quantity" binding:"required"`
+	Assignees []AssigneePair `json:"assignees" form:"assignees" binding:"required"`
+}
+
+type AssigneePair struct {
+	Reviewer uint64 `json:"reviewer" form:"reviewer" binding:"required"`
+	Quantity int    `json:"quantity" form:"quantity" binding:"required"`
 }
 
 type GetTaskDetailsRequest struct {
@@ -45,11 +51,11 @@ type TaskResponse struct {
 }
 
 type PushTaskMessage struct {
-	Workspace workspaceapi.WorkspaceResponse `json:"workspace"`
-	Project   projectapi.ProjectResponse     `json:"project"`
-	Dataset   datasetapi.DatasetResponse     `json:"dataset"`
-	Tasks     []TaskResponse                 `json:"tasks"`
-	Labels    []labelapi.LabelResponse       `json:"labels"`
+	Workspace workspaceapi.WorkspaceDetailResponse `json:"workspace"`
+	Project   projectapi.ProjectResponse           `json:"project"`
+	Dataset   datasetapi.DatasetResponse           `json:"dataset"`
+	Tasks     []TaskResponse                       `json:"tasks"`
+	Labels    []labelapi.LabelResponse             `json:"labels"`
 }
 
 func ToTaskDetailResponse(detail task.Detail) TaskDetailResponse {

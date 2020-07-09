@@ -34,15 +34,16 @@ func NewRepository(r task.Repository, ir image.Repository) *repository {
 
 func (r *repository) CreateTask(request CreateTaskRequest) error {
 	imgs, err := r.imgRepo.GetAllImageByDataset(request.DatasetID)
+	var cursor = 0
 	if err != nil {
 		return err
 	}
-	truncated := truncate(imgs, request.Quantity)
+	truncated := truncate(imgs, &cursor, request.Quantity)
 	ids := make([]uint64, len(truncated))
 	for i := range truncated {
 		ids[i] = truncated[i].ID
 	}
-	return r.repository.CreateTask(request.Assigner, request.Labeler, request.Reviewer, request.DatasetID, ids)
+	return r.repository.CreateTask(request.Assigner, request.Labeler, 2342, request.DatasetID, ids)
 }
 
 func (r *repository) GetTaskDetails(request GetTaskDetailsRequest) ([]TaskDetailResponse, error) {
@@ -72,7 +73,7 @@ func (r *repository) UpdateTaskDetail(taskID, detailID uint64, request UpdateTas
 
 func pushTaskMessage() PushTaskMessage {
 	msg := PushTaskMessage{
-		Workspace: workspaceapi.WorkspaceResponse{},
+		Workspace: workspaceapi.WorkspaceDetailResponse{},
 		Project: projectapi.ProjectResponse{
 			ID:           434,
 			Title:        "fdsfsdf",
@@ -113,10 +114,14 @@ func pushTaskMessage() PushTaskMessage {
 	return msg
 }
 
-func truncate(imgs []image.Image, s int) []image.Image {
+func truncate(imgs []image.Image, cursor *int, s int) []image.Image {
 	l := len(imgs)
-	if l <= s {
-		return imgs
+	if position := *cursor + s; position <= l {
+		*cursor += s
+		return imgs[*cursor:position]
+	} else {
+		left := s - (l - *cursor)
+		*cursor = left
+		return imgs[:left]
 	}
-	return imgs[:s]
 }

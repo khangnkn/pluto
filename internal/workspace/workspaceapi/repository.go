@@ -3,8 +3,6 @@ package workspaceapi
 import (
 	"encoding/json"
 
-	"github.com/nkhang/pluto/pkg/util/clock"
-
 	"github.com/nkhang/pluto/internal/project"
 	"github.com/nkhang/pluto/internal/workspace"
 	"github.com/nkhang/pluto/pkg/errors"
@@ -13,10 +11,10 @@ import (
 )
 
 type Repository interface {
-	GetByID(id uint64) (WorkspaceResponse, error)
+	GetByID(id uint64) (WorkspaceDetailResponse, error)
 	GetByUserID(request GetByUserIDRequest) (GetByUserResponse, error)
-	CreateWorkspace(p CreateWorkspaceRequest) (WorkspaceResponse, error)
-	UpdateWorkspace(id uint64, request UpdateWorkspaceRequest) (WorkspaceResponse, error)
+	CreateWorkspace(p CreateWorkspaceRequest) (WorkspaceDetailResponse, error)
+	UpdateWorkspace(id uint64, request UpdateWorkspaceRequest) (WorkspaceDetailResponse, error)
 }
 
 type repository struct {
@@ -31,10 +29,10 @@ func NewRepository(workspaceRepo workspace.Repository, projectRepo project.Repos
 	}
 }
 
-func (r *repository) GetByID(id uint64) (WorkspaceResponse, error) {
+func (r *repository) GetByID(id uint64) (WorkspaceDetailResponse, error) {
 	w, err := r.workspaceRepository.Get(id)
 	if err != nil {
-		return WorkspaceResponse{}, err
+		return WorkspaceDetailResponse{}, err
 	}
 	return r.convertResponse(
 		w), nil
@@ -66,7 +64,7 @@ func (r *repository) GetByUserID(request GetByUserIDRequest) (GetByUserResponse,
 	default:
 		return GetByUserResponse{}, errors.BadRequest.NewWithMessage("unsupported src")
 	}
-	responses := make([]WorkspaceResponse, len(workspaces))
+	responses := make([]WorkspaceDetailResponse, len(workspaces))
 	for i := range workspaces {
 		responses[i] = r.convertResponse(workspaces[i])
 	}
@@ -76,26 +74,26 @@ func (r *repository) GetByUserID(request GetByUserIDRequest) (GetByUserResponse,
 	}, nil
 }
 
-func (r *repository) CreateWorkspace(p CreateWorkspaceRequest) (WorkspaceResponse, error) {
+func (r *repository) CreateWorkspace(p CreateWorkspaceRequest) (WorkspaceDetailResponse, error) {
 	w, err := r.workspaceRepository.Create(p.Admin, p.Title, p.Description, p.Color)
 	if err != nil {
-		return WorkspaceResponse{}, err
+		return WorkspaceDetailResponse{}, err
 	}
 	err = r.workspaceRepository.CreatePermission(w.ID, p.Members, workspace.Member)
 	if err != nil {
 		logger.Errorf("permission has not been created for workspace %d", w.ID)
 		err2 := r.workspaceRepository.DeleteWorkspace(w.ID)
 		if err2 != nil {
-			return WorkspaceResponse{}, err2
+			return WorkspaceDetailResponse{}, err2
 		}
-		return WorkspaceResponse{}, err
+		return WorkspaceDetailResponse{}, err
 	}
 	response := r.convertResponse(w)
 	return response, nil
 
 }
 
-func (r *repository) convertResponse(w workspace.Workspace) WorkspaceResponse {
+func (r *repository) convertResponse(w workspace.Workspace) WorkspaceDetailResponse {
 	logger.Infof("%+v", w)
 	_, projectCount, err := r.projectRepo.GetByWorkspaceID(w.ID, 0, 0)
 	if err != nil {
@@ -115,26 +113,22 @@ func (r *repository) convertResponse(w workspace.Workspace) WorkspaceResponse {
 	} else {
 		logger.Error("get admin error")
 	}
-	return WorkspaceResponse{
-		ID:           w.ID,
-		Updated:      clock.UnixMillisecondFromTime(w.UpdatedAt),
-		Title:        w.Title,
-		Description:  w.Description,
-		Color:        w.Color,
-		ProjectCount: projectCount,
-		MemberCount:  permissionCount,
-		Admin:        admin,
+	return WorkspaceDetailResponse{
+		WorkspaceResponse: ToWorkspaceInfoResponse(w),
+		ProjectCount:      projectCount,
+		MemberCount:       permissionCount,
+		Admin:             admin,
 	}
 }
 
-func (r *repository) UpdateWorkspace(id uint64, request UpdateWorkspaceRequest) (WorkspaceResponse, error) {
+func (r *repository) UpdateWorkspace(id uint64, request UpdateWorkspaceRequest) (WorkspaceDetailResponse, error) {
 	var changes = make(map[string]interface{})
 	b, _ := json.Marshal(&request)
 	_ = json.Unmarshal(b, &changes)
 	logger.Info(changes)
 	w, err := r.workspaceRepository.UpdateWorkspace(id, changes)
 	if err != nil {
-		return WorkspaceResponse{}, nil
+		return WorkspaceDetailResponse{}, nil
 	}
 	return r.convertResponse(w), nil
 }

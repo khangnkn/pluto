@@ -2,6 +2,7 @@ package projectfx
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
 	"go.uber.org/fx"
 
 	"github.com/nkhang/pluto/internal/dataset"
@@ -19,8 +20,8 @@ func provideRepository(r project.DBRepository, c cache.Cache) project.Repository
 	return project.NewRepository(r, c)
 }
 
-func provideAPIRepository(r project.Repository, dr dataset.Repository) projectapi.Repository {
-	return projectapi.NewRepository(r, dr)
+func provideAPIRepository(r project.Repository, dr dataset.Repository, wr workspaceapi.Repository) projectapi.Repository {
+	return projectapi.NewRepository(r, dr, wr)
 }
 
 type params struct {
