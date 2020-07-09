@@ -3,14 +3,14 @@ package projectapi
 import "github.com/nkhang/pluto/internal/workspace/workspaceapi"
 
 const (
-	SrcAllProjectInWorkspace = iota + 1
+	SrcAllProject = iota + 1
 	SrcMyProject
 	SrcOtherProject
-	SrcAllProject
+	SrcAllProjectInWorkspace
 )
 
 type GetProjectParam struct {
-	WorkspaceID uint64 `form:"workspace_id" binding:"required"`
+	WorkspaceID uint64 `form:"workspace_id"`
 	Page        int    `form:"page" binding:"required"`
 	PageSize    int    `form:"page_size" binding:"required"`
 	Source      int    `form:"src" binding:"required"`
