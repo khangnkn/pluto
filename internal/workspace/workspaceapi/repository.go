@@ -15,6 +15,7 @@ type Repository interface {
 	GetByUserID(request GetByUserIDRequest) (GetByUserResponse, error)
 	CreateWorkspace(p CreateWorkspaceRequest) (WorkspaceDetailResponse, error)
 	UpdateWorkspace(id uint64, request UpdateWorkspaceRequest) (WorkspaceDetailResponse, error)
+	DeleteWorkspace(id uint64) error
 }
 
 type repository struct {
@@ -131,4 +132,8 @@ func (r *repository) UpdateWorkspace(id uint64, request UpdateWorkspaceRequest) 
 		return WorkspaceDetailResponse{}, nil
 	}
 	return r.convertResponse(w), nil
+}
+
+func (r *repository) DeleteWorkspace(id uint64) error {
+	return r.workspaceRepository.DeleteWorkspace(id)
 }
