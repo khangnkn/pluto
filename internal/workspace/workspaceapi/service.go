@@ -2,6 +2,7 @@ package workspaceapi
 
 import (
 	"github.com/gin-gonic/gin"
+	pgin "github.com/nkhang/pluto/pkg/gin"
 	"github.com/nkhang/pluto/pkg/util/idextractor"
 	"github.com/spf13/cast"
 
@@ -15,20 +16,26 @@ const (
 
 type service struct {
 	repository Repository
+	permRouter pgin.IEngine
 }
 
-func NewService(r Repository) *service {
+func NewService(r Repository, permRouter pgin.IEngine) *service {
 	return &service{
 		repository: r,
+		permRouter: permRouter,
 	}
 }
 
 func (s *service) Register(router gin.IRouter) {
 	router.GET("/", ginwrapper.Wrap(s.getByUserID))
 	router.POST("/", ginwrapper.Wrap(s.create))
-	router.GET("/:"+FieldWorkspaceID, ginwrapper.Wrap(s.get))
-	router.PUT("/:"+FieldWorkspaceID, ginwrapper.Wrap(s.update))
-	router.DELETE("/:"+FieldWorkspaceID, ginwrapper.Wrap(s.delete))
+	detailRouter := router.Group("/:" + FieldWorkspaceID)
+	{
+		detailRouter.GET("", ginwrapper.Wrap(s.get))
+		detailRouter.PUT("", ginwrapper.Wrap(s.update))
+		detailRouter.DELETE("", ginwrapper.Wrap(s.delete))
+	}
+	s.permRouter.Register(detailRouter.Group("/perms"))
 }
 
 func (s *service) get(c *gin.Context) ginwrapper.Response {

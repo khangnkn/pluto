@@ -7,4 +7,5 @@ const (
 	WorkspaceCannotUpdate
 	WorkspacePermissionErrorCreating
 	WorkspaceErrorDeleting
+	WorkspacePermissionDeletingError
 )

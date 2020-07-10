@@ -17,6 +17,7 @@ type Repository interface {
 	InvalidatePermissionsForWorkspace(workspaceID uint64)
 	UpdateWorkspace(workspaceID uint64, changes map[string]interface{}) (Workspace, error)
 	DeleteWorkspace(workspaceID uint64) error
+	DeletePermission(workspaceID uint64, userID uint64) error
 }
 
 type repository struct {
@@ -172,6 +173,18 @@ func (r *repository) CreatePermission(workspaceID uint64, userIDs []uint64, role
 		for i := range userIDs {
 			r.InvalidateWorkspacesForUser(userIDs[i])
 		}
+	}()
+	return nil
+}
+
+func (r *repository) DeletePermission(workspaceID uint64, userID uint64) error {
+	err := r.dbRepo.DeletePermission(workspaceID, userID)
+	if err != nil {
+		return err
+	}
+	go func() {
+		r.InvalidatePermissionsForWorkspace(workspaceID)
+		r.InvalidateWorkspacesForUser(userID)
 	}()
 	return nil
 }

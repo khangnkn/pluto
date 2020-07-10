@@ -56,6 +56,9 @@ func (c *client) Set(key string, data interface{}) error {
 }
 
 func (c *client) Del(key ...string) error {
+	if len(key) == 0 {
+		return nil
+	}
 	err := c.cmd.Del(key...).Err()
 	if err != nil {
 		return errors.CacheDeleteError.Wrap(err, "cannot del keys")

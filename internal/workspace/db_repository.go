@@ -14,6 +14,7 @@ type DBRepository interface {
 	Create(userID uint64, title, description, color string) (Workspace, error)
 	DeleteWorkspace(workspaceID uint64) error
 	CreatePermission(workspaceID uint64, userIDs []uint64, role Role) error
+	DeletePermission(workspaceID uint64, userID uint64) error
 	UpdateWorkspace(workspaceID uint64, changes map[string]interface{}) (Workspace, error)
 }
 
@@ -129,6 +130,18 @@ func (r *dbRepository) CreatePermission(workspaceID uint64, userIDs []uint64, ro
 	err := gormbulk.BulkInsert(r.db, perms, 1000)
 	if err != nil {
 		return errors.WorkspacePermissionErrorCreating.Wrap(err, "cannot create permissions")
+	}
+	return nil
+}
+
+func (r *dbRepository) DeletePermission(workspaceID uint64, userID uint64) error {
+	var perm = Permission{
+		WorkspaceID: workspaceID,
+		UserID:      userID,
+	}
+	err := r.db.Delete(&perm).Error
+	if err != nil {
+		return errors.WorkspacePermissionDeletingError.Wrap(err, "cannot delete user from workspace")
 	}
 	return nil
 }
