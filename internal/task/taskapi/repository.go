@@ -2,6 +2,10 @@ package taskapi
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
+
+	"github.com/nkhang/pluto/pkg/errors"
 
 	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
 
@@ -34,16 +38,27 @@ func NewRepository(r task.Repository, ir image.Repository) *repository {
 
 func (r *repository) CreateTask(request CreateTaskRequest) error {
 	imgs, err := r.imgRepo.GetAllImageByDataset(request.DatasetID)
-	var cursor = 0
 	if err != nil {
 		return err
 	}
-	truncated := truncate(imgs, &cursor, request.Quantity)
-	ids := make([]uint64, len(truncated))
-	for i := range truncated {
-		ids[i] = truncated[i].ID
+	var errs = make([]error, 0)
+	var cursor = 0
+	for _, pair := range request.Assignees {
+		truncated := truncate(imgs, &cursor, request.Quantity)
+		ids := make([]uint64, len(truncated))
+		for j := range truncated {
+			ids[j] = truncated[j].ID
+		}
+		err := r.repository.CreateTask(request.Assigner, pair.Labeler, pair.Reviewer, request.DatasetID, ids)
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
-	return r.repository.CreateTask(request.Assigner, request.Labeler, 2342, request.DatasetID, ids)
+	if len(errs) == 0 {
+		return nil
+	}
+	msg := fmt.Sprintf("failed to create %d tasks", len(errs))
+	return errors.TaskCannotCreate.NewWithMessage(msg)
 }
 
 func (r *repository) GetTaskDetails(request GetTaskDetailsRequest) ([]TaskDetailResponse, error) {
@@ -114,14 +129,21 @@ func pushTaskMessage() PushTaskMessage {
 	return msg
 }
 
-func truncate(imgs []image.Image, cursor *int, s int) []image.Image {
+func truncate(imgs []image.Image, cursor *int, s int) (res []image.Image) {
 	l := len(imgs)
+	if s >= l {
+		*cursor = 0
+		return imgs
+	}
 	if position := *cursor + s; position <= l {
+		log.Print(*cursor, position)
+		res = imgs[*cursor:position]
 		*cursor += s
-		return imgs[*cursor:position]
 	} else {
 		left := s - (l - *cursor)
+		log.Print(left)
+		res = append(imgs[*cursor:l], imgs[:left]...)
 		*cursor = left
-		return imgs[:left]
 	}
+	return
 }
