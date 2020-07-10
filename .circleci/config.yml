@@ -7,6 +7,6 @@ jobs:
       - checkout # check out the code in the project directory
       - run: go test ./...
       - run: |
-              echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin \
-                                 docker build -t nkhang/pluto:latest . \
+              echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin && \
+                                 docker build -t nkhang/pluto:latest . && \
                                  docker push nkhang/pluto:latest
