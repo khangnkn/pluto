@@ -1,8 +1,10 @@
 {
   "workspace": {
     "id": 0,
+    "updated": 0,
     "title": "",
     "description": "",
+    "color": "",
     "project_count": 0,
     "member_count": 0,
     "admin": 0
@@ -15,7 +17,17 @@
     "color": "fsdfdfsd",
     "dataset_count": 6,
     "member_count": 4,
-    "project_manager": 0
+    "project_manager": 0,
+    "workspace": {
+      "id": 0,
+      "updated": 0,
+      "title": "",
+      "description": "",
+      "color": "",
+      "project_count": 0,
+      "member_count": 0,
+      "admin": 0
+    }
   },
   "dataset": {
     "id": 2342,
