@@ -1,12 +1,17 @@
 version: 2.1
 jobs:
-  build:
+  test:
     docker: 
       - image: circleci/golang:latest # the primary container, where your job's commands are run
     steps:
       - checkout # check out the code in the project directory
       - run: go test ./...
+
+  build:
+    machine: true
+    steps:
+      - checkout # check out the code in the project directory
       - run: |
-              echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin && \
-                                 docker build -t nkhang/pluto:latest . && \
-                                 docker push nkhang/pluto:latest
+              echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
+      - run: docker build -t nkhang/pluto:latest .
+      - run: docker push nkhang/pluto:latest
