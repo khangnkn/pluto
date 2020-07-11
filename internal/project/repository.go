@@ -16,10 +16,9 @@ type Repository interface {
 	GetPermission(userID, projectID uint64) (Permission, error)
 	CreateProject(wID uint64, title, desc, color string) (Project, error)
 	CreatePermission(projectID, userID uint64, role Role) (Permission, error)
-	InvalidateProjectsByWorkspaceID(id uint64) error
-	InvalidatePermissionForUser(userID uint64) error
 	UpdateProject(projectID uint64, changes map[string]interface{}) (Project, error)
 	Delete(id uint64) error
+	DeleteByWorkspace(workspaceID uint64) error
 }
 
 type repository struct {
@@ -43,7 +42,7 @@ func (r *repository) Get(pID uint64) (Project, error) {
 		return p, nil
 	}
 	if errors.Type(err) != errors.CacheNotFound {
-		logger.Error("error getting project from cache", err)
+		logger.Errorf("error getting project from cache %v", err)
 	} else {
 		logger.Infof("cache miss for getting project %d", pID)
 	}
@@ -63,7 +62,7 @@ func (r *repository) Get(pID uint64) (Project, error) {
 func (r *repository) GetByWorkspaceID(id uint64, offset, limit int) ([]Project, int, error) {
 	var projects = make([]Project, 0)
 	var total int
-	k, totalKey := rediskey.ProjectByWorkspaceID(id, offset, limit)
+	k, totalKey, _ := rediskey.ProjectByWorkspaceID(id, offset, limit)
 	err := r.cache.Get(k, &projects)
 	err2 := r.cache.Get(totalKey, &total)
 	if err == nil && err2 == nil {
@@ -123,6 +122,7 @@ func (r *repository) GetUserPermissions(userID uint64, role Role, offset, limit 
 }
 
 func (r *repository) CreateProject(wID uint64, title, desc, color string) (Project, error) {
+	r.InvalidateProjectsByWorkspaceID(wID)
 	uid := uuid.NewV4().String()
 	return r.disk.CreateProject(wID, title, desc, color, uid)
 }
@@ -155,23 +155,24 @@ func (r *repository) GetProjectPermissions(pID uint64) ([]Permission, error) {
 
 func (r *repository) CreatePermission(projectID, userID uint64, role Role) (Permission, error) {
 	r.InvalidatePermissionForProject(projectID)
+	r.InvalidatePermissionForUser(userID)
 	return r.disk.CreatePermission(projectID, userID, role)
 }
 
-func (r *repository) InvalidateProjectsByWorkspaceID(id uint64) error {
-	pattern := rediskey.ProjectByWorkspaceIDPattern(id)
+func (r *repository) InvalidateProjectsByWorkspaceID(id uint64) {
+	_, totalKey, pattern := rediskey.ProjectByWorkspaceID(id, 0, 0)
 	keys, err := r.cache.Keys(pattern)
-	_, totalKey := rediskey.ProjectByWorkspaceID(id, 0, 0)
-	keys = append(keys, totalKey)
 	if err != nil {
-		return err
+		logger.Errorf("error getting pattern %s", pattern)
 	}
-	return r.cache.Del(keys...)
+	keys = append(keys, totalKey)
+	if err := r.cache.Del(keys...); err != nil {
+		logger.Errorf("error deleting keys %v", keys)
+	}
 }
 
 func (r *repository) InvalidatePermissionForUser(userID uint64) error {
-	pattern := rediskey.ProjectPermissionByUserPattern(userID)
-	_, totalKey := rediskey.ProjectByWorkspaceID(userID, 0, 0)
+	_, totalKey, pattern := rediskey.ProjectByWorkspaceID(userID, 0, 0)
 	keys, err := r.cache.Keys(pattern)
 	if err != nil {
 		return err
@@ -203,10 +204,7 @@ func (r *repository) UpdateProject(projectID uint64, changes map[string]interfac
 		return project, errors.ProjectCannotUpdate.Wrap(err, "cannot update project")
 	}
 	go func() {
-		err := r.InvalidateProjectsByWorkspaceID(project.WorkspaceID)
-		if err != nil {
-			logger.Error(err)
-		}
+		r.InvalidateProjectsByWorkspaceID(project.WorkspaceID)
 	}()
 	return project, nil
 }
@@ -216,16 +214,22 @@ func (r *repository) Delete(id uint64) error {
 	if err != nil {
 		return err
 	}
-	k := rediskey.ProjectByID(id)
-	pattern := rediskey.ProjectByWorkspaceIDPattern(project.WorkspaceID)
-	keys, err := r.cache.Keys(pattern)
-	if err != nil {
-		return errors.ProjectCannotDelete.Wrap(err, "cannot get cache keys")
-	}
-	keys = append(keys, k)
-	err = r.cache.Del(keys...)
-	if err != nil {
-		logger.Error(err)
-	}
+	r.InvalidateProjectsByWorkspaceID(project.WorkspaceID)
+	r.InvalidatePermissionForProject(id)
 	return r.disk.Delete(id)
+}
+
+func (r *repository) DeleteByWorkspace(workspaceID uint64) error {
+	r.InvalidateProjectsByWorkspaceID(workspaceID)
+	projects, _, err := r.GetByWorkspaceID(workspaceID, 0, 0)
+	if err != nil {
+		return err
+	}
+	for i := range projects {
+		err = r.Delete(projects[i].ID)
+		if err != nil {
+			logger.Errorf("error delete project %d of workspace %d", projects[i].ID, workspaceID)
+		}
+	}
+	return nil
 }

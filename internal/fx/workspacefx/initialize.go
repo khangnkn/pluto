@@ -16,8 +16,8 @@ func provideWorkspaceDBRepository(db *gorm.DB) workspace.DBRepository {
 	return workspace.NewDDBRepository(db)
 }
 
-func provideWorkspaceRepository(r workspace.DBRepository, c cache.Cache) workspace.Repository {
-	return workspace.NewRepository(r, c)
+func provideWorkspaceRepository(r workspace.DBRepository, projectRepo project.Repository, c cache.Cache) workspace.Repository {
+	return workspace.NewRepository(r, projectRepo, c)
 }
 
 func provideWorkspaceAPIRepository(workspaceRepo workspace.Repository, projectRepo project.Repository) workspaceapi.Repository {

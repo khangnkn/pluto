@@ -1,6 +1,7 @@
 package workspace
 
 import (
+	"github.com/nkhang/pluto/internal/project"
 	"github.com/nkhang/pluto/internal/rediskey"
 	"github.com/nkhang/pluto/pkg/cache"
 	"github.com/nkhang/pluto/pkg/errors"
@@ -13,22 +14,22 @@ type Repository interface {
 	GetPermission(workspaceID uint64, role Role, offset, limit int) ([]Permission, int, error)
 	CreatePermission(workspaceID uint64, userIDs []uint64, role Role) error
 	Create(userID uint64, title, description, color string) (Workspace, error)
-	InvalidateWorkspacesForUser(userID uint64)
-	InvalidatePermissionsForWorkspace(workspaceID uint64)
 	UpdateWorkspace(workspaceID uint64, changes map[string]interface{}) (Workspace, error)
 	DeleteWorkspace(workspaceID uint64) error
 	DeletePermission(workspaceID uint64, userID uint64) error
 }
 
 type repository struct {
-	dbRepo    DBRepository
-	cacheRepo cache.Cache
+	dbRepo      DBRepository
+	projectRepo project.Repository
+	cacheRepo   cache.Cache
 }
 
-func NewRepository(dbRepo DBRepository, c cache.Cache) *repository {
+func NewRepository(dbRepo DBRepository, projectRepo project.Repository, c cache.Cache) *repository {
 	return &repository{
-		dbRepo:    dbRepo,
-		cacheRepo: c,
+		dbRepo:      dbRepo,
+		projectRepo: projectRepo,
+		cacheRepo:   c,
 	}
 }
 
@@ -67,16 +68,16 @@ func (r *repository) GetByUserID(userID uint64, role Role, offset, limit int) ([
 	err := r.cacheRepo.Get(k, &workspaces)
 	err2 := r.cacheRepo.Get(totalKey, &total)
 	if err == nil && err2 == nil {
+		logger.Infof("cache hit for getting workspace by user ID %d", userID)
 		return workspaces, total, nil
 	}
 	if errors.Type(err) == errors.CacheNotFound {
 		logger.Infof("cache miss for user %d", userID)
 	} else {
-		logger.Errorf("error getting cache workspaces for user %d", userID)
+		logger.Infof("error getting cache workspaces for user %d. error %v", userID, err)
 	}
 	workspaces, total, err = r.dbRepo.GetByUserID(userID, role, offset, limit)
 	if err != nil {
-		logger.Error("error getting workspaces from database", err)
 		return nil, 0, err
 	}
 	logger.Infof("getting workspace for user %d successfully", userID)
@@ -91,20 +92,24 @@ func (r *repository) GetPermission(workspaceID uint64, role Role, offset, limit 
 	err2 := r.cacheRepo.Get(totalKey, &total)
 	if err == nil && err2 == nil {
 		logger.Infof("cache hit getting workspace permission %d", workspaceID)
-		return perms, 0, nil
+		return perms, total, nil
 	}
 	if errors.Type(err) == errors.CacheNotFound {
 		logger.Infof("cache miss for workspace %d", workspaceID)
 	} else {
-		logger.Errorf("error getting cache perms for workspace %d, error %v", workspaceID, err)
+		logger.Infof("error getting cache perms for workspace %d, error %v", workspaceID, err)
 	}
 	perms, total, err = r.dbRepo.GetPermissionByWorkspaceID(workspaceID, role, offset, limit)
 	if err != nil {
-		logger.Error("error getting perms from database", err)
 		return nil, 0, err
 	}
 	go func() {
 		err := r.cacheRepo.Set(k, &perms)
+		if err != nil {
+			logger.Error(err)
+		}
+		logger.Infof("total keys %d", total)
+		err = r.cacheRepo.Set(totalKey, total)
 		if err != nil {
 			logger.Error(err)
 		}
@@ -114,7 +119,6 @@ func (r *repository) GetPermission(workspaceID uint64, role Role, offset, limit 
 }
 
 func (r *repository) Create(userID uint64, title, description, color string) (Workspace, error) {
-
 	w, err := r.dbRepo.Create(userID, title, description, color)
 	if err != nil {
 		return Workspace{}, err
@@ -198,6 +202,7 @@ func (r *repository) DeleteWorkspace(workspaceID uint64) error {
 	if err != nil {
 		return err
 	}
+	err = r.projectRepo.DeleteByWorkspace(workspaceID)
 	go func() {
 		r.InvalidatePermissionsForWorkspace(workspaceID)
 		for i := range perms {

@@ -85,14 +85,6 @@ func (r *repository) Create(p CreateProjectParams) (ProjectResponse, error) {
 	if err != nil {
 		return ProjectResponse{}, err
 	}
-	go func() {
-		err := r.repository.InvalidateProjectsByWorkspaceID(p.WorkspaceID)
-		if err != nil {
-			logger.Errorf("error invalidate cache for projects by workspace %d, error %v", p.WorkspaceID, err)
-			return
-		}
-		logger.Infof("invalidate cache for projects by workspace %d successfully", p.WorkspaceID)
-	}()
 	return r.convertResponse(project), nil
 }
 
@@ -107,14 +99,6 @@ func (r *repository) CreatePerm(req CreatePermParams) error {
 		if err != nil {
 			errs = append(errs, err)
 		}
-		go func() {
-			err := r.repository.InvalidatePermissionForUser(p.UserID)
-			if err != nil {
-				logger.Errorf("error invalidate permission for user %d", p.UserID)
-			} else {
-				logger.Infof("invalidate project permission for user %d successfully", p.UserID)
-			}
-		}()
 	}
 	if len(errs) != 0 {
 		return errors.ProjectPermissionCreatingError.NewWithMessageF("error creating %d permissions", len(errs))

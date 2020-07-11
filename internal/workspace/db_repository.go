@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/nkhang/pluto/pkg/logger"
 	gormbulk "github.com/t-tiger/gorm-bulk-insert/v2"
 
 	"github.com/nkhang/pluto/pkg/errors"
@@ -111,8 +112,12 @@ func (r *dbRepository) Create(userID uint64, title, description, color string) (
 func (r *dbRepository) UpdateWorkspace(workspaceID uint64, changes map[string]interface{}) (Workspace, error) {
 	var workspace Workspace
 	workspace.ID = workspaceID
-	err := r.db.Model(&workspace).Update(changes).First(&workspace, workspaceID).Error
-	if err != nil {
+	db := r.db.Model(&workspace).Update(changes).First(&workspace, workspaceID)
+	if db.RecordNotFound() {
+		logger.Infof("is empty %v", db.RecordNotFound())
+		return Workspace{}, errors.WorkspaceNotFound.NewWithMessageF("workspace %d not found", workspaceID)
+	}
+	if err := db.Error; err != nil {
 		return Workspace{}, errors.WorkspaceCannotUpdate.Wrap(err, "cannot update workspace detail")
 	}
 	return workspace, nil
@@ -147,15 +152,14 @@ func (r *dbRepository) DeletePermission(workspaceID uint64, userID uint64) error
 }
 
 func (r *dbRepository) DeleteWorkspace(workspaceID uint64) error {
-	err := r.db.Transaction(func(tx *gorm.DB) error {
-		err := r.db.Model(&Permission{}).Where("workspace_id = ?", workspaceID).Delete(&Permission{}).Error
-		if err != nil {
-			return err
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		db := r.db.Model(&Permission{}).Where("workspace_id = ?", workspaceID).Delete(&Permission{})
+		if err := db.Error; err != nil {
+			return errors.WorkspaceErrorDeleting.Wrap(err, "cannot delete workspace")
 		}
-		return r.db.Delete(&Workspace{}, workspaceID).Error
+		if err := r.db.Delete(&Workspace{}, workspaceID).Error; err != nil {
+			return errors.WorkspaceErrorDeleting.Wrap(err, "cannot delete workspace")
+		}
+		return nil
 	})
-	if err != nil {
-		return errors.WorkspaceErrorDeleting.Wrap(err, "cannot delete workspace")
-	}
-	return nil
 }

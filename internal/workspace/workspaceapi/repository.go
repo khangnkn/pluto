@@ -101,7 +101,6 @@ func (r *repository) convertResponse(w workspace.Workspace) WorkspaceDetailRespo
 		logger.Error("cannot get all projects by workspace")
 		projectCount = 0
 	}
-	_ = projectCount
 	_, permissionCount, err := r.workspaceRepository.GetPermission(w.ID, workspace.Any, 0, 0)
 	if err != nil {
 		logger.Error("cannot get all permissions by workspace")
@@ -129,7 +128,7 @@ func (r *repository) UpdateWorkspace(id uint64, request UpdateWorkspaceRequest) 
 	logger.Info(changes)
 	w, err := r.workspaceRepository.UpdateWorkspace(id, changes)
 	if err != nil {
-		return WorkspaceDetailResponse{}, nil
+		return WorkspaceDetailResponse{}, err
 	}
 	return r.convertResponse(w), nil
 }
