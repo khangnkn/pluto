@@ -123,20 +123,16 @@ func (r *repository) DeleteProject(id uint64) error {
 
 func (r *repository) convertResponse(p project.Project) ProjectResponse {
 	var datasetCount int
-	var memberCount int
 	d, err := r.datasetRepo.GetByProject(p.ID)
 	if err != nil {
 		logger.Error("error getting project by project id")
 	} else {
 		datasetCount = len(d)
 	}
-	m, err := r.repository.GetProjectPermissions(p.ID)
+	_, totalPerms, err := r.repository.GetProjectPermissions(p.ID, project.Any, 0, 0)
 	if err != nil {
 		logger.Error("error getting project perm")
-	} else {
-		memberCount = len(m)
 	}
-
 	w, _ := r.workspaceRepo.GetByID(p.WorkspaceID)
 	return ProjectResponse{
 		ID:           p.ID,
@@ -145,7 +141,7 @@ func (r *repository) convertResponse(p project.Project) ProjectResponse {
 		Thumbnail:    p.Thumbnail,
 		Color:        p.Color,
 		DatasetCount: datasetCount,
-		MemberCount:  memberCount,
+		MemberCount:  totalPerms,
 		Workspace:    w,
 	}
 }

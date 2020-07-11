@@ -65,8 +65,11 @@ func ProjectPermissionByUserPattern(userID uint64) string {
 	return fmt.Sprintf("pluto:project:permissions:userid:%d:*", userID)
 }
 
-func ProjectPermissionByID(projectID uint64) string {
-	return fmt.Sprintf("pluto:permissions:project:id:%d", projectID)
+func ProjectPermissionByID(projectID uint64, role uint32, offset, limit int) (specKey, totalKey, pattern string) {
+	specKey = fmt.Sprintf("pluto:permissions:project:id:%d:role:%d:offset:%d:limit:%d", projectID, role, offset, limit)
+	totalKey = fmt.Sprintf("pluto:permissions:project:id:%d:role:%d:total", projectID, role)
+	pattern = fmt.Sprintf("pluto:permissions:project:id:%d:*", projectID)
+	return
 }
 
 func TaskByID(id uint64) string {

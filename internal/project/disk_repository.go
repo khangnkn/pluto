@@ -10,7 +10,7 @@ import (
 type DBRepository interface {
 	Get(pID uint64) (Project, error)
 	GetByWorkspaceID(wID uint64, offset, limit int) ([]Project, int, error)
-	GetProjectPermissions(pID uint64) ([]Permission, error)
+	GetProjectPermissions(pID uint64, role Role, offset, limit int) (perms []Permission, total int, err error)
 	GetUserPermissions(userID uint64, role Role, offset, limit int) ([]Permission, int, error)
 	GetPermission(userID, projectID uint64) (Permission, error)
 	CreateProject(wID uint64, title, desc, color, uid string) (Project, error)
@@ -70,13 +70,17 @@ func (r *dbRepository) CreateProject(wID uint64, title, desc, color, uid string)
 	return p, nil
 }
 
-func (r *dbRepository) GetProjectPermissions(pID uint64) ([]Permission, error) {
-	var perms = make([]Permission, 0)
-	err := r.db.Where("project_id = ?", pID).Find(&perms).Error
-	if err != nil {
-		return nil, errors.ProjectPermissionQueryError.Wrap(err, "cannot query project permissions for project")
+func (r *dbRepository) GetProjectPermissions(pID uint64, role Role, offset, limit int) (perms []Permission, total int, err error) {
+	db := r.db.Model(&Permission{}).Where("project_id = ?", pID)
+	if role != 0 {
+		db = db.Where("role = ?", role)
 	}
-	return perms, nil
+	db = db.Count(&total)
+	if offset != 0 || limit != 0 {
+		db = db.Offset(offset).Limit(limit)
+	}
+	err = db.Find(&perms).Error
+	return
 }
 
 func (r *dbRepository) GetUserPermissions(userID uint64, role Role, offset, limit int) ([]Permission, int, error) {
