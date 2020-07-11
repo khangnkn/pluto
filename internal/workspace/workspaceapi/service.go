@@ -27,8 +27,8 @@ func NewService(r Repository, permRouter pgin.IEngine) *service {
 }
 
 func (s *service) Register(router gin.IRouter) {
-	router.GET("/", ginwrapper.Wrap(s.getByUserID))
-	router.POST("/", ginwrapper.Wrap(s.create))
+	router.GET("", ginwrapper.Wrap(s.getByUserID))
+	router.POST("", ginwrapper.Wrap(s.create))
 	detailRouter := router.Group("/:" + FieldWorkspaceID)
 	{
 		detailRouter.GET("", ginwrapper.Wrap(s.get))
