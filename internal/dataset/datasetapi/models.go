@@ -4,6 +4,9 @@ import (
 	"github.com/nkhang/pluto/internal/dataset"
 )
 
+type GetDatasetRequest struct {
+	ProjectID uint64 `json:"project_id" form:"project_id"`
+}
 type CreateDatasetRequest struct {
 	Title       string `form:"title"`
 	Description string `form:"description"`

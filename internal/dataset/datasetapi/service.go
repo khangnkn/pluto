@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 
-	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
 	"github.com/nkhang/pluto/pkg/logger"
@@ -52,14 +51,13 @@ func (s *service) getByID(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) getByProjectID(c *gin.Context) ginwrapper.Response {
-	pIDStr := c.Query(projectapi.FieldProjectID)
-	pID, err := cast.ToUint64E(pIDStr)
-	if err != nil {
+	var request GetDatasetRequest
+	if err := c.ShouldBind(&request); err != nil {
 		return ginwrapper.Response{
 			Error: errors.BadRequest.Wrap(err, "cannot get dataset id"),
 		}
 	}
-	datasets, err := s.repository.GetByProjectID(pID)
+	datasets, err := s.repository.GetByProjectID(request.ProjectID)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
