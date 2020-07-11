@@ -18,7 +18,7 @@ type GetProjectParam struct {
 }
 
 type CreateProjectParams struct {
-	WorkspaceID uint64 `form:"workspace_id" json:"workspace_id"`
+	WorkspaceID uint64 `form:"workspace_id" json:"workspace_id" binding:"required"`
 	Title       string `form:"title" json:"title"`
 	Desc        string `form:"desc" json:"desc"`
 	Color       string `form:"color" json:"color"`
@@ -30,9 +30,13 @@ type UpdateProjectRequest struct {
 }
 
 type CreatePermParams struct {
-	ProjectID uint64 `form:"-"`
-	UserID    uint64 `form:"user_id" binding:"required"`
-	Role      int32  `form:"role" binding:"required"`
+	ProjectID uint64             `form:"-" json:"-"`
+	Members   []CreatePermObject `json:"members"`
+}
+
+type CreatePermObject struct {
+	UserID uint64 `form:"user_id" json:"user_id" binding:"required"`
+	Role   int32  `form:"role" json:"role" binding:"required"`
 }
 
 type ProjectResponse struct {

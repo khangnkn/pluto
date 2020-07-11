@@ -96,23 +96,29 @@ func (r *repository) Create(p CreateProjectParams) (ProjectResponse, error) {
 	return r.convertResponse(project), nil
 }
 
-func (r *repository) CreatePerm(p CreatePermParams) error {
-	_, err := r.repository.GetPermission(p.UserID, p.ProjectID)
-	if err == nil {
-		return errors.ProjectPermissionExisted.NewWithMessage("user existed in dataset")
-	}
-	_, err = r.repository.CreatePermission(p.ProjectID, p.UserID, project.Role(p.Role))
-	if err != nil {
-		return err
-	}
-	go func() {
-		err := r.repository.InvalidatePermissionForUser(p.UserID)
-		if err != nil {
-			logger.Errorf("error invalidate permission for user %d", p.UserID)
-		} else {
-			logger.Infof("invalidate project permission for user %d successfully", p.UserID)
+func (r *repository) CreatePerm(req CreatePermParams) error {
+	var errs = make([]error, 0)
+	for _, p := range req.Members {
+		_, err := r.repository.GetPermission(p.UserID, req.ProjectID)
+		if err == nil {
+			continue
 		}
-	}()
+		_, err = r.repository.CreatePermission(req.ProjectID, p.UserID, project.Role(p.Role))
+		if err != nil {
+			errs = append(errs, err)
+		}
+		go func() {
+			err := r.repository.InvalidatePermissionForUser(p.UserID)
+			if err != nil {
+				logger.Errorf("error invalidate permission for user %d", p.UserID)
+			} else {
+				logger.Infof("invalidate project permission for user %d successfully", p.UserID)
+			}
+		}()
+	}
+	if len(errs) != 0 {
+		return errors.ProjectPermissionCreatingError.NewWithMessageF("error creating %d permissions", len(errs))
+	}
 	return nil
 }
 

@@ -96,7 +96,7 @@ func (r *repository) GetPermission(workspaceID uint64, role Role, offset, limit 
 	if errors.Type(err) == errors.CacheNotFound {
 		logger.Infof("cache miss for workspace %d", workspaceID)
 	} else {
-		logger.Errorf("error getting cache perms for workspace %d", workspaceID)
+		logger.Errorf("error getting cache perms for workspace %d, error %v", workspaceID, err)
 	}
 	perms, total, err = r.dbRepo.GetPermissionByWorkspaceID(workspaceID, role, offset, limit)
 	if err != nil {
