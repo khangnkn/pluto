@@ -154,6 +154,7 @@ func (r *repository) GetProjectPermissions(pID uint64) ([]Permission, error) {
 }
 
 func (r *repository) CreatePermission(projectID, userID uint64, role Role) (Permission, error) {
+	r.InvalidatePermissionForProject(projectID)
 	return r.disk.CreatePermission(projectID, userID, role)
 }
 
@@ -177,6 +178,14 @@ func (r *repository) InvalidatePermissionForUser(userID uint64) error {
 	}
 	keys = append(keys, totalKey)
 	return r.cache.Del(keys...)
+}
+
+func (r *repository) InvalidatePermissionForProject(projectID uint64) {
+	k := rediskey.ProjectPermissionByID(projectID)
+	if err := r.cache.Del(k); err != nil {
+		logger.Errorf("error delete key %s", k)
+	}
+	logger.Infof("invalidate key %s successfully", k)
 }
 
 func (r *repository) GetPermission(userID, projectID uint64) (Permission, error) {
