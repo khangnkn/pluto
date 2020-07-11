@@ -141,6 +141,7 @@ func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
 		Assigner:    t.Assigner,
 		Labeler:     t.Labeler,
 		Reviewer:    t.Reviewer,
+		Status:      uint32(t.Status),
 		CreatedAt:   clock.UnixMillisecondFromTime(t.CreatedAt),
 	}
 }

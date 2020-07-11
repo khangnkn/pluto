@@ -68,6 +68,7 @@ type TaskResponse struct {
 	Assigner    uint64 `json:"assigner"`
 	Labeler     uint64 `json:"labeler"`
 	Reviewer    uint64 `json:"reviewer"`
+	Status      uint32 `json:"status"`
 	CreatedAt   int64  `json:"created_at"`
 }
 

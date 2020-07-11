@@ -86,6 +86,7 @@ func (r *dbRepository) CreateTask(title, description string, assigner, labeler, 
 		Assigner:    assigner,
 		Labeler:     labeler,
 		Reviewer:    reviewer,
+		Status:      Labeling,
 	}
 	err := r.db.Create(&t).Error
 	if err != nil {
