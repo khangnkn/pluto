@@ -1,6 +1,9 @@
 package labelapi
 
-import "github.com/nkhang/pluto/internal/label"
+import (
+	"github.com/nkhang/pluto/internal/label"
+	"github.com/nkhang/pluto/pkg/errors"
+)
 
 type Repository interface {
 	GetByProject(pID uint64) ([]LabelResponse, error)
@@ -29,6 +32,16 @@ func (r *repository) GetByProject(pID uint64) ([]LabelResponse, error) {
 	return responses, nil
 }
 
-func (r *repository) CreateLabel(req CreateLabelRequest) error {
-	return r.repository.CreateLabel(req.Name, req.Color, req.ProjectID, req.ToolID)
+func (r *repository) CreateLabel(request CreateLabelRequest) error {
+	errs := make([]error, 0)
+	for _, req := range request.Labels {
+		err := r.repository.CreateLabel(req.Name, req.Color, request.ProjectID, req.ToolID)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) != 0 {
+		return errors.LabelCannotCreate.NewWithMessage("cannot create labels")
+	}
+	return nil
 }

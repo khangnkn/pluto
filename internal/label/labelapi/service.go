@@ -46,10 +46,10 @@ func (s *service) getByProjectID(c *gin.Context) ginwrapper.Response {
 
 func (s *service) create(c *gin.Context) ginwrapper.Response {
 	var req CreateLabelRequest
-	if err := c.ShouldBind(&req); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error("error binding request", err)
 		return ginwrapper.Response{
-			Error: errors.BadRequest.NewWithMessageF("error binding request. error %d", err),
+			Error: errors.BadRequest.NewWithMessageF("error binding request. error %v", err),
 		}
 	}
 	if err := s.repository.CreateLabel(req); err != nil {

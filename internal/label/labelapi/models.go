@@ -10,10 +10,14 @@ type LabelRequest struct {
 }
 
 type CreateLabelRequest struct {
-	ProjectID uint64 `form:"project_id" binding:"required"`
-	Name      string `form:"name" binding:"required"`
-	Color     string `form:"color" binding:"required"`
-	ToolID    uint64 `form:"tool_id" binding:"required"`
+	ProjectID uint64              `json:"project_id" form:"project_id" binding:"required"`
+	Labels    []CreateLabelObject `json:"labels" form:"labels"`
+}
+
+type CreateLabelObject struct {
+	Name   string `form:"name" binding:"required"`
+	Color  string `form:"color" binding:"required"`
+	ToolID uint64 `form:"tool_id" binding:"required"`
 }
 
 type LabelResponse struct {
