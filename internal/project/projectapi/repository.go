@@ -3,6 +3,8 @@ package projectapi
 import (
 	"encoding/json"
 
+	"github.com/nkhang/pluto/pkg/util/clock"
+
 	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
 
 	"github.com/nkhang/pluto/internal/dataset"
@@ -14,8 +16,9 @@ import (
 
 type Repository interface {
 	GetByID(pID uint64) (ProjectResponse, error)
-	GetList(p GetProjectParam) ([]ProjectResponse, int, error)
-	Create(p CreateProjectParams) (ProjectResponse, error)
+	GetList(p GetProjectRequest) ([]ProjectResponse, int, error)
+	GetPermissions(projectID uint64, request GetPermissionsRequest) (PermissionResponse, error)
+	Create(p CreateProjectRequest) (ProjectResponse, error)
 	CreatePerm(p CreatePermParams) error
 	UpdateProject(id uint64, request UpdateProjectRequest) (ProjectResponse, error)
 	DeleteProject(id uint64) error
@@ -43,7 +46,7 @@ func (r *repository) GetByID(pID uint64) (ProjectResponse, error) {
 	return r.convertResponse(p), nil
 }
 
-func (r *repository) GetList(p GetProjectParam) (responses []ProjectResponse, total int, err error) {
+func (r *repository) GetList(p GetProjectRequest) (responses []ProjectResponse, total int, err error) {
 	offset, limit := paging.Parse(p.Page, p.PageSize)
 	var projects []project.Project
 	switch p.Source {
@@ -80,7 +83,23 @@ func (r *repository) GetList(p GetProjectParam) (responses []ProjectResponse, to
 	return responses, total, nil
 }
 
-func (r *repository) Create(p CreateProjectParams) (ProjectResponse, error) {
+func (r *repository) GetPermissions(projectID uint64, request GetPermissionsRequest) (PermissionResponse, error) {
+	offset, limit := paging.Parse(request.Page, request.PageSize)
+	perms, total, err := r.repository.GetProjectPermissions(projectID, project.Any, offset, limit)
+	if err != nil {
+		return PermissionResponse{}, err
+	}
+	var responses = make([]PermissionObject, len(perms))
+	for i := range perms {
+		responses[i] = convertPermissionObject(perms[i])
+	}
+	return PermissionResponse{
+		Total:   total,
+		Members: responses,
+	}, nil
+}
+
+func (r *repository) Create(p CreateProjectRequest) (ProjectResponse, error) {
 	project, err := r.repository.CreateProject(p.WorkspaceID, p.Title, p.Desc, p.Color)
 	if err != nil {
 		return ProjectResponse{}, err
@@ -143,5 +162,13 @@ func (r *repository) convertResponse(p project.Project) ProjectResponse {
 		DatasetCount: datasetCount,
 		MemberCount:  totalPerms,
 		Workspace:    w,
+	}
+}
+
+func convertPermissionObject(perm project.Permission) PermissionObject {
+	return PermissionObject{
+		CreatedAt: clock.UnixMillisecondFromTime(perm.CreatedAt),
+		UserID:    perm.UserID,
+		Role:      perm.Role,
 	}
 }

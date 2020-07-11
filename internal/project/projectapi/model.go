@@ -1,6 +1,9 @@
 package projectapi
 
-import "github.com/nkhang/pluto/internal/workspace/workspaceapi"
+import (
+	"github.com/nkhang/pluto/internal/project"
+	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
+)
 
 const (
 	SrcAllProject = iota + 1
@@ -9,15 +12,15 @@ const (
 	SrcAllProjectInWorkspace
 )
 
-type GetProjectParam struct {
+type GetProjectRequest struct {
 	WorkspaceID uint64 `form:"workspace_id"`
 	Page        int    `form:"page" binding:"required"`
 	PageSize    int    `form:"page_size" binding:"required"`
 	Source      int    `form:"src" binding:"required"`
-	UserID      uint64 `form:"userid"`
+	UserID      uint64 `form:"user_id"`
 }
 
-type CreateProjectParams struct {
+type CreateProjectRequest struct {
 	WorkspaceID uint64 `form:"workspace_id" json:"workspace_id" binding:"required"`
 	Title       string `form:"title" json:"title"`
 	Desc        string `form:"desc" json:"desc"`
@@ -54,4 +57,20 @@ type ProjectResponse struct {
 type GetProjectResponse struct {
 	Total    int               `json:"total"`
 	Projects []ProjectResponse `json:"projects"`
+}
+
+type GetPermissionsRequest struct {
+	Page     int `form:"page" binding:"required"`
+	PageSize int `form:"page_size" binding:"required"`
+}
+
+type PermissionObject struct {
+	CreatedAt int64        `json:"created_at"`
+	UserID    uint64       `json:"user_id"`
+	Role      project.Role `json:"role"`
+}
+
+type PermissionResponse struct {
+	Total   int                `json:"total"`
+	Members []PermissionObject `json:"members"`
 }
