@@ -91,7 +91,7 @@ func (s *service) create(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.Wrap(err, "cannot bind request params"),
 		}
 	}
-	err := s.repository.Create(req)
+	resp, err := s.repository.Create(req)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -99,6 +99,7 @@ func (s *service) create(c *gin.Context) ginwrapper.Response {
 	}
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("success"),
+		Data:  resp,
 	}
 }
 

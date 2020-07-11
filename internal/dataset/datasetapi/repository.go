@@ -30,7 +30,7 @@ func (r *repository) GetByID(dID uint64) (DatasetResponse, error) {
 	if err != nil {
 		return DatasetResponse{}, err
 	}
-	return ToDatasetResponse(d), nil
+	return r.ToDatasetResponse(d), nil
 }
 
 func (r *repository) GetByProjectID(pID uint64) ([]DatasetResponse, error) {
@@ -40,7 +40,7 @@ func (r *repository) GetByProjectID(pID uint64) ([]DatasetResponse, error) {
 	}
 	responses := make([]DatasetResponse, len(datasets))
 	for i := range datasets {
-		responses[i] = ToDatasetResponse(datasets[i])
+		responses[i] = r.ToDatasetResponse(datasets[i])
 	}
 	return responses, nil
 }
@@ -50,7 +50,7 @@ func (r *repository) CreateDataset(title, description string, pID uint64) (Datas
 	if err != nil {
 		return DatasetResponse{}, err
 	}
-	return ToDatasetResponse(d), nil
+	return r.ToDatasetResponse(d), nil
 }
 
 func (r *repository) CloneDataset(projectID uint64, datasetID uint64) (DatasetResponse, error) {
@@ -81,5 +81,5 @@ func (r *repository) CloneDataset(projectID uint64, datasetID uint64) (DatasetRe
 		}()
 		return DatasetResponse{}, err
 	}
-	return ToDatasetResponse(cloned), nil
+	return r.ToDatasetResponse(cloned), nil
 }

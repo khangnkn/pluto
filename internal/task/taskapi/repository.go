@@ -134,14 +134,22 @@ func (r *repository) UpdateTaskDetail(taskID, detailID uint64, request UpdateTas
 }
 
 func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
+	var imageCount int
+	imgs, err := r.imgRepo.GetAllImageByDataset(t.DatasetID)
+	if err == nil {
+		imageCount = len(imgs)
+	}
 	return TaskResponse{
 		ID:          t.ID,
 		Title:       t.Title,
 		Description: t.Description,
+		DatasetID:   t.DatasetID,
+		ProjectID:   t.ProjectID,
 		Assigner:    t.Assigner,
 		Labeler:     t.Labeler,
 		Reviewer:    t.Reviewer,
 		Status:      uint32(t.Status),
+		ImageCount:  imageCount,
 		CreatedAt:   clock.UnixMillisecondFromTime(t.CreatedAt),
 	}
 }

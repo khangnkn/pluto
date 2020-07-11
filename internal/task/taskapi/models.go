@@ -65,10 +65,13 @@ type TaskResponse struct {
 	ID          uint64 `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
+	DatasetID   uint64 `json:"dataset_id"`
+	ProjectID   uint64 `json:"project_id"`
 	Assigner    uint64 `json:"assigner"`
 	Labeler     uint64 `json:"labeler"`
 	Reviewer    uint64 `json:"reviewer"`
 	Status      uint32 `json:"status"`
+	ImageCount  int    `json:"image_count"`
 	CreatedAt   int64  `json:"created_at"`
 }
 

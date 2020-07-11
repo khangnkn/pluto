@@ -15,7 +15,7 @@ import (
 type Repository interface {
 	GetByID(pID uint64) (ProjectResponse, error)
 	GetList(p GetProjectParam) ([]ProjectResponse, int, error)
-	Create(p CreateProjectParams) error
+	Create(p CreateProjectParams) (ProjectResponse, error)
 	CreatePerm(p CreatePermParams) error
 	UpdateProject(id uint64, request UpdateProjectRequest) (ProjectResponse, error)
 	DeleteProject(id uint64) error
@@ -80,10 +80,10 @@ func (r *repository) GetList(p GetProjectParam) (responses []ProjectResponse, to
 	return responses, total, nil
 }
 
-func (r *repository) Create(p CreateProjectParams) error {
-	_, err := r.repository.CreateProject(p.WorkspaceID, p.Title, p.Desc, p.Color)
+func (r *repository) Create(p CreateProjectParams) (ProjectResponse, error) {
+	project, err := r.repository.CreateProject(p.WorkspaceID, p.Title, p.Desc, p.Color)
 	if err != nil {
-		return err
+		return ProjectResponse{}, err
 	}
 	go func() {
 		err := r.repository.InvalidateProjectsByWorkspaceID(p.WorkspaceID)
@@ -93,7 +93,7 @@ func (r *repository) Create(p CreateProjectParams) error {
 		}
 		logger.Infof("invalidate cache for projects by workspace %d successfully", p.WorkspaceID)
 	}()
-	return nil
+	return r.convertResponse(project), nil
 }
 
 func (r *repository) CreatePerm(p CreatePermParams) error {
