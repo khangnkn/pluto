@@ -21,6 +21,7 @@ type CreateProjectParams struct {
 	WorkspaceID uint64 `form:"workspace_id" json:"workspace_id"`
 	Title       string `form:"title" json:"title"`
 	Desc        string `form:"desc" json:"desc"`
+	Color       string `form:"color" json:"color"`
 }
 
 type UpdateProjectRequest struct {

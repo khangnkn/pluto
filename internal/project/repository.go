@@ -14,7 +14,7 @@ type Repository interface {
 	GetUserPermissions(userID uint64, role Role, offset, limit int) ([]Permission, int, error)
 	GetProjectPermissions(pID uint64) ([]Permission, error)
 	GetPermission(userID, projectID uint64) (Permission, error)
-	CreateProject(wID uint64, title, desc string) (Project, error)
+	CreateProject(wID uint64, title, desc, color string) (Project, error)
 	CreatePermission(projectID, userID uint64, role Role) (Permission, error)
 	InvalidateProjectsByWorkspaceID(id uint64) error
 	InvalidatePermissionForUser(userID uint64) error
@@ -122,9 +122,9 @@ func (r *repository) GetUserPermissions(userID uint64, role Role, offset, limit 
 	return
 }
 
-func (r *repository) CreateProject(wID uint64, title, desc string) (Project, error) {
+func (r *repository) CreateProject(wID uint64, title, desc, color string) (Project, error) {
 	uid := uuid.NewV4().String()
-	return r.disk.CreateProject(wID, title, desc, uid)
+	return r.disk.CreateProject(wID, title, desc, color, uid)
 }
 
 func (r *repository) GetProjectPermissions(pID uint64) ([]Permission, error) {

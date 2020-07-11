@@ -1,9 +1,6 @@
 package project
 
 import (
-	"math/rand"
-	"time"
-
 	"github.com/jinzhu/gorm"
 	"github.com/nkhang/pluto/pkg/logger"
 
@@ -16,7 +13,7 @@ type DBRepository interface {
 	GetProjectPermissions(pID uint64) ([]Permission, error)
 	GetUserPermissions(userID uint64, role Role, offset, limit int) ([]Permission, int, error)
 	GetPermission(userID, projectID uint64) (Permission, error)
-	CreateProject(wID uint64, title, desc, uid string) (Project, error)
+	CreateProject(wID uint64, title, desc, color, uid string) (Project, error)
 	CreatePermission(projectID, userID uint64, role Role) (Permission, error)
 	UpdateProject(ProjectID uint64, changes map[string]interface{}) (Project, error)
 	Delete(id uint64) error
@@ -57,16 +54,14 @@ func (r *dbRepository) GetByWorkspaceID(wID uint64, offset, limit int) ([]Projec
 	return projects, total, nil
 }
 
-func (r *dbRepository) CreateProject(wID uint64, title, desc, uid string) (Project, error) {
-	rand.Seed(time.Now().Unix())
-	index := rand.Int()
+func (r *dbRepository) CreateProject(wID uint64, title, desc, color, uid string) (Project, error) {
 	var p = Project{
 		WorkspaceID: wID,
 		Title:       title,
 		Description: desc,
 		Dir:         uid,
 		Thumbnail:   defaultImage,
-		Color:       Color[index%len(Color)],
+		Color:       color,
 	}
 	err := r.db.Create(&p).Error
 	if err != nil {

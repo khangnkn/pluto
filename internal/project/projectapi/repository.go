@@ -81,7 +81,7 @@ func (r *repository) GetList(p GetProjectParam) (responses []ProjectResponse, to
 }
 
 func (r *repository) Create(p CreateProjectParams) error {
-	_, err := r.repository.CreateProject(p.WorkspaceID, p.Title, p.Desc)
+	_, err := r.repository.CreateProject(p.WorkspaceID, p.Title, p.Desc, p.Color)
 	if err != nil {
 		return err
 	}
