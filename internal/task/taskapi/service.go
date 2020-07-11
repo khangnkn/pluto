@@ -23,7 +23,9 @@ func NewService(r Repository) *service {
 }
 
 func (s *service) Register(router gin.IRouter) {
+	router.GET("", ginwrapper.Wrap(s.get))
 	router.POST("/", ginwrapper.Wrap(s.createTask))
+	router.DELETE("/:"+fieldTaskID, ginwrapper.Wrap(s.delete))
 	router.PUT("/:"+fieldTaskID+"/details/:"+fieldTaskDetailID, ginwrapper.Wrap(s.updateTaskDetail))
 	router.GET("/:"+fieldTaskID+"/details", ginwrapper.Wrap(s.getTaskDetails))
 }
@@ -36,6 +38,44 @@ func (s *service) createTask(c *gin.Context) ginwrapper.Response {
 		}
 	}
 	err := s.repository.CreateTask(req)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+	}
+}
+
+func (s *service) get(c *gin.Context) ginwrapper.Response {
+	var request GetTasksRequest
+	if err := c.ShouldBindQuery(&request); err != nil {
+		logger.Error(err)
+		return ginwrapper.Response{
+			Error: errors.BadRequest.NewWithMessage("error binding get tasks request"),
+		}
+	}
+	response, err := s.repository.GetTasks(request)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+		Data:  response,
+	}
+}
+
+func (s *service) delete(c *gin.Context) ginwrapper.Response {
+	id, err := idextractor.ExtractUint64Param(c, fieldTaskID)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	err = s.repository.DeleteTask(id)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,

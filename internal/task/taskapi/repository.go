@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/nkhang/pluto/pkg/util/clock"
+
 	"github.com/nkhang/pluto/pkg/errors"
 
 	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
@@ -19,7 +21,9 @@ import (
 )
 
 type Repository interface {
+	GetTasks(request GetTasksRequest) (response GetTaskResponse, err error)
 	CreateTask(request CreateTaskRequest) error
+	DeleteTask(taskID uint64) error
 	GetTaskDetails(request GetTaskDetailsRequest) ([]TaskDetailResponse, error)
 	UpdateTaskDetail(taskID, detailID uint64, request UpdateTaskDetailRequest) (TaskDetailResponse, error)
 }
@@ -36,6 +40,45 @@ func NewRepository(r task.Repository, ir image.Repository) *repository {
 	}
 }
 
+func (r *repository) GetTasks(request GetTasksRequest) (response GetTaskResponse, err error) {
+	offset, limit := paging.Parse(request.Page, request.PageSize)
+	var (
+		tasks = make([]task.Task, 0)
+		total int
+	)
+
+	switch request.Source {
+	case SrcAllTasks:
+		tasks, total, err = r.repository.GetTasksByUser(request.UserID, task.AnyRole, task.Any, offset, limit)
+		if err != nil {
+			return GetTaskResponse{}, err
+		}
+	case SrcLabelingTasks:
+		tasks, total, err = r.repository.GetTasksByUser(request.UserID, task.Labeler, task.Any, offset, limit)
+		if err != nil {
+			return GetTaskResponse{}, err
+		}
+	case SrcReviewingTasks:
+		tasks, total, err = r.repository.GetTasksByUser(request.UserID, task.Reviewer, task.Any, offset, limit)
+		if err != nil {
+			return GetTaskResponse{}, err
+		}
+	case SrcProjectTasks:
+		tasks, total, err = r.repository.GetTasksByProject(request.ProjectID, task.Any, offset, limit)
+		if err != nil {
+			return GetTaskResponse{}, err
+		}
+	}
+	responses := make([]TaskResponse, len(tasks))
+	for i := range tasks {
+		responses[i] = r.ToTaskResponse(tasks[i])
+	}
+	return GetTaskResponse{
+		Total: total,
+		Tasks: responses,
+	}, nil
+}
+
 func (r *repository) CreateTask(request CreateTaskRequest) error {
 	imgs, err := r.imgRepo.GetAllImageByDataset(request.DatasetID)
 	if err != nil {
@@ -49,7 +92,7 @@ func (r *repository) CreateTask(request CreateTaskRequest) error {
 		for j := range truncated {
 			ids[j] = truncated[j].ID
 		}
-		err := r.repository.CreateTask(request.Assigner, pair.Labeler, pair.Reviewer, request.DatasetID, ids)
+		err := r.repository.CreateTask(request.Title, request.Description, request.Assigner, pair.Labeler, pair.Reviewer, request.ProjectID, request.DatasetID, ids)
 		if err != nil {
 			errs = append(errs, err)
 		}
@@ -59,6 +102,10 @@ func (r *repository) CreateTask(request CreateTaskRequest) error {
 	}
 	msg := fmt.Sprintf("failed to create %d tasks", len(errs))
 	return errors.TaskCannotCreate.NewWithMessage(msg)
+}
+
+func (r *repository) DeleteTask(taskID uint64) error {
+	return r.repository.DeleteTask(taskID)
 }
 
 func (r *repository) GetTaskDetails(request GetTaskDetailsRequest) ([]TaskDetailResponse, error) {
@@ -84,6 +131,18 @@ func (r *repository) UpdateTaskDetail(taskID, detailID uint64, request UpdateTas
 	}
 	return ToTaskDetailResponse(detail), nil
 
+}
+
+func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
+	return TaskResponse{
+		ID:          t.ID,
+		Title:       t.Title,
+		Description: t.Description,
+		Assigner:    t.Assigner,
+		Labeler:     t.Labeler,
+		Reviewer:    t.Reviewer,
+		CreatedAt:   clock.UnixMillisecondFromTime(t.CreatedAt),
+	}
 }
 
 func pushTaskMessage() PushTaskMessage {

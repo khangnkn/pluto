@@ -10,11 +10,33 @@ import (
 )
 
 type CreateTaskRequest struct {
-	ProjectID uint64         `json:"project_id" form:"project_id"`
-	DatasetID uint64         `json:"dataset_id" form:"dataset_id" binding:"required"`
-	Assigner  uint64         `json:"assigner" form:"assigner" binding:"required"`
-	Quantity  int            `json:"quantity" form:"quantity" binding:"required"`
-	Assignees []AssigneePair `json:"assignees" form:"assignees" binding:"required"`
+	Title       string         `json:"title" form:"title"`
+	Description string         `json:"description" form:"description"`
+	ProjectID   uint64         `json:"project_id" form:"project_id" binding:"required"`
+	DatasetID   uint64         `json:"dataset_id" form:"dataset_id" binding:"required"`
+	Assigner    uint64         `json:"assigner" form:"assigner" binding:"required"`
+	Quantity    int            `json:"quantity" form:"quantity" binding:"required"`
+	Assignees   []AssigneePair `json:"assignees" form:"assignees" binding:"required"`
+}
+
+const (
+	SrcAllTasks uint32 = iota + 1
+	SrcLabelingTasks
+	SrcReviewingTasks
+	SrcProjectTasks
+)
+
+type GetTasksRequest struct {
+	ProjectID uint64 `json:"project_id" form:"project_id" binding:"required"`
+	UserID    uint64 `json:"user_id" form:"user_id"`
+	Source    uint32 `json:"src" form:"src" binding:"required"`
+	Page      int    `json:"page" form:"page"`
+	PageSize  int    `json:"page_size" form:"page_size"`
+}
+
+type GetTaskResponse struct {
+	Total int            `json:"total"`
+	Tasks []TaskResponse `json:"tasks"`
 }
 
 type AssigneePair struct {
@@ -46,7 +68,7 @@ type TaskResponse struct {
 	Assigner    uint64 `json:"assigner"`
 	Labeler     uint64 `json:"labeler"`
 	Reviewer    uint64 `json:"reviewer"`
-	CreatedAt   uint64 `json:"created_at"`
+	CreatedAt   int64  `json:"created_at"`
 }
 
 type PushTaskMessage struct {

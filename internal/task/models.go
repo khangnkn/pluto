@@ -7,12 +7,28 @@ import (
 )
 
 type DetailStatus uint32
+type Status uint32
+type Role uint32
+
+const (
+	AnyRole Role = iota
+	Labeler
+	Reviewer
+)
 
 const (
 	Unassigned DetailStatus = iota
 	Draft
 	Labeled
 	Reviewed
+)
+
+const (
+	Any Status = iota
+	Labeling
+	Reviewing
+	Approved
+	Rejected
 )
 
 var DetailStatusMap = map[DetailStatus]string{
@@ -26,10 +42,12 @@ type Task struct {
 	gorm.Model
 	Title       string
 	Description string
+	ProjectID   uint64
 	DatasetID   uint64
 	Assigner    uint64
 	Labeler     uint64
 	Reviewer    uint64
+	Status      Status
 }
 
 type Detail struct {
