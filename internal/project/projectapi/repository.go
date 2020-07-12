@@ -17,7 +17,7 @@ import (
 type Repository interface {
 	GetByID(pID uint64) (ProjectResponse, error)
 	GetList(p GetProjectRequest) ([]ProjectResponse, int, error)
-	GetPermissions(projectID uint64, request GetPermissionsRequest) (PermissionResponse, error)
+	GetPermissions(projectID uint64) (PermissionResponse, error)
 	Create(p CreateProjectRequest) (ProjectResponse, error)
 	CreatePerm(p CreatePermParams) error
 	UpdateProject(id uint64, request UpdateProjectRequest) (ProjectResponse, error)
@@ -83,9 +83,8 @@ func (r *repository) GetList(p GetProjectRequest) (responses []ProjectResponse, 
 	return responses, total, nil
 }
 
-func (r *repository) GetPermissions(projectID uint64, request GetPermissionsRequest) (PermissionResponse, error) {
-	offset, limit := paging.Parse(request.Page, request.PageSize)
-	perms, total, err := r.repository.GetProjectPermissions(projectID, project.Any, offset, limit)
+func (r *repository) GetPermissions(projectID uint64) (PermissionResponse, error) {
+	perms, total, err := r.repository.GetProjectPermissions(projectID, project.Any, 0, 0)
 	if err != nil {
 		return PermissionResponse{}, err
 	}

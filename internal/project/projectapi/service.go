@@ -86,19 +86,13 @@ func (s *service) get(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) getPermissions(c *gin.Context) ginwrapper.Response {
-	var req GetPermissionsRequest
 	projectID, err := idextractor.ExtractUint64Param(c, FieldProjectID)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
 		}
 	}
-	if err := c.ShouldBindQuery(&req); err != nil {
-		return ginwrapper.Response{
-			Error: errors.BadRequest.NewWithMessageF("error binding query"),
-		}
-	}
-	resp, err := s.repository.GetPermissions(projectID, req)
+	resp, err := s.repository.GetPermissions(projectID)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,

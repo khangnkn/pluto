@@ -59,11 +59,6 @@ type GetProjectResponse struct {
 	Projects []ProjectResponse `json:"projects"`
 }
 
-type GetPermissionsRequest struct {
-	Page     int `form:"page" binding:"required"`
-	PageSize int `form:"page_size" binding:"required"`
-}
-
 type PermissionObject struct {
 	CreatedAt int64        `json:"created_at"`
 	UserID    uint64       `json:"user_id"`
