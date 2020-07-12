@@ -5,6 +5,7 @@ import (
 	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
+	"github.com/nkhang/pluto/pkg/logger"
 	"github.com/nkhang/pluto/pkg/util/idextractor"
 )
 
@@ -82,6 +83,7 @@ func (s *service) delete(c *gin.Context) ginwrapper.Response {
 			Error: err,
 		}
 	}
+	logger.Infof("delete user %d at workspace %d", userID, workspaceID)
 	err = s.repository.DeletePermission(workspaceID, userID)
 	if err != nil {
 		return ginwrapper.Response{

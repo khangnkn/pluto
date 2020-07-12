@@ -140,11 +140,14 @@ func (r *dbRepository) CreatePermission(workspaceID uint64, userIDs []uint64, ro
 }
 
 func (r *dbRepository) DeletePermission(workspaceID uint64, userID uint64) error {
+	if userID == 0 {
+		return errors.WorkspaceErrorDeleting.NewWithMessage("userID must be different than 0")
+	}
 	var perm = Permission{
 		WorkspaceID: workspaceID,
 		UserID:      userID,
 	}
-	err := r.db.Delete(&perm).Error
+	err := r.db.Where(&perm).Delete(&Permission{}).Error
 	if err != nil {
 		return errors.WorkspacePermissionDeletingError.Wrap(err, "cannot delete user from workspace")
 	}
