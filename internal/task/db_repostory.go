@@ -118,7 +118,7 @@ func (r *dbRepository) AddImages(id uint64, imageIDs []uint64) error {
 	records := make([]interface{}, len(imageIDs))
 	for i := range records {
 		var record = Detail{
-			Status:  Unassigned,
+			Status:  Pending,
 			TaskID:  id,
 			ImageID: imageIDs[i],
 		}

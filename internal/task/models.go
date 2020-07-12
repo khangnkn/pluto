@@ -17,26 +17,19 @@ const (
 )
 
 const (
-	Unassigned DetailStatus = iota
+	Pending DetailStatus = iota
 	Draft
 	Labeled
-	Reviewed
+	Approved
+	Rejected
 )
 
 const (
 	Any Status = iota
 	Labeling
 	Reviewing
-	Approved
-	Rejected
+	Done
 )
-
-var DetailStatusMap = map[DetailStatus]string{
-	Unassigned: "Unassigned",
-	Draft:      "Draft",
-	Labeled:    "Labeled",
-	Reviewed:   "Reviewed",
-}
 
 type Task struct {
 	gorm.Model

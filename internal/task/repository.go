@@ -90,6 +90,7 @@ func (r *repository) GetTasksByProject(projectID uint64, status Status, offset, 
 	err1 := r.cache.Get(specificKey, &tasks)
 	err2 := r.cache.Get(totalKey, &total)
 	if err1 == nil && err2 == nil {
+		logger.Infof("cache hit getting all tasks by projects %d", projectID)
 		return
 	}
 	tasks, total, err = r.dbRepo.GetTasksByProject(projectID, status, offset, limit)

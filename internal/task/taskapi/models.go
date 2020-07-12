@@ -27,7 +27,7 @@ const (
 )
 
 type GetTasksRequest struct {
-	ProjectID uint64 `json:"project_id" form:"project_id" binding:"required"`
+	ProjectID uint64 `json:"project_id" form:"project_id"`
 	UserID    uint64 `json:"user_id" form:"user_id"`
 	Source    uint32 `json:"src" form:"src" binding:"required"`
 	Page      int    `json:"page" form:"page"`
