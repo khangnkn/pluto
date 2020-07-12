@@ -3,12 +3,13 @@ package task
 import (
 	"github.com/nkhang/pluto/internal/rediskey"
 	"github.com/nkhang/pluto/pkg/cache"
+	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/logger"
 )
 
 type Repository interface {
 	GetTask(taskID uint64) (Task, error)
-	CreateTask(title, description string, assigner, labeler, reviewer, projectID, datasetID uint64, images []uint64) error
+	CreateTask(title, description string, assigner, labeler, reviewer, projectID, datasetID uint64, images []uint64) (Task, error)
 	GetTasksByUser(userID uint64, role Role, status Status, offset, limit int) (tasks []Task, total int, err error)
 	GetTasksByProject(projectID uint64, status Status, offset, limit int) (tasks []Task, total int, err error)
 	DeleteTask(taskID uint64) error
@@ -46,10 +47,10 @@ func (r *repository) GetTask(taskID uint64) (task Task, err error) {
 	return
 }
 
-func (r *repository) CreateTask(title, description string, assigner, labeler, reviewer, projectID, datasetID uint64, images []uint64) error {
+func (r *repository) CreateTask(title, description string, assigner, labeler, reviewer, projectID, datasetID uint64, images []uint64) (Task, error) {
 	task, err := r.dbRepo.CreateTask(title, description, assigner, labeler, reviewer, projectID, datasetID)
 	if err != nil {
-		return err
+		return Task{}, err
 	}
 	go func() {
 		r.InvalidateForUser(labeler)
@@ -64,7 +65,10 @@ func (r *repository) CreateTask(title, description string, assigner, labeler, re
 			}
 		}
 	}()
-	return r.dbRepo.AddImages(task.ID, images)
+	if err := r.dbRepo.AddImages(task.ID, images); err != nil {
+		return Task{}, errors.TaskCannotCreate.NewWithMessage("task created, but images not add properly")
+	}
+	return task, nil
 }
 
 func (r *repository) GetTasksByUser(userID uint64, role Role, status Status, offset, limit int) (tasks []Task, total int, err error) {

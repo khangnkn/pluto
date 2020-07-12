@@ -168,7 +168,11 @@ func (r *repository) UpdateWorkspace(workspaceID uint64, changes map[string]inte
 }
 
 func (r *repository) CreatePermission(workspaceID uint64, userIDs []uint64, role Role) error {
-	err := r.dbRepo.CreatePermission(workspaceID, userIDs, role)
+	_, err := r.dbRepo.Get(workspaceID)
+	if errors.Type(err) == errors.WorkspaceNotFound {
+		return err
+	}
+	err = r.dbRepo.CreatePermission(workspaceID, userIDs, role)
 	if err != nil {
 		return err
 	}

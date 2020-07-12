@@ -108,6 +108,6 @@ func WorkspacesPermissionByWorkspaceID(workspaceID uint64, role int32, offset, l
 		fmt.Sprintf("pluto:workspaces:permission:workspace:%d:role:%d:total", workspaceID, role)
 }
 
-func WorkspacesPermissionByWorkspaceIDPattern(userID uint64) string {
-	return fmt.Sprintf("pluto:workspaces:permisson:workspace:%d:*", userID)
+func WorkspacesPermissionByWorkspaceIDPattern(workspaceID uint64) string {
+	return fmt.Sprintf("pluto:workspaces:permission:workspace:%d:*", workspaceID)
 }

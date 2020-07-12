@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/nkhang/pluto/pkg/annotation"
+
 	"github.com/nkhang/pluto/pkg/logger"
 
 	"github.com/nkhang/pluto/pkg/util/clock"
@@ -32,21 +34,24 @@ type Repository interface {
 }
 
 type repository struct {
-	repository  task.Repository
-	imgRepo     image.Repository
-	datasetRepo datasetapi.Repository
-	projectRepo projectapi.Repository
+	repository        task.Repository
+	imgRepo           image.Repository
+	datasetRepo       datasetapi.Repository
+	projectRepo       projectapi.Repository
+	annotationService annotation.Service
 }
 
 func NewRepository(r task.Repository,
 	ir image.Repository,
 	datasetRepo datasetapi.Repository,
-	projectRepo projectapi.Repository) *repository {
+	projectRepo projectapi.Repository,
+	annotationService annotation.Service) *repository {
 	return &repository{
-		repository:  r,
-		imgRepo:     ir,
-		datasetRepo: datasetRepo,
-		projectRepo: projectRepo,
+		repository:        r,
+		imgRepo:           ir,
+		datasetRepo:       datasetRepo,
+		projectRepo:       projectRepo,
+		annotationService: annotationService,
 	}
 }
 
@@ -104,15 +109,23 @@ func (r *repository) CreateTask(request CreateTaskRequest) error {
 	}
 	var errs = make([]error, 0)
 	var cursor = 0
+	var tasks = make([]task.Task, 0)
 	for _, pair := range request.Assignees {
 		truncated := truncate(imgs, &cursor, request.Quantity)
 		ids := make([]uint64, len(truncated))
 		for j := range truncated {
 			ids[j] = truncated[j].ID
 		}
-		err := r.repository.CreateTask(request.Title, request.Description, request.Assigner, pair.Labeler, pair.Reviewer, request.ProjectID, request.DatasetID, ids)
+		task, err := r.repository.CreateTask(request.Title, request.Description, request.Assigner, pair.Labeler, pair.Reviewer, request.ProjectID, request.DatasetID, ids)
 		if err != nil {
 			errs = append(errs, err)
+		}
+		tasks = append(tasks, task)
+	}
+	if len(tasks) != 0 {
+		err := r.annotationService.CreateTask(request.ProjectID, request.DatasetID, tasks)
+		if err != nil {
+			logger.Error(err)
 		}
 	}
 	if len(errs) == 0 {

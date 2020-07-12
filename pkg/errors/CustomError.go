@@ -7,7 +7,10 @@ type CustomError struct {
 }
 
 func (ce CustomError) Error() string {
-	return ce.Message + " >> " + ce.RootCause.Error()
+	if ce.RootCause != nil {
+		return ce.Message + " >> " + ce.RootCause.Error()
+	}
+	return ce.Message
 }
 
 func (ce CustomError) BareError() string {

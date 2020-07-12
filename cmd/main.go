@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/nkhang/pluto/internal/fx/taskfx"
+	"github.com/nkhang/pluto/pkg/fx/annotationfx"
 	"go.uber.org/fx"
 
 	"github.com/nkhang/pluto/internal/fx/datasetfx"
@@ -29,6 +30,7 @@ func main() {
 		datasetfx.Module,
 		projectfx.Module,
 		workspacefx.Module,
+		annotationfx.Module,
 		storagefx.Module,
 		ginfx.Module,
 		fx.Invoke(initializer),

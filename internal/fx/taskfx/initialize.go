@@ -7,6 +7,7 @@ import (
 	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/internal/task"
 	"github.com/nkhang/pluto/internal/task/taskapi"
+	"github.com/nkhang/pluto/pkg/annotation"
 	"github.com/nkhang/pluto/pkg/cache"
 	pgin "github.com/nkhang/pluto/pkg/gin"
 )
@@ -19,8 +20,8 @@ func provideTaskRepo(dbRepo task.DBRepository, cacheRepo cache.Cache) task.Repos
 	return task.NewRepository(dbRepo, cacheRepo)
 }
 
-func provideAPIRepo(r task.Repository, ir image.Repository, datasetRepo datasetapi.Repository, projectRepo projectapi.Repository) taskapi.Repository {
-	return taskapi.NewRepository(r, ir, datasetRepo, projectRepo)
+func provideAPIRepo(r task.Repository, ir image.Repository, datasetRepo datasetapi.Repository, projectRepo projectapi.Repository, annotationService annotation.Service) taskapi.Repository {
+	return taskapi.NewRepository(r, ir, datasetRepo, projectRepo, annotationService)
 }
 
 func provideService(r taskapi.Repository) pgin.IEngine {
