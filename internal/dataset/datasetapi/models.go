@@ -9,9 +9,9 @@ type GetDatasetRequest struct {
 	ProjectID uint64 `json:"project_id" form:"project_id"`
 }
 type CreateDatasetRequest struct {
-	Title       string `form:"title"`
-	Description string `form:"description"`
-	ProjectID   uint64 `form:"project_id"`
+	Title       string `form:"title" json:"title"`
+	Description string `form:"description" json:"description"`
+	ProjectID   uint64 `form:"project_id" json:"project_id"`
 }
 
 type CloneDatasetRequest struct {

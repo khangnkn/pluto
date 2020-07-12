@@ -14,7 +14,7 @@ func initializer() (*gin.Engine, gin.IRouter) {
 	e := gin.Default()
 	conf := cors.DefaultConfig()
 	conf.AllowOrigins = append(conf.AllowOrigins, "http://localhost:3000")
-	conf.AllowCredentials = true
+	//conf.AllowCredentials = true
 	conf.AllowFiles = true
 	conf.AddAllowHeaders("Authorization")
 	e.Use(cors.New(conf))
