@@ -15,7 +15,10 @@ func provideRepository(db *gorm.DB, c cache.Cache) dataset.Repository {
 	return dataset.NewRepository(dbRepo, c)
 }
 
-func provideService(r dataset.Repository, imgRepo image.Repository) gin.IEngine {
-	repository := datasetapi.NewRepository(r, imgRepo)
+func provideAPIRepo(r dataset.Repository, imgRepo image.Repository) datasetapi.Repository {
+	return datasetapi.NewRepository(r, imgRepo)
+}
+
+func provideService(repository datasetapi.Repository) gin.IEngine {
 	return datasetapi.NewService(repository)
 }

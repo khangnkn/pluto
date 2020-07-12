@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/nkhang/pluto/pkg/logger"
+
 	"github.com/nkhang/pluto/pkg/util/clock"
 
 	"github.com/nkhang/pluto/pkg/errors"
@@ -22,6 +24,7 @@ import (
 
 type Repository interface {
 	GetTasks(request GetTasksRequest) (response GetTaskResponse, err error)
+	GetTask(taskID uint64) (TaskResponse, error)
 	CreateTask(request CreateTaskRequest) error
 	DeleteTask(taskID uint64) error
 	GetTaskDetails(request GetTaskDetailsRequest) ([]TaskDetailResponse, error)
@@ -29,15 +32,30 @@ type Repository interface {
 }
 
 type repository struct {
-	repository task.Repository
-	imgRepo    image.Repository
+	repository  task.Repository
+	imgRepo     image.Repository
+	datasetRepo datasetapi.Repository
+	projectRepo projectapi.Repository
 }
 
-func NewRepository(r task.Repository, ir image.Repository) *repository {
+func NewRepository(r task.Repository,
+	ir image.Repository,
+	datasetRepo datasetapi.Repository,
+	projectRepo projectapi.Repository) *repository {
 	return &repository{
-		repository: r,
-		imgRepo:    ir,
+		repository:  r,
+		imgRepo:     ir,
+		datasetRepo: datasetRepo,
+		projectRepo: projectRepo,
 	}
+}
+
+func (r *repository) GetTask(taskID uint64) (TaskResponse, error) {
+	task, err := r.repository.GetTask(taskID)
+	if err != nil {
+		return TaskResponse{}, err
+	}
+	return r.ToTaskResponse(task), nil
 }
 
 func (r *repository) GetTasks(request GetTasksRequest) (response GetTaskResponse, err error) {
@@ -139,12 +157,21 @@ func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
 	if err == nil {
 		imageCount = len(imgs)
 	}
+	dataset, err := r.datasetRepo.GetByID(t.DatasetID)
+	if err != nil {
+		logger.Errorf("cannot get dataset response. error %w", err)
+	}
+	project, err := r.projectRepo.GetByID(t.ProjectID)
+	if err != nil {
+		logger.Info(err)
+		logger.Errorf("cannot get project response. error %v", err)
+	}
 	return TaskResponse{
 		ID:          t.ID,
 		Title:       t.Title,
 		Description: t.Description,
-		DatasetID:   t.DatasetID,
-		ProjectID:   t.ProjectID,
+		Dataset:     dataset,
+		Project:     project,
 		Assigner:    t.Assigner,
 		Labeler:     t.Labeler,
 		Reviewer:    t.Reviewer,

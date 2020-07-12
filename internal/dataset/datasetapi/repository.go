@@ -26,6 +26,7 @@ func NewRepository(r dataset.Repository, imgRepo image.Repository) *repository {
 }
 
 func (r *repository) GetByID(dID uint64) (DatasetResponse, error) {
+	logger.Info("XXX get by id")
 	d, err := r.repository.Get(dID)
 	if err != nil {
 		return DatasetResponse{}, err

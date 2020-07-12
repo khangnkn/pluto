@@ -23,9 +23,10 @@ func NewService(r Repository) *service {
 }
 
 func (s *service) Register(router gin.IRouter) {
-	router.GET("", ginwrapper.Wrap(s.get))
-	router.POST("/", ginwrapper.Wrap(s.createTask))
+	router.GET("", ginwrapper.Wrap(s.getList))
+	router.POST("", ginwrapper.Wrap(s.createTask))
 	router.DELETE("/:"+fieldTaskID, ginwrapper.Wrap(s.delete))
+	router.GET("/:"+fieldTaskID, ginwrapper.Wrap(s.get))
 	router.PUT("/:"+fieldTaskID+"/details/:"+fieldTaskDetailID, ginwrapper.Wrap(s.updateTaskDetail))
 	router.GET("/:"+fieldTaskID+"/details", ginwrapper.Wrap(s.getTaskDetails))
 }
@@ -49,6 +50,25 @@ func (s *service) createTask(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) get(c *gin.Context) ginwrapper.Response {
+	taskID, err := idextractor.ExtractUint64Param(c, fieldTaskID)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	resp, err := s.repository.GetTask(taskID)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+		Data:  resp,
+	}
+}
+
+func (s *service) getList(c *gin.Context) ginwrapper.Response {
 	var request GetTasksRequest
 	if err := c.ShouldBindQuery(&request); err != nil {
 		logger.Error(err)

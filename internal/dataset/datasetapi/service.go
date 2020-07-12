@@ -27,7 +27,7 @@ func (s *service) Register(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getByProjectID))
 	router.GET("/:"+fieldDatasetID, ginwrapper.Wrap(s.getByID))
 	router.POST("/:"+fieldDatasetID+"/clone", ginwrapper.Wrap(s.clone))
-	router.POST("/", ginwrapper.Wrap(s.create))
+	router.POST("", ginwrapper.Wrap(s.create))
 }
 
 func (s *service) getByID(c *gin.Context) ginwrapper.Response {
