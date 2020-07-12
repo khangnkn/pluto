@@ -85,9 +85,14 @@ func (r *repository) CreateDataset(title, description string, pID uint64) (Datas
 }
 
 func (r *repository) DeleteDataset(ID uint64) error {
-	k := rediskey.DatasetByID(ID)
+	d, err := r.Get(ID)
+	if err != nil {
+		return err
+	}
 	go func() {
-		err := r.cacheRepo.Del(k)
+		k := rediskey.DatasetByID(ID)
+		k2 := rediskey.DatasetByProject(d.ProjectID)
+		err := r.cacheRepo.Del(k, k2)
 		if err != nil {
 			logger.Errorf("cannot delete dataset %d from cache", ID)
 		}

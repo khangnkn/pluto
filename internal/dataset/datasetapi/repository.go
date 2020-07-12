@@ -10,6 +10,7 @@ type Repository interface {
 	GetByID(dID uint64) (DatasetResponse, error)
 	GetByProjectID(pID uint64) ([]DatasetResponse, error)
 	CreateDataset(title, description string, pID uint64) (DatasetResponse, error)
+	Delete(id uint64) error
 	CloneDataset(projectID uint64, datasetID uint64) (DatasetResponse, error)
 }
 
@@ -26,7 +27,6 @@ func NewRepository(r dataset.Repository, imgRepo image.Repository) *repository {
 }
 
 func (r *repository) GetByID(dID uint64) (DatasetResponse, error) {
-	logger.Info("XXX get by id")
 	d, err := r.repository.Get(dID)
 	if err != nil {
 		return DatasetResponse{}, err
@@ -83,4 +83,8 @@ func (r *repository) CloneDataset(projectID uint64, datasetID uint64) (DatasetRe
 		return DatasetResponse{}, err
 	}
 	return r.ToDatasetResponse(cloned), nil
+}
+
+func (r *repository) Delete(id uint64) error {
+	return r.repository.DeleteDataset(id)
 }

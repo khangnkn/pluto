@@ -2,6 +2,7 @@ package datasetapi
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/nkhang/pluto/pkg/util/idextractor"
 	"github.com/spf13/cast"
 
 	"github.com/nkhang/pluto/pkg/errors"
@@ -10,7 +11,7 @@ import (
 )
 
 const (
-	fieldDatasetID = "dataset_id"
+	fieldDatasetID = "datasetId"
 )
 
 type service struct {
@@ -26,6 +27,7 @@ func NewService(r Repository) *service {
 func (s *service) Register(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getByProjectID))
 	router.GET("/:"+fieldDatasetID, ginwrapper.Wrap(s.getByID))
+	router.DELETE("/:"+fieldDatasetID, ginwrapper.Wrap(s.del))
 	router.POST("/:"+fieldDatasetID+"/clone", ginwrapper.Wrap(s.clone))
 	router.POST("", ginwrapper.Wrap(s.create))
 }
@@ -112,5 +114,19 @@ func (s *service) clone(c *gin.Context) ginwrapper.Response {
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("success"),
 		Data:  cloned,
+	}
+}
+
+func (s *service) del(c *gin.Context) ginwrapper.Response {
+	id, err := idextractor.ExtractUint64Param(c, fieldDatasetID)
+	if err != nil {
+		return ginwrapper.Response{Error: err}
+	}
+	err = s.repository.Delete(id)
+	if err != nil {
+		return ginwrapper.Response{Error: err}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
 	}
 }

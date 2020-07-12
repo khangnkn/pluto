@@ -140,8 +140,9 @@ func (r *dbRepository) CreatePermission(workspaceID uint64, userIDs []uint64, ro
 }
 
 func (r *dbRepository) DeletePermission(workspaceID uint64, userID uint64) error {
-	if userID == 0 {
-		return errors.WorkspaceErrorDeleting.NewWithMessage("userID must be different than 0")
+	if userID == 0 || workspaceID == 0 {
+		return errors.WorkspaceErrorDeleting.NewWithMessage("userID and workspaceID must be different than 0")
+
 	}
 	var perm = Permission{
 		WorkspaceID: workspaceID,
