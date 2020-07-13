@@ -2,6 +2,8 @@ package task
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/nkhang/pluto/internal/dataset"
+	"github.com/nkhang/pluto/internal/project"
 	"github.com/nkhang/pluto/pkg/errors"
 	gormbulk "github.com/t-tiger/gorm-bulk-insert/v2"
 )
@@ -87,6 +89,13 @@ func (r *dbRepository) CreateTask(title, description string, assigner, labeler, 
 		Labeler:     labeler,
 		Reviewer:    reviewer,
 		Status:      Labeling,
+	}
+	if r.db.First(&project.Project{}, projectID).RecordNotFound() {
+		return Task{}, errors.TaskCannotCreate.NewWithMessage("project not found")
+	}
+	var d dataset.Dataset
+	if r.db.First(&d, datasetID).RecordNotFound() || d.ProjectID != projectID {
+		return Task{}, errors.TaskCannotCreate.NewWithMessage("dataset not found")
 	}
 	err := r.db.Create(&t).Error
 	if err != nil {

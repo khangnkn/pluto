@@ -87,6 +87,9 @@ func (r *repository) GetTasks(request GetTasksRequest) (response GetTaskResponse
 			return GetTaskResponse{}, err
 		}
 	case SrcProjectTasks:
+		if request.ProjectID == 0 {
+			return GetTaskResponse{}, errors.BadRequest.NewWithMessage("project_id is required")
+		}
 		tasks, total, err = r.repository.GetTasksByProject(request.ProjectID, task.Any, offset, limit)
 		if err != nil {
 			return GetTaskResponse{}, err
