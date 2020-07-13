@@ -1,7 +1,6 @@
 package redisfx
 
 import (
-	"log"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -12,7 +11,6 @@ import (
 
 func provideRedisClient() (redis.UniversalClient, error) {
 	addr := viper.GetString("redis.url")
-	log.Print(addr)
 	client := redis.NewClient(&redis.Options{
 		Addr: addr,
 	})
@@ -21,5 +19,6 @@ func provideRedisClient() (redis.UniversalClient, error) {
 }
 
 func provideCacheRepository(client redis.UniversalClient) cache.Cache {
+	client.FlushAll()
 	return cache.New(client, cache.WithExpireTime(time.Hour))
 }

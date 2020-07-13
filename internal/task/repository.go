@@ -54,14 +54,14 @@ func (r *repository) CreateTask(title, description string, assigner, labeler, re
 	go func() {
 		r.InvalidateForUser(labeler)
 		r.InvalidateForUser(reviewer)
-		_, _, pattern1 := rediskey.TaskByProject(projectID, 0, 0, 0)
-		keys, err := r.cache.Keys(pattern1)
+		_, _, pattern := rediskey.TaskByProject(projectID, 0, 0, 0)
+		keys, err := r.cache.Keys(pattern)
 		if err != nil {
+			logger.Errorf("error getting keys for pattern %d. error %v", pattern, err)
+			return
+		}
+		if err := r.cache.Del(keys...); err != nil {
 			logger.Error(err)
-		} else {
-			if err := r.cache.Del(keys...); err != nil {
-				logger.Error(err)
-			}
 		}
 	}()
 	if err := r.dbRepo.AddImages(task.ID, images); err != nil {
@@ -71,20 +71,7 @@ func (r *repository) CreateTask(title, description string, assigner, labeler, re
 }
 
 func (r *repository) GetTasksByUser(userID uint64, role Role, status Status, offset, limit int) (tasks []Task, total int, err error) {
-	taskKey, totalKey, _ := rediskey.TaskByUser(userID, uint32(role), uint32(status), offset, limit)
-	err1 := r.cache.Get(taskKey, &tasks)
-	err2 := r.cache.Get(totalKey, &total)
-	if err1 == nil && err2 == nil {
-		return
-	}
 	tasks, total, err = r.dbRepo.GetTasksByUser(userID, role, status, offset, limit)
-	if err != nil {
-		return
-	}
-	go func() {
-		r.cache.Set(taskKey, &tasks)
-		r.cache.Set(totalKey, &total)
-	}()
 	return
 }
 
@@ -155,4 +142,13 @@ func (r *repository) InvalidateForProject(projectID uint64) {
 	if err != nil {
 		logger.Errorf("error delete keys %v", keys)
 	}
+}
+
+func (r *repository) DeleteTaskByProject(projectID uint64) error {
+	err := r.dbRepo.DeleteTaskByProject(projectID)
+	if err != nil {
+		return err
+	}
+	r.InvalidateForProject(projectID)
+	return nil
 }

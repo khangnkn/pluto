@@ -3,8 +3,6 @@ package label
 import (
 	"fmt"
 
-	"github.com/nkhang/pluto/pkg/logger"
-
 	"github.com/jinzhu/gorm"
 
 	"github.com/nkhang/pluto/pkg/errors"
@@ -27,7 +25,6 @@ func (d *dbRepository) GetByProjectID(projectID uint64) ([]Label, error) {
 	l := make([]Label, 0)
 	query := fmt.Sprint(fieldProjectID, " = ?")
 	err := d.db.Preload("Tool").Where(query, projectID).Find(&l).Error
-	logger.Infof("%+v", l)
 	if err != nil {
 		return nil, errors.LabelQueryError.NewWithMessage("label query error")
 	}

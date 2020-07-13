@@ -2,7 +2,6 @@ package dataset
 
 import (
 	"github.com/nkhang/pluto/internal/rediskey"
-	"github.com/nkhang/pluto/internal/task"
 	"github.com/nkhang/pluto/pkg/cache"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/logger"
@@ -11,7 +10,6 @@ import (
 type Repository DbRepository
 
 type repository struct {
-	tasksRepo task.Repository
 	dbRepo    DbRepository
 	cacheRepo cache.Cache
 }
@@ -103,5 +101,5 @@ func (r *repository) DeleteDataset(ID uint64) error {
 	if err != nil {
 		return err
 	}
-	r.tasksRepo.DeleteTask()
+	return nil
 }

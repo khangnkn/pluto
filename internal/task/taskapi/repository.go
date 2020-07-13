@@ -69,7 +69,6 @@ func (r *repository) GetTasks(request GetTasksRequest) (response GetTaskResponse
 		tasks = make([]task.Task, 0)
 		total int
 	)
-
 	switch request.Source {
 	case SrcAllTasks:
 		tasks, total, err = r.repository.GetTasksByUser(request.UserID, task.AnyRole, task.Any, offset, limit)
@@ -169,17 +168,16 @@ func (r *repository) UpdateTaskDetail(taskID, detailID uint64, request UpdateTas
 
 func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
 	var imageCount int
-	imgs, err := r.imgRepo.GetAllImageByDataset(t.DatasetID)
+	details, err := r.repository.GetTaskDetails(t.ID, 0, 0)
 	if err == nil {
-		imageCount = len(imgs)
+		imageCount = len(details)
 	}
 	dataset, err := r.datasetRepo.GetByID(t.DatasetID)
 	if err != nil {
-		logger.Errorf("cannot get dataset response. error %w", err)
+		logger.Errorf("cannot get dataset response. error %v", err)
 	}
 	project, err := r.projectRepo.GetByID(t.ProjectID)
 	if err != nil {
-		logger.Info(err)
 		logger.Errorf("cannot get project response. error %v", err)
 	}
 	return TaskResponse{
@@ -187,7 +185,8 @@ func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
 		Title:       t.Title,
 		Description: t.Description,
 		Dataset:     dataset,
-		Project:     project,
+		Project:     project.Title,
+		Workspace:   project.Workspace.Title,
 		Assigner:    t.Assigner,
 		Labeler:     t.Labeler,
 		Reviewer:    t.Reviewer,

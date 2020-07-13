@@ -12,5 +12,8 @@ func ExtractUint64Param(c *gin.Context, key string) (uint64, error) {
 	if err != nil {
 		return 0, errors.BadRequest.NewWithMessageF("error getting %s from path", val)
 	}
+	if res == 0 {
+		return 0, errors.BadRequest.NewWithMessageF("field %s must be other than 0", key)
+	}
 	return res, nil
 }

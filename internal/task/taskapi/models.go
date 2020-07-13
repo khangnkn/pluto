@@ -65,14 +65,15 @@ type TaskResponse struct {
 	ID          uint64                     `json:"id"`
 	Title       string                     `json:"title"`
 	Description string                     `json:"description"`
-	Dataset     datasetapi.DatasetResponse `json:"dataset"`
-	Project     projectapi.ProjectResponse `json:"project"`
+	Project     string                     `json:"project"`
+	Workspace   string                     `json:"workspace"`
 	Assigner    uint64                     `json:"assigner"`
 	Labeler     uint64                     `json:"labeler"`
 	Reviewer    uint64                     `json:"reviewer"`
 	Status      uint32                     `json:"status"`
 	ImageCount  int                        `json:"image_count"`
 	CreatedAt   int64                      `json:"created_at"`
+	Dataset     datasetapi.DatasetResponse `json:"dataset"`
 }
 
 type PushTaskMessage struct {

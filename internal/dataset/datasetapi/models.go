@@ -6,7 +6,7 @@ import (
 )
 
 type GetDatasetRequest struct {
-	ProjectID uint64 `json:"project_id" form:"project_id"`
+	ProjectID uint64 `json:"project_id" form:"project_id" binding:"required"`
 }
 type CreateDatasetRequest struct {
 	Title       string `form:"title" json:"title"`
