@@ -99,7 +99,7 @@ func (r *repository) GetPermissions(projectID uint64) (PermissionResponse, error
 }
 
 func (r *repository) Create(p CreateProjectRequest) (ProjectResponse, error) {
-	project, err := r.repository.CreateProject(p.WorkspaceID, p.Title, p.Desc, p.Color)
+	project, err := r.repository.CreateProject(p.WorkspaceID, p.Title, p.Description, p.Color)
 	if err != nil {
 		return ProjectResponse{}, err
 	}
@@ -128,11 +128,11 @@ func (r *repository) UpdateProject(id uint64, request UpdateProjectRequest) (Pro
 	var changes = make(map[string]interface{})
 	b, _ := json.Marshal(&request)
 	_ = json.Unmarshal(b, &changes)
-	w, err := r.repository.UpdateProject(id, changes)
+	project, err := r.repository.UpdateProject(id, changes)
 	if err != nil {
 		return ProjectResponse{}, nil
 	}
-	return r.convertResponse(w), nil
+	return r.convertResponse(project), nil
 }
 
 func (r *repository) DeleteProject(id uint64) error {
@@ -143,24 +143,32 @@ func (r *repository) convertResponse(p project.Project) ProjectResponse {
 	var datasetCount int
 	d, err := r.datasetRepo.GetByProject(p.ID)
 	if err != nil {
-		logger.Error("error getting project by project id")
+		logger.Error("error getting dataset by project id")
 	} else {
 		datasetCount = len(d)
 	}
-	_, totalPerms, err := r.repository.GetProjectPermissions(p.ID, project.Any, 0, 0)
+	var pm uint64
+	perms, totalPerms, err := r.repository.GetProjectPermissions(p.ID, project.Any, 0, 0)
 	if err != nil {
 		logger.Error("error getting project perm")
 	}
+	for i := range perms {
+		if perms[i].Role == project.Manager {
+			pm = perms[i].UserID
+			break
+		}
+	}
 	w, _ := r.workspaceRepo.GetByID(p.WorkspaceID)
 	return ProjectResponse{
-		ID:           p.ID,
-		Title:        p.Title,
-		Description:  p.Description,
-		Thumbnail:    p.Thumbnail,
-		Color:        p.Color,
-		DatasetCount: datasetCount,
-		MemberCount:  totalPerms,
-		Workspace:    w,
+		ID:             p.ID,
+		Title:          p.Title,
+		Description:    p.Description,
+		Thumbnail:      p.Thumbnail,
+		Color:          p.Color,
+		DatasetCount:   datasetCount,
+		MemberCount:    totalPerms,
+		Workspace:      w,
+		ProjectManager: pm,
 	}
 }
 

@@ -109,6 +109,9 @@ func (r *repository) CreateTask(request CreateTaskRequest) error {
 	if err != nil {
 		return err
 	}
+	if len(imgs) == 0 {
+		return errors.TaskCannotCreate.NewWithMessageF("dataset %d has no images, abort", request.DatasetID)
+	}
 	var errs = make([]error, 0)
 	var cursor = 0
 	var tasks = make([]task.Task, 0)

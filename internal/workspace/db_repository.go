@@ -112,7 +112,7 @@ func (r *dbRepository) Create(userID uint64, title, description, color string) (
 func (r *dbRepository) UpdateWorkspace(workspaceID uint64, changes map[string]interface{}) (Workspace, error) {
 	var workspace Workspace
 	workspace.ID = workspaceID
-	db := r.db.Model(&workspace).Update(changes).First(&workspace, workspaceID)
+	db := r.db.Model(&workspace).Update(changes).First(&workspace)
 	if db.RecordNotFound() {
 		logger.Infof("is empty %v", db.RecordNotFound())
 		return Workspace{}, errors.WorkspaceNotFound.NewWithMessageF("workspace %d not found", workspaceID)

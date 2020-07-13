@@ -23,7 +23,7 @@ type GetProjectRequest struct {
 type CreateProjectRequest struct {
 	WorkspaceID uint64 `form:"workspace_id" json:"workspace_id" binding:"required"`
 	Title       string `form:"title" json:"title"`
-	Desc        string `form:"desc" json:"desc"`
+	Description string `form:"description" json:"description"`
 	Color       string `form:"color" json:"color"`
 }
 

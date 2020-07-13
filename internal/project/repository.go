@@ -194,13 +194,14 @@ func (r *repository) InvalidatePermissionForUser(userID uint64) error {
 }
 
 func (r *repository) InvalidatePermissionForProject(projectID uint64) {
-	_, _, pattern := rediskey.ProjectPermissionByID(projectID, 0, 0, 0)
+	_, totalKey, pattern := rediskey.ProjectPermissionByID(projectID, 0, 0, 0)
 	keys, err := r.cache.Keys(pattern)
 	if err != nil {
 		logger.Errorf("error getting all keys with pattern %s", pattern)
 		return
 	}
-	if err := r.cache.Del(keys...); err != nil {
+	projectKey := rediskey.ProjectByID(projectID)
+	if err := r.cache.Del(append(keys, totalKey, projectKey)...); err != nil {
 		logger.Errorf("error delete key %s", keys)
 	}
 	logger.Infof("invalidate key %d successfully", len(keys))

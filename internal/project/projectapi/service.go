@@ -1,41 +1,44 @@
 package projectapi
 
 import (
+	"net/http"
+
+	"github.com/nkhang/pluto/internal/project"
+
 	"github.com/gin-gonic/gin"
 	"github.com/nkhang/pluto/pkg/util/idextractor"
-	"github.com/spf13/cast"
 
 	"github.com/nkhang/pluto/pkg/errors"
-	pgin "github.com/nkhang/pluto/pkg/gin"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
 )
 
 type service struct {
-	repository     Repository
-	labelService   pgin.IEngine
-	datasetService pgin.IEngine
+	repository  Repository
+	projectRepo project.Repository
 }
 
 const (
 	FieldProjectID = "projectId"
 )
 
-func NewService(r Repository, labelService, datasetService pgin.IEngine) *service {
+func NewService(r Repository, projectRepo project.Repository) *service {
 	return &service{
-		repository:     r,
-		labelService:   labelService,
-		datasetService: datasetService,
+		repository:  r,
+		projectRepo: projectRepo,
 	}
 }
 
 func (s *service) Register(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getAll))
 	router.POST("", ginwrapper.Wrap(s.create))
-	router.GET("/:"+FieldProjectID, ginwrapper.Wrap(s.get))
-	router.PUT("/:"+FieldProjectID, ginwrapper.Wrap(s.update))
-	router.DELETE("/:"+FieldProjectID, ginwrapper.Wrap(s.delete))
-	router.POST("/:"+FieldProjectID+"/perm", ginwrapper.Wrap(s.createPerm))
-	router.GET("/:"+FieldProjectID+"/perm", ginwrapper.Wrap(s.getPermissions))
+	detailRouter := router.Group("/:"+FieldProjectID, s.verifyProjectIDMdw())
+	{
+		detailRouter.GET("", ginwrapper.Wrap(s.get))
+		detailRouter.PUT("", ginwrapper.Wrap(s.update))
+		detailRouter.DELETE("", ginwrapper.Wrap(s.delete))
+		detailRouter.POST("/perm", ginwrapper.Wrap(s.createPerm))
+		detailRouter.GET("/perm", ginwrapper.Wrap(s.getPermissions))
+	}
 }
 
 func (s *service) getAll(c *gin.Context) ginwrapper.Response {
@@ -61,19 +64,8 @@ func (s *service) getAll(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) get(c *gin.Context) ginwrapper.Response {
-	idStr := c.Param(FieldProjectID)
-	pID, err := cast.ToUint64E(idStr)
-	if err != nil {
-		return ginwrapper.Response{
-			Error: errors.BadRequest.Wrap(err, "cannot get project id"),
-		}
-	}
-	if pID <= 0 {
-		return ginwrapper.Response{
-			Error: errors.BadRequest.NewWithMessage("id must greater than 0"),
-		}
-	}
-	p, err := s.repository.GetByID(pID)
+	id := c.GetInt64(FieldProjectID)
+	p, err := s.repository.GetByID(uint64(id))
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -188,4 +180,27 @@ func (s *service) delete(c *gin.Context) ginwrapper.Response {
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("success"),
 	}
+}
+
+func (s *service) verifyProjectIDMdw() gin.HandlerFunc {
+	return gin.HandlerFunc(func(c *gin.Context) {
+		projectID, err := idextractor.ExtractUint64Param(c, FieldProjectID)
+		if err != nil {
+			err := errors.BadRequest.NewWithMessageF("project %d not found", projectID)
+			ginwrapper.Report(c, http.StatusOK, err, nil)
+			return
+		}
+		if projectID == 0 {
+			err := errors.BadRequest.NewWithMessage("project ID must be other than 0")
+			ginwrapper.Report(c, http.StatusOK, err, nil)
+			return
+		}
+		_, err = s.projectRepo.Get(projectID)
+		if err != nil {
+			ginwrapper.Report(c, http.StatusOK, err, nil)
+			return
+		}
+		c.Keys[FieldProjectID] = projectID
+		c.Next()
+	})
 }

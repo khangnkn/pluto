@@ -46,12 +46,12 @@ type AssigneePair struct {
 
 type GetTaskDetailsRequest struct {
 	TaskID   uint64 `form:"-"`
-	Page     int    `form:"page"`
-	PageSize int    `form:"page_size"`
+	Page     int    `form:"page" json:"page"`
+	PageSize int    `form:"page_size" json:"page_size"`
 }
 
 type UpdateTaskDetailRequest struct {
-	Status uint64 `form:"status" json:"status"`
+	Status uint64 `form:"status" json:"status" binding:"required"`
 }
 
 type TaskDetailResponse struct {

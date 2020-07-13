@@ -27,11 +27,10 @@ func provideAPIRepository(r project.Repository, dr dataset.Repository, wr worksp
 type params struct {
 	fx.In
 
-	Repository     projectapi.Repository
-	LabelService   gin.IEngine `name:"LabelService"`
-	DatasetService gin.IEngine `name:"DatasetService"`
+	Repository  projectapi.Repository
+	ProjectRepo project.Repository
 }
 
 func provideService(p params) gin.IEngine {
-	return projectapi.NewService(p.Repository, p.LabelService, p.DatasetService)
+	return projectapi.NewService(p.Repository, p.ProjectRepo)
 }
