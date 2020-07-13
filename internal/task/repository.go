@@ -13,10 +13,9 @@ type Repository interface {
 	GetTasksByUser(userID uint64, role Role, status Status, offset, limit int) (tasks []Task, total int, err error)
 	GetTasksByProject(projectID uint64, status Status, offset, limit int) (tasks []Task, total int, err error)
 	DeleteTask(taskID uint64) error
+	DeleteTaskByProject(projectID uint64) error
 	GetTaskDetails(taskID uint64, offset, limit int) ([]Detail, error)
 	UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error)
-	InvalidateForUser(userID uint64)
-	InvalidateForProject(projectID uint64)
 }
 
 type repository struct {

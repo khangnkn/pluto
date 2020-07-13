@@ -14,6 +14,7 @@ type DBRepository interface {
 	GetTasksByUser(userID uint64, role Role, status Status, offset, limit int) (tasks []Task, total int, err error)
 	CreateTask(title, description string, assigner, labeler, reviewer, projectID, datasetID uint64) (Task, error)
 	DeleteTask(id uint64) error
+	DeleteTaskByProject(projectID uint64) error
 	AddImages(id uint64, imageIDs []uint64) error
 	GetTaskDetails(taskID uint64, offset, limit int) ([]Detail, error)
 	UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error)
@@ -162,4 +163,21 @@ func (r *dbRepository) UpdateTaskDetail(taskID, detailID uint64, changes map[str
 		return Detail{}, errors.TaskDetailCannotUpdate.Wrap(err, "cannot update task detail")
 	}
 	return detail, nil
+}
+
+func (r *dbRepository) DeleteTaskByProject(projectID uint64) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var tasks = make([]Task, 0)
+		err := r.db.Where("project_id = ?", projectID).Find(&tasks).Delete(&Task{}).Error
+		if err != nil {
+			return errors.TaskCannotDelete.NewWithMessageF("cannot delete tasks of project %d", projectID)
+		}
+		for _, task := range tasks {
+			err = r.db.Where("task_id = ?", task.ID).Delete(&Detail{}).Error
+			if err != nil {
+				return errors.TaskDetailCannotDelete.Wrap(err, "cannot delete task detail")
+			}
+		}
+		return nil
+	})
 }
