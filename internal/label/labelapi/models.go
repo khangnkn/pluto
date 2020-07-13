@@ -15,9 +15,9 @@ type CreateLabelRequest struct {
 }
 
 type CreateLabelObject struct {
-	Name   string `form:"name" binding:"required"`
-	Color  string `form:"color" binding:"required"`
-	ToolID uint64 `form:"tool_id" binding:"required"`
+	Name   string `json:"name" form:"name" binding:"required"`
+	Color  string `json:"color" form:"color" binding:"required"`
+	ToolID uint64 `json:"tool" form:"tool" binding:"required"`
 }
 
 type LabelResponse struct {

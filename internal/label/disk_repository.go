@@ -2,6 +2,9 @@ package label
 
 import (
 	"fmt"
+
+	"github.com/nkhang/pluto/pkg/logger"
+
 	"github.com/jinzhu/gorm"
 
 	"github.com/nkhang/pluto/pkg/errors"
@@ -23,7 +26,8 @@ func NewDiskRepository(db *gorm.DB) *dbRepository {
 func (d *dbRepository) GetByProjectID(projectID uint64) ([]Label, error) {
 	l := make([]Label, 0)
 	query := fmt.Sprint(fieldProjectID, " = ?")
-	err := d.db.Where(query, projectID).Preload("Tool").Find(&l).Error
+	err := d.db.Preload("Tool").Where(query, projectID).Find(&l).Error
+	logger.Infof("%+v", l)
 	if err != nil {
 		return nil, errors.LabelQueryError.NewWithMessage("label query error")
 	}
@@ -32,8 +36,8 @@ func (d *dbRepository) GetByProjectID(projectID uint64) ([]Label, error) {
 
 func (d *dbRepository) CreateLabel(name, color string, projectID, toolID uint64) error {
 	l := Label{
-		Name:     name,
-		Color:    color,
+		Name:      name,
+		Color:     color,
 		ProjectID: projectID,
 		ToolID:    toolID,
 	}

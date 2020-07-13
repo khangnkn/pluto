@@ -15,5 +15,5 @@ type Label struct {
 	Color     string
 	ProjectID uint64
 	ToolID    uint64
-	Tool      tool.Tool `gorm:"foreignkey:ToolID;association_foreignkey:ID"`
+	Tool      tool.Tool
 }
