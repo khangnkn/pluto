@@ -3,8 +3,6 @@ package projectapi
 import (
 	"net/http"
 
-	"github.com/nkhang/pluto/pkg/logger"
-
 	"github.com/nkhang/pluto/internal/project"
 
 	"github.com/gin-gonic/gin"
@@ -183,7 +181,6 @@ func (s *service) verifyProjectIDMdw() gin.HandlerFunc {
 			return
 		}
 		c.Set(FieldProjectID, projectID)
-		logger.Info(c.Get(FieldProjectID))
 		c.Next()
 	})
 }

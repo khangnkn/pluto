@@ -40,5 +40,5 @@ func Report(c *gin.Context, code int, err error, data interface{}) {
 		ReturnMessage: e.Message,
 		Data:          data,
 	}
-	c.JSON(code, returnObj)
+	c.AbortWithStatusJSON(code, returnObj)
 }
