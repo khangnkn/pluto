@@ -17,3 +17,11 @@ func ExtractUint64Param(c *gin.Context, key string) (uint64, error) {
 	}
 	return res, nil
 }
+
+func ExtractInt64Param(c *gin.Context, key string) (int64, error) {
+	id, err := ExtractUint64Param(c, key)
+	if err != nil {
+		return 0, err
+	}
+	return int64(id), nil
+}

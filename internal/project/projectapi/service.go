@@ -3,6 +3,8 @@ package projectapi
 import (
 	"net/http"
 
+	"github.com/nkhang/pluto/pkg/logger"
+
 	"github.com/nkhang/pluto/internal/project"
 
 	"github.com/gin-gonic/gin"
@@ -31,7 +33,7 @@ func NewService(r Repository, projectRepo project.Repository) *service {
 func (s *service) Register(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getAll))
 	router.POST("", ginwrapper.Wrap(s.create))
-	detailRouter := router.Group("/:"+FieldProjectID, s.verifyProjectIDMdw())
+	detailRouter := router.Group("/:" + FieldProjectID).Use(s.verifyProjectIDMdw())
 	{
 		detailRouter.GET("", ginwrapper.Wrap(s.get))
 		detailRouter.PUT("", ginwrapper.Wrap(s.update))
@@ -164,7 +166,7 @@ func (s *service) delete(c *gin.Context) ginwrapper.Response {
 
 func (s *service) verifyProjectIDMdw() gin.HandlerFunc {
 	return gin.HandlerFunc(func(c *gin.Context) {
-		projectID, err := idextractor.ExtractUint64Param(c, FieldProjectID)
+		projectID, err := idextractor.ExtractInt64Param(c, FieldProjectID)
 		if err != nil {
 			err := errors.BadRequest.NewWithMessageF("project %d not found", projectID)
 			ginwrapper.Report(c, http.StatusOK, err, nil)
@@ -175,12 +177,13 @@ func (s *service) verifyProjectIDMdw() gin.HandlerFunc {
 			ginwrapper.Report(c, http.StatusOK, err, nil)
 			return
 		}
-		_, err = s.projectRepo.Get(projectID)
+		_, err = s.projectRepo.Get(uint64(projectID))
 		if err != nil {
 			ginwrapper.Report(c, http.StatusOK, err, nil)
 			return
 		}
 		c.Set(FieldProjectID, projectID)
+		logger.Info(c.Get(FieldProjectID))
 		c.Next()
 	})
 }
