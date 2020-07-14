@@ -14,5 +14,6 @@ type Dataset struct {
 	Title       string
 	Description string
 	ProjectID   uint64
+	Thumbnail   string
 	Project     project.Project
 }

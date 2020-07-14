@@ -9,19 +9,20 @@ type GetDatasetRequest struct {
 	ProjectID uint64 `json:"project_id" form:"project_id" binding:"required"`
 }
 type CreateDatasetRequest struct {
-	Title       string `form:"title" json:"title"`
-	Description string `form:"description" json:"description"`
-	ProjectID   uint64 `form:"project_id" json:"project_id"`
+	Title       string `form:"title" json:"title" binding:"required"`
+	Description string `form:"description" json:"description" binding:"required"`
+	ProjectID   uint64 `form:"project_id" json:"project_id" binding:"required"`
 }
 
 type CloneDatasetRequest struct {
-	ProjectID uint64 `form:"project_id"`
+	ProjectID uint64 `form:"project_id" json:"project_id" binding:"required"`
 }
 
 type DatasetResponse struct {
 	ID          uint64 `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
+	Thumbnail   string `json:"thumbnail"`
 	ProjectID   uint64 `json:"project_id"`
 	ImageCount  int    `json:"image_count"`
 	UpdatedAt   int64  `json:"updated_at"`
@@ -37,6 +38,7 @@ func (r *repository) ToDatasetResponse(d dataset.Dataset) DatasetResponse {
 		ID:          d.ID,
 		Title:       d.Title,
 		Description: d.Description,
+		Thumbnail:   d.Thumbnail,
 		ProjectID:   d.ProjectID,
 		ImageCount:  total,
 		UpdatedAt:   clock.UnixMillisecondFromTime(d.UpdatedAt),

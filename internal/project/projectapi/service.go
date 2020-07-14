@@ -78,13 +78,8 @@ func (s *service) get(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) getPermissions(c *gin.Context) ginwrapper.Response {
-	projectID, err := idextractor.ExtractUint64Param(c, FieldProjectID)
-	if err != nil {
-		return ginwrapper.Response{
-			Error: err,
-		}
-	}
-	resp, err := s.repository.GetPermissions(projectID)
+	id := c.GetInt64(FieldProjectID)
+	resp, err := s.repository.GetPermissions(uint64(id))
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -116,20 +111,15 @@ func (s *service) create(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) createPerm(c *gin.Context) ginwrapper.Response {
+	id := c.GetInt64(FieldProjectID)
 	var req CreatePermParams
-	pID, err := idextractor.ExtractUint64Param(c, FieldProjectID)
-	if err != nil {
-		return ginwrapper.Response{
-			Error: errors.BadRequest.Wrap(err, "cannot get project id"),
-		}
-	}
 	if err := c.ShouldBind(&req); err != nil {
 		return ginwrapper.Response{
 			Error: errors.BadRequest.NewWithMessage("error binding request params"),
 		}
 	}
-	req.ProjectID = pID
-	err = s.repository.CreatePerm(req)
+	req.ProjectID = uint64(id)
+	err := s.repository.CreatePerm(req)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -141,18 +131,13 @@ func (s *service) createPerm(c *gin.Context) ginwrapper.Response {
 }
 func (s *service) update(c *gin.Context) ginwrapper.Response {
 	var req UpdateProjectRequest
-	projectID, err := idextractor.ExtractUint64Param(c, FieldProjectID)
-	if err != nil {
-		return ginwrapper.Response{
-			Error: err,
-		}
-	}
+	id := c.GetInt64(FieldProjectID)
 	if err := c.ShouldBind(&req); err != nil {
 		return ginwrapper.Response{
 			Error: errors.BadRequest.Wrap(err, "cannot bind update request"),
 		}
 	}
-	w, err := s.repository.UpdateProject(projectID, req)
+	w, err := s.repository.UpdateProject(uint64(id), req)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -165,13 +150,8 @@ func (s *service) update(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) delete(c *gin.Context) ginwrapper.Response {
-	id, err := idextractor.ExtractUint64Param(c, FieldProjectID)
-	if err != nil {
-		return ginwrapper.Response{
-			Error: err,
-		}
-	}
-	err = s.repository.DeleteProject(id)
+	id := c.GetInt64(FieldProjectID)
+	err := s.repository.DeleteProject(uint64(id))
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -200,7 +180,7 @@ func (s *service) verifyProjectIDMdw() gin.HandlerFunc {
 			ginwrapper.Report(c, http.StatusOK, err, nil)
 			return
 		}
-		c.Keys[FieldProjectID] = projectID
+		c.Set(FieldProjectID, projectID)
 		c.Next()
 	})
 }

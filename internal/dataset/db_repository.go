@@ -51,6 +51,7 @@ func (r *dbRepository) CreateDataset(title, description string, pID uint64) (Dat
 	d := Dataset{
 		Title:       title,
 		Description: description,
+		Thumbnail:   "http://annotation.ml:9000/plutos3/placeholder.png",
 		ProjectID:   pID,
 	}
 	err := r.db.Create(&d).Error
