@@ -1,10 +1,9 @@
 package annotation
 
 import (
-	"bytes"
-	"encoding/json"
-	"io/ioutil"
 	"net/http"
+
+	"github.com/nats-io/nats.go"
 
 	"github.com/spf13/viper"
 
@@ -28,13 +27,14 @@ type service struct {
 	datasetRepo        dataset.Repository
 	labelRepo          label.Repository
 	client             http.Client
+	nc                 *nats.EncodedConn
 	annotationBasePath string
 }
 
 func NewService(workspaceRepo workspace.Repository,
 	projectRepo project.Repository,
 	datasetRepo dataset.Repository,
-	labelRepo label.Repository) *service {
+	labelRepo label.Repository, nc *nats.EncodedConn) *service {
 	client := http.Client{}
 	annotationBase := viper.GetString("annotation.baseurl")
 	return &service{
@@ -43,6 +43,7 @@ func NewService(workspaceRepo workspace.Repository,
 		datasetRepo:        datasetRepo,
 		labelRepo:          labelRepo,
 		client:             client,
+		nc:                 nc,
 		annotationBasePath: annotationBase,
 	}
 }
@@ -70,21 +71,8 @@ func (s *service) CreateTask(projectID, datasetID uint64, tasks []task.Task) err
 }
 
 func (s *service) push(message PushTaskMessage) error {
-	path := s.annotationBasePath + "/task"
-	b, err := json.Marshal(&message)
-	if err != nil {
-		return err
-	}
-
-	resp, err := s.client.Post(path, "application/json", bytes.NewReader(b))
-	if err != nil {
-		return err
-	}
-	bb, err := ioutil.ReadAll(resp.Body)
-	if err == nil {
-		logger.Info(string(bb))
-	}
-	return nil
+	logger.Info("Publishing task...")
+	return s.nc.Publish("task.creation", &message)
 }
 
 type builder struct {

@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/nkhang/pluto/internal/fx/taskfx"
 	"github.com/nkhang/pluto/pkg/fx/annotationfx"
+	"github.com/nkhang/pluto/pkg/fx/natsfx"
 	"go.uber.org/fx"
 
 	"github.com/nkhang/pluto/internal/fx/datasetfx"
@@ -23,6 +24,7 @@ func main() {
 		configfx.Initialize("pluto"),
 		dbfx.Module,
 		redisfx.Module,
+		natsfx.Module,
 		toolfx.Module,
 		labelfx.Module,
 		taskfx.Module,

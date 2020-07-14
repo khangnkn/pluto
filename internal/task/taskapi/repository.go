@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
+
 	"github.com/nkhang/pluto/pkg/annotation"
 
 	"github.com/nkhang/pluto/pkg/logger"
@@ -13,14 +15,10 @@ import (
 
 	"github.com/nkhang/pluto/pkg/errors"
 
-	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
-
 	"github.com/nkhang/pluto/internal/dataset/datasetapi"
 	"github.com/nkhang/pluto/internal/image"
-	"github.com/nkhang/pluto/internal/label/labelapi"
 	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/internal/task"
-	"github.com/nkhang/pluto/internal/tool/toolapi"
 	"github.com/nkhang/pluto/pkg/util/paging"
 )
 
@@ -188,58 +186,27 @@ func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
 		Title:       t.Title,
 		Description: t.Description,
 		Dataset:     dataset,
-		Project:     project.Title,
-		Workspace:   project.Workspace.Title,
-		Assigner:    t.Assigner,
-		Labeler:     t.Labeler,
-		Reviewer:    t.Reviewer,
-		Status:      uint32(t.Status),
-		ImageCount:  imageCount,
-		CreatedAt:   clock.UnixMillisecondFromTime(t.CreatedAt),
+		Project: projectapi.ProjectBaseResponse{
+			ID:          project.ID,
+			Title:       project.Title,
+			Description: project.Description,
+			Thumbnail:   project.Thumbnail,
+			Color:       project.Color,
+		},
+		Workspace: workspaceapi.WorkspaceResponse{
+			ID:          project.Workspace.ID,
+			Updated:     project.Workspace.Updated,
+			Title:       project.Workspace.Title,
+			Description: project.Workspace.Description,
+			Color:       project.Workspace.Color,
+		},
+		Assigner:   t.Assigner,
+		Labeler:    t.Labeler,
+		Reviewer:   t.Reviewer,
+		Status:     uint32(t.Status),
+		ImageCount: imageCount,
+		CreatedAt:  clock.UnixMillisecondFromTime(t.CreatedAt),
 	}
-}
-
-func pushTaskMessage() PushTaskMessage {
-	msg := PushTaskMessage{
-		Workspace: workspaceapi.WorkspaceDetailResponse{},
-		Project: projectapi.ProjectResponse{
-			ID:           434,
-			Title:        "fdsfsdf",
-			Description:  "dfsf",
-			Thumbnail:    "fsdf",
-			Color:        "fsdfdfsd",
-			DatasetCount: 6,
-			MemberCount:  4,
-		},
-		Dataset: datasetapi.DatasetResponse{
-			ID:          2342,
-			Title:       "dsfs",
-			Description: "fsf",
-			ProjectID:   5,
-		},
-		Tasks: []TaskResponse{
-			TaskResponse{
-				Title:       "sdfasdf",
-				Description: "sdfasdf",
-				Assigner:    2343244,
-				Labeler:     024,
-				Reviewer:    04234,
-				CreatedAt:   064,
-			},
-		},
-		Labels: []labelapi.LabelResponse{
-			labelapi.LabelResponse{
-				ID:    45634,
-				Name:  "ff",
-				Color: "dgsdfg",
-				Tool: toolapi.ToolResponse{
-					ID:   1,
-					Name: "rect",
-				},
-			},
-		},
-	}
-	return msg
 }
 
 func truncate(imgs []image.Image, cursor *int, s int) (res []image.Image) {

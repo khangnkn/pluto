@@ -17,7 +17,7 @@ require (
 	github.com/manifoldco/promptui v0.7.0 // indirect
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/minio/minio-go/v6 v6.0.55 // indirect
-	github.com/nats-io/nats.go v1.10.0 // indirect
+	github.com/nats-io/nats.go v1.10.0
 	github.com/parnurzeal/gorequest v0.2.16 // indirect
 	github.com/pascaldekloe/name v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1

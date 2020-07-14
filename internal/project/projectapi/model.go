@@ -48,15 +48,19 @@ type CreatePermObject struct {
 }
 
 type ProjectResponse struct {
-	ID             uint64                               `json:"id"`
-	Title          string                               `json:"title"`
-	Description    string                               `json:"description"`
-	Thumbnail      string                               `json:"thumbnail"`
-	Color          string                               `json:"color"`
+	ProjectBaseResponse
 	DatasetCount   int                                  `json:"dataset_count"`
 	MemberCount    int                                  `json:"member_count"`
 	ProjectManager uint64                               `json:"project_manager"`
 	Workspace      workspaceapi.WorkspaceDetailResponse `json:"workspace"`
+}
+
+type ProjectBaseResponse struct {
+	ID          uint64 `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Thumbnail   string `json:"thumbnail"`
+	Color       string `json:"color"`
 }
 
 type GetProjectResponse struct {

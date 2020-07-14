@@ -178,11 +178,13 @@ func (r *repository) convertResponse(p project.Project) ProjectResponse {
 	}
 	w, _ := r.workspaceRepo.GetByID(p.WorkspaceID)
 	return ProjectResponse{
-		ID:             p.ID,
-		Title:          p.Title,
-		Description:    p.Description,
-		Thumbnail:      p.Thumbnail,
-		Color:          p.Color,
+		ProjectBaseResponse: ProjectBaseResponse{
+			ID:          p.ID,
+			Title:       p.Title,
+			Description: p.Description,
+			Thumbnail:   p.Thumbnail,
+			Color:       p.Color,
+		},
 		DatasetCount:   datasetCount,
 		MemberCount:    totalPerms,
 		Workspace:      w,
