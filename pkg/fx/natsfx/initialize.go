@@ -11,6 +11,7 @@ import (
 
 func provideNATSClient(lc fx.Lifecycle) *nats.EncodedConn {
 	url := viper.GetString("nats.url")
+	logger.Infof("Opening connection to NATS server at %s", url)
 	nc, err := nats.Connect(url)
 	if err != nil {
 		logger.Panic(err)
