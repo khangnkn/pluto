@@ -155,7 +155,7 @@ func (r *dbRepository) GetTaskDetails(taskID uint64, currentID uint64, limit int
 	var tableName = Detail{TaskID: taskID}.TableName()
 	db := r.db.Table(tableName).
 		Preload("Image").
-		Where("task_id = ?", taskID)
+		Where("task_id = ? and status = ?", taskID, Pending)
 	if currentID != 0 || limit != 0 {
 		db = db.Where("id > ?", currentID).Limit(limit)
 	}

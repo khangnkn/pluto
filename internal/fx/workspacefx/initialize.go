@@ -31,10 +31,11 @@ func provideWorkspacePermAPIRepository(r workspace.Repository) permissionapi.Rep
 type params struct {
 	fx.In
 	Repository  workspaceapi.Repository
+	Wr          workspace.Repository
 	PermAPIRepo permissionapi.Repository
 }
 
 func provideWorkspaceService(p params) gin.IEngine {
 	permRouter := permissionapi.NewService(p.PermAPIRepo)
-	return workspaceapi.NewService(p.Repository, permRouter)
+	return workspaceapi.NewService(p.Repository, permRouter, p.Wr)
 }

@@ -1,7 +1,10 @@
 package workspaceapi
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"github.com/nkhang/pluto/internal/workspace"
 	pgin "github.com/nkhang/pluto/pkg/gin"
 	"github.com/nkhang/pluto/pkg/util/idextractor"
 	"github.com/spf13/cast"
@@ -15,21 +18,23 @@ const (
 )
 
 type service struct {
-	repository Repository
-	permRouter pgin.IEngine
+	repository    Repository
+	workspaceRepo workspace.Repository
+	permRouter    pgin.IEngine
 }
 
-func NewService(r Repository, permRouter pgin.IEngine) *service {
+func NewService(r Repository, permRouter pgin.IEngine, workspaceRepo workspace.Repository) *service {
 	return &service{
-		repository: r,
-		permRouter: permRouter,
+		repository:    r,
+		workspaceRepo: workspaceRepo,
+		permRouter:    permRouter,
 	}
 }
 
 func (s *service) Register(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getByUserID))
 	router.POST("", ginwrapper.Wrap(s.create))
-	detailRouter := router.Group("/:" + FieldWorkspaceID)
+	detailRouter := router.Group("/:"+FieldWorkspaceID, s.verifyWorkspace())
 	{
 		detailRouter.GET("", ginwrapper.Wrap(s.get))
 		detailRouter.PUT("", ginwrapper.Wrap(s.update))
@@ -138,4 +143,27 @@ func (s *service) delete(c *gin.Context) ginwrapper.Response {
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("success"),
 	}
+}
+
+func (s *service) verifyWorkspace() gin.HandlerFunc {
+	return gin.HandlerFunc(func(c *gin.Context) {
+		workspaceID, err := idextractor.ExtractInt64Param(c, FieldWorkspaceID)
+		if err != nil {
+			err := errors.BadRequest.NewWithMessageF("workspace ID %d is invalid", workspaceID)
+			ginwrapper.Report(c, http.StatusOK, err, nil)
+			return
+		}
+		if workspaceID == 0 {
+			err := errors.BadRequest.NewWithMessage("workspace ID must be other than 0")
+			ginwrapper.Report(c, http.StatusOK, err, nil)
+			return
+		}
+		_, err = s.workspaceRepo.Get(uint64(workspaceID))
+		if err != nil {
+			ginwrapper.Report(c, http.StatusOK, err, nil)
+			return
+		}
+		c.Set(FieldWorkspaceID, workspaceID)
+		c.Next()
+	})
 }
