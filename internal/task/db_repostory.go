@@ -29,8 +29,11 @@ func NewDBRepository(db *gorm.DB) *dbRepository {
 }
 
 func (r *dbRepository) GetTask(taskID uint64) (task Task, err error) {
-	err = r.db.First(&task, taskID).Error
-	if err != nil {
+	db := r.db.First(&task, taskID)
+	if db.RecordNotFound() {
+		return Task{}, errors.TaskNotFound.NewWithMessageF("task %d not found", taskID)
+	}
+	if err = db.Error; err != nil {
 		err = errors.TaskCannotGet.Wrap(err, "cannot get task")
 		return
 	}
@@ -107,12 +110,15 @@ func (r *dbRepository) CreateTask(title, description string, assigner, labeler, 
 
 func (r *dbRepository) DeleteTask(id uint64) error {
 	err := r.db.Transaction(func(tx *gorm.DB) error {
-		err := tx.Delete(&Task{}, id).Error
+		var t Task
+		var d Detail
+		d.TaskID = id
+		t.ID = id
+		err := tx.Model(&t).Delete(&Task{}, id).Error
 		if err != nil {
 			return err
 		}
-		err = tx.Model(&Detail{TaskID: id}).
-			Where("task_id = ?", id).Delete(&Detail{}).Error
+		err = tx.Model(&d).Table(d.TableName()).Where("task_id = ?", id).Delete(&Detail{}).Error
 		if err != nil {
 			return err
 		}
@@ -144,12 +150,13 @@ func (r *dbRepository) AddImages(id uint64, imageIDs []uint64) error {
 func (r *dbRepository) GetTaskDetails(taskID uint64, offset, limit int) ([]Detail, error) {
 	var details []Detail
 	var tableName = Detail{TaskID: taskID}.TableName()
-	err := r.db.Table(tableName).
+	db := r.db.Table(tableName).
 		Preload("Image").
-		Where("task_id = ?", taskID).
-		Offset(offset).
-		Limit(limit).
-		Find(&details).Error
+		Where("task_id = ?", taskID)
+	if offset != 0 || limit != 0 {
+		db = db.Offset(offset).Limit(limit)
+	}
+	err := db.Find(&details).Error
 	if err != nil {
 		return nil, errors.TaskDetailCannotGet.NewWithMessage("cannot get task details")
 	}

@@ -134,7 +134,6 @@ func (r *repository) UpdatePerm(projectID uint64, req UpdatePermissionRequest) (
 		role = project.Member
 	default:
 		return PermissionObject{}, errors.ProjectRoleInvalid.NewWithMessageF("role %d is not supported", req.Role)
-
 	}
 	perm, err := r.repository.UpdatePermission(projectID, req.UserID, role)
 	if err != nil {

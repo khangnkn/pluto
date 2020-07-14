@@ -1,12 +1,14 @@
 package taskapi
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"github.com/nkhang/pluto/internal/task"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
 	"github.com/nkhang/pluto/pkg/logger"
 	"github.com/nkhang/pluto/pkg/util/idextractor"
-	"github.com/spf13/cast"
 )
 
 const (
@@ -16,19 +18,26 @@ const (
 
 type service struct {
 	repository Repository
+	taskRepo   task.Repository
 }
 
-func NewService(r Repository) *service {
-	return &service{repository: r}
+func NewService(r Repository, tr task.Repository) *service {
+	return &service{
+		repository: r,
+		taskRepo:   tr,
+	}
 }
 
 func (s *service) Register(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getList))
 	router.POST("", ginwrapper.Wrap(s.createTask))
-	router.DELETE("/:"+fieldTaskID, ginwrapper.Wrap(s.delete))
-	router.GET("/:"+fieldTaskID, ginwrapper.Wrap(s.get))
-	router.PUT("/:"+fieldTaskID+"/details/:"+fieldTaskDetailID, ginwrapper.Wrap(s.updateTaskDetail))
-	router.GET("/:"+fieldTaskID+"/details", ginwrapper.Wrap(s.getTaskDetails))
+	detailRouter := router.Group("/:"+fieldTaskID, s.verifyTask())
+	{
+		detailRouter.DELETE("", ginwrapper.Wrap(s.delete))
+		detailRouter.GET("", ginwrapper.Wrap(s.get))
+		detailRouter.PUT("/details/:"+fieldTaskDetailID, ginwrapper.Wrap(s.updateTaskDetail))
+		detailRouter.GET("/details", ginwrapper.Wrap(s.getTaskDetails))
+	}
 }
 
 func (s *service) createTask(c *gin.Context) ginwrapper.Response {
@@ -50,12 +59,7 @@ func (s *service) createTask(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) get(c *gin.Context) ginwrapper.Response {
-	taskID, err := idextractor.ExtractUint64Param(c, fieldTaskID)
-	if err != nil {
-		return ginwrapper.Response{
-			Error: err,
-		}
-	}
+	taskID := uint64(c.GetInt64(fieldTaskID))
 	resp, err := s.repository.GetTask(taskID)
 	if err != nil {
 		return ginwrapper.Response{
@@ -89,13 +93,8 @@ func (s *service) getList(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) delete(c *gin.Context) ginwrapper.Response {
-	id, err := idextractor.ExtractUint64Param(c, fieldTaskID)
-	if err != nil {
-		return ginwrapper.Response{
-			Error: err,
-		}
-	}
-	err = s.repository.DeleteTask(id)
+	taskID := uint64(c.GetInt64(fieldTaskID))
+	err := s.repository.DeleteTask(uint64(taskID))
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -107,13 +106,7 @@ func (s *service) delete(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) getTaskDetails(c *gin.Context) ginwrapper.Response {
-	idStr := c.Param(fieldTaskID)
-	taskID, err := cast.ToUint64E(idStr)
-	if err != nil {
-		return ginwrapper.Response{
-			Error: errors.BadRequest.Wrap(err, "invalid task id"),
-		}
-	}
+	taskID := uint64(c.GetInt64(fieldTaskID))
 	var req GetTaskDetailsRequest
 	if err := c.ShouldBind(&req); err != nil {
 		return ginwrapper.Response{
@@ -137,10 +130,7 @@ func (s *service) updateTaskDetail(c *gin.Context) ginwrapper.Response {
 	if err != nil {
 		return ginwrapper.Response{Error: err}
 	}
-	taskID, err := idextractor.ExtractUint64Param(c, fieldTaskID)
-	if err != nil {
-		return ginwrapper.Response{Error: err}
-	}
+	taskID := uint64(c.GetInt64(fieldTaskID))
 	if err := c.ShouldBind(&request); err != nil {
 		return ginwrapper.Response{
 			Error: errors.BadRequest.Wrap(err, "error binding update task detail request"),
@@ -157,4 +147,27 @@ func (s *service) updateTaskDetail(c *gin.Context) ginwrapper.Response {
 		Error: errors.Success.NewWithMessage("success"),
 		Data:  response,
 	}
+}
+
+func (s *service) verifyTask() gin.HandlerFunc {
+	return gin.HandlerFunc(func(c *gin.Context) {
+		taskID, err := idextractor.ExtractInt64Param(c, fieldTaskID)
+		if err != nil {
+			err := errors.BadRequest.NewWithMessageF("task %d not found", taskID)
+			ginwrapper.Report(c, http.StatusOK, err, nil)
+			return
+		}
+		if taskID == 0 {
+			err := errors.BadRequest.NewWithMessage("task ID must be other than 0")
+			ginwrapper.Report(c, http.StatusOK, err, nil)
+			return
+		}
+		_, err = s.taskRepo.GetTask(uint64(taskID))
+		if err != nil {
+			ginwrapper.Report(c, http.StatusOK, err, nil)
+			return
+		}
+		c.Set(fieldTaskID, taskID)
+		c.Next()
+	})
 }
