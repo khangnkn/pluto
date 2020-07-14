@@ -1,6 +1,8 @@
 package taskapi
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -113,8 +115,7 @@ func (s *service) getTaskDetails(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.NewWithMessage("cannot bind request params"),
 		}
 	}
-	req.TaskID = taskID
-	details, err := s.repository.GetTaskDetails(req)
+	details, err := s.repository.GetTaskDetails(taskID, req)
 	if err != nil {
 		return ginwrapper.Response{Error: err}
 	}
@@ -125,13 +126,20 @@ func (s *service) getTaskDetails(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) updateTaskDetail(c *gin.Context) ginwrapper.Response {
+	b, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil || len(b) == 0 {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.NewWithMessage("cannot read request body"),
+		}
+	}
 	var request UpdateTaskDetailRequest
 	detailID, err := idextractor.ExtractUint64Param(c, fieldTaskDetailID)
 	if err != nil {
 		return ginwrapper.Response{Error: err}
 	}
 	taskID := uint64(c.GetInt64(fieldTaskID))
-	if err := c.ShouldBind(&request); err != nil {
+	if err := json.Unmarshal(b, &request); err != nil {
+		logger.Error(err)
 		return ginwrapper.Response{
 			Error: errors.BadRequest.Wrap(err, "error binding update task detail request"),
 		}

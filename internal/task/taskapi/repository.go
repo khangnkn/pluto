@@ -27,7 +27,7 @@ type Repository interface {
 	GetTask(taskID uint64) (TaskResponse, error)
 	CreateTask(request CreateTaskRequest) error
 	DeleteTask(taskID uint64) error
-	GetTaskDetails(request GetTaskDetailsRequest) ([]TaskDetailResponse, error)
+	GetTaskDetails(taskID uint64, request GetTaskDetailsRequest) ([]TaskDetailResponse, error)
 	UpdateTaskDetail(taskID, detailID uint64, request UpdateTaskDetailRequest) (TaskDetailResponse, error)
 }
 
@@ -142,9 +142,8 @@ func (r *repository) DeleteTask(taskID uint64) error {
 	return r.repository.DeleteTask(taskID)
 }
 
-func (r *repository) GetTaskDetails(request GetTaskDetailsRequest) ([]TaskDetailResponse, error) {
-	offset, limit := paging.Parse(request.Page, request.PageSize)
-	details, err := r.repository.GetTaskDetails(request.TaskID, offset, limit)
+func (r *repository) GetTaskDetails(taskID uint64, request GetTaskDetailsRequest) ([]TaskDetailResponse, error) {
+	details, err := r.repository.GetTaskDetails(taskID, request.CurrentID, request.PageSize)
 	if err != nil {
 		return nil, err
 	}

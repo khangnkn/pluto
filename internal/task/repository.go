@@ -14,7 +14,7 @@ type Repository interface {
 	GetTasksByProject(projectID uint64, status Status, offset, limit int) (tasks []Task, total int, err error)
 	DeleteTask(taskID uint64) error
 	DeleteTaskByProject(projectID uint64) error
-	GetTaskDetails(taskID uint64, offset, limit int) ([]Detail, error)
+	GetTaskDetails(taskID uint64, currentID uint64, limit int) ([]Detail, error)
 	UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error)
 }
 
@@ -113,8 +113,8 @@ func (r *repository) DeleteTask(id uint64) error {
 	return nil
 }
 
-func (r *repository) GetTaskDetails(taskID uint64, offset, limit int) ([]Detail, error) {
-	return r.dbRepo.GetTaskDetails(taskID, offset, limit)
+func (r *repository) GetTaskDetails(taskID uint64, currentID uint64, limit int) ([]Detail, error) {
+	return r.dbRepo.GetTaskDetails(taskID, currentID, limit)
 }
 
 func (r *repository) UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error) {

@@ -16,7 +16,7 @@ type DBRepository interface {
 	DeleteTask(id uint64) error
 	DeleteTaskByProject(projectID uint64) error
 	AddImages(id uint64, imageIDs []uint64) error
-	GetTaskDetails(taskID uint64, offset, limit int) ([]Detail, error)
+	GetTaskDetails(taskID uint64, currentID uint64, limit int) ([]Detail, error)
 	UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error)
 }
 
@@ -150,14 +150,14 @@ func (r *dbRepository) AddImages(id uint64, imageIDs []uint64) error {
 	return nil
 }
 
-func (r *dbRepository) GetTaskDetails(taskID uint64, offset, limit int) ([]Detail, error) {
+func (r *dbRepository) GetTaskDetails(taskID uint64, currentID uint64, limit int) ([]Detail, error) {
 	var details []Detail
 	var tableName = Detail{TaskID: taskID}.TableName()
 	db := r.db.Table(tableName).
 		Preload("Image").
 		Where("task_id = ?", taskID)
-	if offset != 0 || limit != 0 {
-		db = db.Offset(offset).Limit(limit)
+	if currentID != 0 || limit != 0 {
+		db = db.Where("id > ?", currentID).Limit(limit)
 	}
 	err := db.Find(&details).Error
 	if err != nil {
