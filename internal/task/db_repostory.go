@@ -118,7 +118,10 @@ func (r *dbRepository) DeleteTask(id uint64) error {
 		if err != nil {
 			return err
 		}
-		err = tx.Model(&d).Table(d.TableName()).Where("task_id = ?", id).Delete(&Detail{}).Error
+		err = tx.Model(&d).
+			Table(d.TableName()).
+			Where("task_id = ?", id).
+			Delete(&Detail{}).Error
 		if err != nil {
 			return err
 		}
@@ -165,6 +168,7 @@ func (r *dbRepository) GetTaskDetails(taskID uint64, offset, limit int) ([]Detai
 
 func (r *dbRepository) UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error) {
 	var detail = Detail{TaskID: taskID}
+	detail.ID = detailID
 	err := r.db.Model(&detail).Update(changes).Preload("Image").First(&detail, detailID).Error
 	if err != nil {
 		return Detail{}, errors.TaskDetailCannotUpdate.Wrap(err, "cannot update task detail")
