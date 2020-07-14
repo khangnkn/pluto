@@ -21,6 +21,7 @@ type Repository interface {
 	Create(p CreateProjectRequest) (ProjectResponse, error)
 	CreatePerm(p CreatePermParams) error
 	UpdateProject(id uint64, request UpdateProjectRequest) (ProjectResponse, error)
+	UpdatePerm(projectID uint64, req UpdatePermissionRequest) (PermissionObject, error)
 	DeleteProject(id uint64) error
 }
 
@@ -122,6 +123,24 @@ func (r *repository) CreatePerm(req CreatePermParams) error {
 		return errors.ProjectPermissionCreatingError.NewWithMessageF("error creating %d permissions", len(errs))
 	}
 	return nil
+}
+
+func (r *repository) UpdatePerm(projectID uint64, req UpdatePermissionRequest) (PermissionObject, error) {
+	var role project.Role
+	switch req.Role {
+	case 1:
+		role = project.Manager
+	case 2:
+		role = project.Member
+	default:
+		return PermissionObject{}, errors.ProjectRoleInvalid.NewWithMessageF("role %d is not supported", req.Role)
+
+	}
+	perm, err := r.repository.UpdatePermission(projectID, req.UserID, role)
+	if err != nil {
+		return PermissionObject{}, err
+	}
+	return convertPermissionObject(perm), nil
 }
 
 func (r *repository) UpdateProject(id uint64, request UpdateProjectRequest) (ProjectResponse, error) {

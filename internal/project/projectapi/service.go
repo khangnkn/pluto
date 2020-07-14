@@ -38,6 +38,7 @@ func (s *service) Register(router gin.IRouter) {
 		detailRouter.DELETE("", ginwrapper.Wrap(s.delete))
 		detailRouter.POST("/perm", ginwrapper.Wrap(s.createPerm))
 		detailRouter.GET("/perm", ginwrapper.Wrap(s.getPermissions))
+		detailRouter.PUT("/perm", ginwrapper.Wrap(s.updatePermission))
 	}
 }
 
@@ -129,6 +130,27 @@ func (s *service) createPerm(c *gin.Context) ginwrapper.Response {
 		Error: errors.Success.NewWithMessage("success"),
 	}
 }
+
+func (s *service) updatePermission(c *gin.Context) ginwrapper.Response {
+	id := c.GetInt64(FieldProjectID)
+	var req UpdatePermissionRequest
+	if err := c.ShouldBind(&req); err != nil {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.NewWithMessage("cannot bind params"),
+		}
+	}
+	perm, err := s.repository.UpdatePerm(uint64(id), req)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+		Data:  perm,
+	}
+}
+
 func (s *service) update(c *gin.Context) ginwrapper.Response {
 	var req UpdateProjectRequest
 	id := c.GetInt64(FieldProjectID)

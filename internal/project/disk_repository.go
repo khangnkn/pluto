@@ -15,6 +15,7 @@ type DBRepository interface {
 	GetPermission(userID, projectID uint64) (Permission, error)
 	CreateProject(wID uint64, title, desc, color, uid string) (Project, error)
 	CreatePermission(projectID, userID uint64, role Role) (Permission, error)
+	UpdatePermission(projectID, userID uint64, role Role) (Permission, error)
 	UpdateProject(ProjectID uint64, changes map[string]interface{}) (Project, error)
 	Delete(id uint64) error
 }
@@ -112,6 +113,22 @@ func (r *dbRepository) CreatePermission(projectID, userID uint64, role Role) (Pe
 	err := r.db.Create(&perm).Error
 	if err != nil {
 		return perm, errors.ProjectPermissionCreatingError.Wrap(err, "cannot create project permission")
+	}
+	return perm, nil
+}
+
+func (r *dbRepository) UpdatePermission(projectID, userID uint64, role Role) (Permission, error) {
+	var perm = Permission{
+		ProjectID: projectID,
+		UserID:    userID,
+	}
+	if r.db.Where(&perm).First(&perm).RecordNotFound() {
+		return Permission{}, errors.ProjectPermissionNotFound.
+			NewWithMessageF("user %d is not a member of project %d", userID, projectID)
+	}
+	err := r.db.Model(&perm).Update("role", role).First(&perm).Error
+	if err != nil {
+		return Permission{}, errors.ProjectPermissionCannotUpdate.Wrap(err, "cannot update permission")
 	}
 	return perm, nil
 }

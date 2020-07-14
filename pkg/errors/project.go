@@ -5,9 +5,11 @@ const (
 	ProjectQueryError
 	ProjectPermissionQueryError
 	ProjectPermissionNotFound
+	ProjectPermissionCannotUpdate
 	ProjectPermissionExisted
 	ProjectPermissionCreatingError
 	ProjectCreatingError
 	ProjectCannotUpdate
 	ProjectCannotDelete
+	ProjectRoleInvalid
 )

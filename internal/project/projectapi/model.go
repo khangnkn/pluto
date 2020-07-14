@@ -32,6 +32,11 @@ type UpdateProjectRequest struct {
 	Description string `form:"description" json:"description,omitempty"`
 }
 
+type UpdatePermissionRequest struct {
+	UserID uint64 `form:"user_id" json:"user_id" binding:"required"`
+	Role   int32  `form:"role" json:"role" binding:"required"`
+}
+
 type CreatePermParams struct {
 	ProjectID uint64             `form:"-" json:"-"`
 	Members   []CreatePermObject `json:"members"`

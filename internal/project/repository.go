@@ -16,6 +16,7 @@ type Repository interface {
 	GetPermission(userID, projectID uint64) (Permission, error)
 	CreateProject(wID uint64, title, desc, color string) (Project, error)
 	CreatePermission(projectID, userID uint64, role Role) (Permission, error)
+	UpdatePermission(projectID, userID uint64, role Role) (Permission, error)
 	UpdateProject(projectID uint64, changes map[string]interface{}) (Project, error)
 	Delete(id uint64) error
 	DeleteByWorkspace(workspaceID uint64) error
@@ -169,6 +170,16 @@ func (r *repository) CreatePermission(projectID, userID uint64, role Role) (Perm
 		return Permission{}, errors.ProjectNotFound.NewWithMessageF("project %d not existed", projectID)
 	}
 	return r.disk.CreatePermission(projectID, userID, role)
+}
+
+func (r *repository) UpdatePermission(projectID, userID uint64, role Role) (Permission, error) {
+	perm, err := r.disk.UpdatePermission(projectID, userID, role)
+	if err != nil {
+		return Permission{}, err
+	}
+	r.InvalidatePermissionForUser(userID)
+	r.InvalidatePermissionForProject(projectID)
+	return perm, nil
 }
 
 func (r *repository) InvalidateProjectsByWorkspaceID(id uint64) {
