@@ -3,8 +3,6 @@ package projectapi
 import (
 	"encoding/json"
 
-	"github.com/nkhang/pluto/pkg/util/clock"
-
 	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
 
 	"github.com/nkhang/pluto/internal/dataset"
@@ -17,11 +15,9 @@ import (
 type Repository interface {
 	GetByID(pID uint64) (ProjectResponse, error)
 	GetList(p GetProjectRequest) ([]ProjectResponse, int, error)
-	GetPermissions(projectID uint64) (PermissionResponse, error)
-	Create(p CreateProjectRequest) (ProjectResponse, error)
-	CreatePerm(p CreatePermParams) error
+	GetForWorkspace(workspaceID uint64, paging paging.Paging) (GetProjectResponse, error)
+	Create(workspaceID uint64, p CreateProjectRequest) (ProjectResponse, error)
 	UpdateProject(id uint64, request UpdateProjectRequest) (ProjectResponse, error)
-	UpdatePerm(projectID uint64, req UpdatePermissionRequest) (PermissionObject, error)
 	DeleteProject(id uint64) error
 }
 
@@ -51,8 +47,12 @@ func (r *repository) GetList(p GetProjectRequest) (responses []ProjectResponse, 
 	offset, limit := paging.Parse(p.Page, p.PageSize)
 	var projects []project.Project
 	switch p.Source {
-	case SrcAllProjectInWorkspace:
-		projects, total, err = r.repository.GetByWorkspaceID(p.WorkspaceID, offset, limit)
+	case SrcAllProject:
+		var perms []project.Permission
+		perms, total, err = r.repository.GetUserPermissions(p.UserID, project.Any, offset, limit)
+		for i := range perms {
+			projects = append(projects, perms[i].Project)
+		}
 	case SrcMyProject:
 		var perms []project.Permission
 		perms, total, err = r.repository.GetUserPermissions(p.UserID, project.Manager, offset, limit)
@@ -65,12 +65,7 @@ func (r *repository) GetList(p GetProjectRequest) (responses []ProjectResponse, 
 		for i := range perms {
 			projects = append(projects, perms[i].Project)
 		}
-	case SrcAllProject:
-		var perms []project.Permission
-		perms, total, err = r.repository.GetUserPermissions(p.UserID, project.Any, offset, limit)
-		for i := range perms {
-			projects = append(projects, perms[i].Project)
-		}
+
 	default:
 		return nil, 0, errors.BadRequest.NewWithMessage("invalid src params")
 	}
@@ -84,62 +79,28 @@ func (r *repository) GetList(p GetProjectRequest) (responses []ProjectResponse, 
 	return responses, total, nil
 }
 
-func (r *repository) GetPermissions(projectID uint64) (PermissionResponse, error) {
-	perms, total, err := r.repository.GetProjectPermissions(projectID, project.Any, 0, 0)
+func (r *repository) GetForWorkspace(workspaceID uint64, paging paging.Paging) (resp GetProjectResponse, err error) {
+	offset, limit := paging.Parse()
+	projects, total, err := r.repository.GetByWorkspaceID(workspaceID, offset, limit)
 	if err != nil {
-		return PermissionResponse{}, err
+		return
 	}
-	var responses = make([]PermissionObject, len(perms))
-	for i := range perms {
-		responses[i] = convertPermissionObject(perms[i])
+	responses := make([]ProjectResponse, len(projects))
+	for i := range projects {
+		responses[i] = r.convertResponse(projects[i])
 	}
-	return PermissionResponse{
-		Total:   total,
-		Members: responses,
+	return GetProjectResponse{
+		Total:    total,
+		Projects: responses,
 	}, nil
 }
 
-func (r *repository) Create(p CreateProjectRequest) (ProjectResponse, error) {
-	project, err := r.repository.CreateProject(p.WorkspaceID, p.Title, p.Description, p.Color)
+func (r *repository) Create(workspaceID uint64, p CreateProjectRequest) (ProjectResponse, error) {
+	project, err := r.repository.CreateProject(workspaceID, p.Title, p.Description, p.Color)
 	if err != nil {
 		return ProjectResponse{}, err
 	}
 	return r.convertResponse(project), nil
-}
-
-func (r *repository) CreatePerm(req CreatePermParams) error {
-	var errs = make([]error, 0)
-	for _, p := range req.Members {
-		_, err := r.repository.GetPermission(p.UserID, req.ProjectID)
-		if err == nil {
-			continue
-		}
-		_, err = r.repository.CreatePermission(req.ProjectID, p.UserID, project.Role(p.Role))
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-	if len(errs) != 0 {
-		return errors.ProjectPermissionCreatingError.NewWithMessageF("error creating %d permissions", len(errs))
-	}
-	return nil
-}
-
-func (r *repository) UpdatePerm(projectID uint64, req UpdatePermissionRequest) (PermissionObject, error) {
-	var role project.Role
-	switch req.Role {
-	case 1:
-		role = project.Manager
-	case 2:
-		role = project.Member
-	default:
-		return PermissionObject{}, errors.ProjectRoleInvalid.NewWithMessageF("role %d is not supported", req.Role)
-	}
-	perm, err := r.repository.UpdatePermission(projectID, req.UserID, role)
-	if err != nil {
-		return PermissionObject{}, err
-	}
-	return convertPermissionObject(perm), nil
 }
 
 func (r *repository) UpdateProject(id uint64, request UpdateProjectRequest) (ProjectResponse, error) {
@@ -189,13 +150,5 @@ func (r *repository) convertResponse(p project.Project) ProjectResponse {
 		MemberCount:    totalPerms,
 		Workspace:      w,
 		ProjectManager: pm,
-	}
-}
-
-func convertPermissionObject(perm project.Permission) PermissionObject {
-	return PermissionObject{
-		CreatedAt: clock.UnixMillisecondFromTime(perm.CreatedAt),
-		UserID:    perm.UserID,
-		Role:      perm.Role,
 	}
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/nkhang/pluto/internal/project"
 	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/pkg/cache"
-	"github.com/nkhang/pluto/pkg/gin"
+	"github.com/nkhang/pluto/pkg/pgin"
 )
 
 func provideProjectDBRepository(db *gorm.DB) project.DBRepository {
@@ -31,6 +31,7 @@ type params struct {
 	ProjectRepo project.Repository
 }
 
-func provideService(p params) gin.IEngine {
-	return projectapi.NewService(p.Repository, p.ProjectRepo)
+func provideService(p params) (pgin.Router, pgin.StandaloneRouter) {
+	service := projectapi.NewService(p.Repository, p.ProjectRepo)
+	return service, service
 }

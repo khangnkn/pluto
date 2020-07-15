@@ -18,7 +18,7 @@ func NewService(r Repository) *service {
 	}
 }
 
-func (s *service) Register(router gin.IRouter) {
+func (s *service) RegisterStandalone(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getByProjectID))
 	router.POST("", ginwrapper.Wrap(s.create))
 }

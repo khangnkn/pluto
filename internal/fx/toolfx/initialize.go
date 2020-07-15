@@ -5,7 +5,7 @@ import (
 	"github.com/nkhang/pluto/internal/tool"
 	"github.com/nkhang/pluto/internal/tool/toolapi"
 	"github.com/nkhang/pluto/pkg/cache"
-	"github.com/nkhang/pluto/pkg/gin"
+	"github.com/nkhang/pluto/pkg/pgin"
 )
 
 func provideToolRepository(db *gorm.DB, cacheRepo cache.Cache) tool.Repository {
@@ -18,6 +18,6 @@ func provideToolAPI(r tool.Repository) toolapi.Repository {
 	return toolapi.NewRepository(r)
 }
 
-func provideToolService(r toolapi.Repository) gin.IEngine {
+func provideToolService(r toolapi.Repository) pgin.StandaloneRouter {
 	return toolapi.NewService(r)
 }

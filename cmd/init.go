@@ -19,8 +19,8 @@ import (
 	"github.com/nkhang/pluto/internal/tool"
 	"github.com/nkhang/pluto/internal/tool/toolapi"
 	"github.com/nkhang/pluto/internal/workspace"
-	pgin "github.com/nkhang/pluto/pkg/gin"
 	"github.com/nkhang/pluto/pkg/logger"
+	pgin "github.com/nkhang/pluto/pkg/pgin"
 )
 
 type params struct {
@@ -29,25 +29,25 @@ type params struct {
 	GormDB           *gorm.DB
 	Router           *gin.Engine
 	ToolRepository   toolapi.Repository
-	WorkspaceService pgin.IEngine `name:"WorkspaceService"`
-	ProjectService   pgin.IEngine `name:"ProjectService"`
-	DatasetService   pgin.IEngine `name:"DatasetService"`
-	LabelService     pgin.IEngine `name:"LabelService"`
-	ToolService      pgin.IEngine `name:"ToolService"`
-	ImageService     pgin.IEngine `name:"ImageService"`
-	TaskService      pgin.IEngine `name:"TaskService"`
+	WorkspaceService pgin.StandaloneRouter `name:"WorkspaceService"`
+	ProjectService   pgin.StandaloneRouter `name:"ProjectService"`
+	DatasetService   pgin.StandaloneRouter `name:"DatasetService"`
+	LabelService     pgin.StandaloneRouter `name:"LabelService"`
+	ToolService      pgin.StandaloneRouter `name:"ToolService"`
+	ImageService     pgin.StandaloneRouter `name:"ImageService"`
+	TaskService      pgin.StandaloneRouter `name:"TaskService"`
 }
 
 func initializer(l fx.Lifecycle, p params) {
 	migrate(p.GormDB)
 	router := p.Router.Group("/pluto/api/v1")
-	p.ToolService.Register(router.Group("/tools"))
-	p.LabelService.Register(router.Group("/labels"))
-	p.ProjectService.Register(router.Group("/projects"))
-	p.DatasetService.Register(router.Group("/datasets"))
-	p.WorkspaceService.Register(router.Group("/workspaces"))
-	p.ImageService.Register(router.Group("/images"))
-	p.TaskService.Register(router.Group("/tasks"))
+	p.ToolService.RegisterStandalone(router.Group("/tools"))
+	p.LabelService.RegisterStandalone(router.Group("/labels"))
+	p.ProjectService.RegisterStandalone(router.Group("/projects"))
+	p.DatasetService.RegisterStandalone(router.Group("/datasets"))
+	p.WorkspaceService.RegisterStandalone(router.Group("/workspaces"))
+	p.ImageService.RegisterStandalone(router.Group("/images"))
+	p.TaskService.RegisterStandalone(router.Group("/tasks"))
 	l.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {

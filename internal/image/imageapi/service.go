@@ -17,7 +17,7 @@ func NewService(r Repository) *service {
 
 const fieldImageID = "image_id"
 
-func (s *service) Register(router gin.IRouter) {
+func (s *service) RegisterStandalone(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getByDataset))
 	router.GET("/:"+fieldImageID, ginwrapper.Wrap(s.get))
 	router.POST("", ginwrapper.Wrap(s.uploadByDataset))

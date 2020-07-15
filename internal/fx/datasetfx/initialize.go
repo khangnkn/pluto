@@ -7,7 +7,7 @@ import (
 	"github.com/nkhang/pluto/internal/dataset/datasetapi"
 	"github.com/nkhang/pluto/internal/image"
 	"github.com/nkhang/pluto/pkg/cache"
-	"github.com/nkhang/pluto/pkg/gin"
+	"github.com/nkhang/pluto/pkg/pgin"
 )
 
 func provideRepository(db *gorm.DB, c cache.Cache) dataset.Repository {
@@ -19,6 +19,6 @@ func provideAPIRepo(r dataset.Repository, imgRepo image.Repository) datasetapi.R
 	return datasetapi.NewRepository(r, imgRepo)
 }
 
-func provideService(repository datasetapi.Repository) gin.IEngine {
+func provideService(repository datasetapi.Repository) pgin.StandaloneRouter {
 	return datasetapi.NewService(repository)
 }

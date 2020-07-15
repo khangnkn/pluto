@@ -9,7 +9,7 @@ import (
 	"github.com/nkhang/pluto/internal/task/taskapi"
 	"github.com/nkhang/pluto/pkg/annotation"
 	"github.com/nkhang/pluto/pkg/cache"
-	pgin "github.com/nkhang/pluto/pkg/gin"
+	pgin "github.com/nkhang/pluto/pkg/pgin"
 )
 
 func provideTaskDBRepo(db *gorm.DB) task.DBRepository {
@@ -24,6 +24,6 @@ func provideAPIRepo(r task.Repository, ir image.Repository, datasetRepo dataseta
 	return taskapi.NewRepository(r, ir, datasetRepo, projectRepo, annotationService)
 }
 
-func provideService(r taskapi.Repository, tr task.Repository) pgin.IEngine {
+func provideService(r taskapi.Repository, tr task.Repository) pgin.StandaloneRouter {
 	return taskapi.NewService(r, tr)
 }

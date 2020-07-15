@@ -3,9 +3,11 @@ package workspaceapi
 import (
 	"net/http"
 
+	"github.com/nkhang/pluto/internal/workspace/workspaceapi/permissionapi"
+
 	"github.com/gin-gonic/gin"
 	"github.com/nkhang/pluto/internal/workspace"
-	pgin "github.com/nkhang/pluto/pkg/gin"
+	pgin "github.com/nkhang/pluto/pkg/pgin"
 	"github.com/nkhang/pluto/pkg/util/idextractor"
 	"github.com/spf13/cast"
 
@@ -20,18 +22,23 @@ const (
 type service struct {
 	repository    Repository
 	workspaceRepo workspace.Repository
-	permRouter    pgin.IEngine
+	permRouter    pgin.Router
+	projectRouter pgin.Router
 }
 
-func NewService(r Repository, permRouter pgin.IEngine, workspaceRepo workspace.Repository) *service {
+func NewService(r Repository,
+	workspaceRepo workspace.Repository, pr pgin.Router) *service {
+	permRepo := permissionapi.NewRepository(workspaceRepo)
+	permRouter := permissionapi.NewService(permRepo)
 	return &service{
 		repository:    r,
 		workspaceRepo: workspaceRepo,
 		permRouter:    permRouter,
+		projectRouter: pr,
 	}
 }
 
-func (s *service) Register(router gin.IRouter) {
+func (s *service) RegisterStandalone(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getByUserID))
 	router.POST("", ginwrapper.Wrap(s.create))
 	detailRouter := router.Group("/:"+FieldWorkspaceID, s.verifyWorkspace())
@@ -41,6 +48,7 @@ func (s *service) Register(router gin.IRouter) {
 		detailRouter.DELETE("", ginwrapper.Wrap(s.delete))
 	}
 	s.permRouter.Register(detailRouter.Group("/perms"))
+	s.projectRouter.Register(detailRouter.Group("/projects"))
 }
 
 func (s *service) get(c *gin.Context) ginwrapper.Response {

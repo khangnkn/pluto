@@ -30,7 +30,7 @@ func NewService(r Repository, tr task.Repository) *service {
 	}
 }
 
-func (s *service) Register(router gin.IRouter) {
+func (s *service) RegisterStandalone(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getList))
 	router.POST("", ginwrapper.Wrap(s.createTask))
 	detailRouter := router.Group("/:"+fieldTaskID, s.verifyTask())
