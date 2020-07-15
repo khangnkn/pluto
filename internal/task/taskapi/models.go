@@ -21,9 +21,9 @@ type CreateTaskRequest struct {
 
 const (
 	SrcAllTasks uint32 = iota + 1
+	SrcAssignerTasks
 	SrcLabelingTasks
 	SrcReviewingTasks
-	SrcProjectTasks
 )
 
 type GetTasksRequest struct {

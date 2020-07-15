@@ -49,6 +49,8 @@ func (r *dbRepository) GetTasksByUser(userID uint64, role Role, status Status, o
 		db = db.Where(&Task{Labeler: userID})
 	case Reviewer:
 		db = db.Where(&Task{Reviewer: userID})
+	case Assigner:
+		db = db.Where(&Task{Assigner: userID})
 	default:
 		err = errors.TaskCannotGet.NewWithMessage("role not supported")
 		return

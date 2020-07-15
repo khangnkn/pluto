@@ -73,6 +73,11 @@ func (r *repository) GetTasks(request GetTasksRequest) (response GetTaskResponse
 		if err != nil {
 			return GetTaskResponse{}, err
 		}
+	case SrcAssignerTasks:
+		tasks, total, err = r.repository.GetTasksByUser(request.UserID, task.Assigner, task.Any, offset, limit)
+		if err != nil {
+			return GetTaskResponse{}, err
+		}
 	case SrcLabelingTasks:
 		tasks, total, err = r.repository.GetTasksByUser(request.UserID, task.Labeler, task.Any, offset, limit)
 		if err != nil {
@@ -83,14 +88,7 @@ func (r *repository) GetTasks(request GetTasksRequest) (response GetTaskResponse
 		if err != nil {
 			return GetTaskResponse{}, err
 		}
-	case SrcProjectTasks:
-		if request.ProjectID == 0 {
-			return GetTaskResponse{}, errors.BadRequest.NewWithMessage("project_id is required")
-		}
-		tasks, total, err = r.repository.GetTasksByProject(request.ProjectID, task.Any, offset, limit)
-		if err != nil {
-			return GetTaskResponse{}, err
-		}
+
 	}
 	responses := make([]TaskResponse, len(tasks))
 	for i := range tasks {

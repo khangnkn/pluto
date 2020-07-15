@@ -12,6 +12,7 @@ type Role uint32
 
 const (
 	AnyRole Role = iota
+	Assigner
 	Labeler
 	Reviewer
 )
