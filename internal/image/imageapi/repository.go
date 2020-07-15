@@ -14,13 +14,8 @@ import (
 
 	"github.com/nkhang/pluto/internal/dataset"
 	"github.com/nkhang/pluto/internal/image"
-	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/logger"
 	"github.com/nkhang/pluto/pkg/objectstorage"
-)
-
-const (
-	MaxLimitImage = 10
 )
 
 type Repository interface {
@@ -60,9 +55,6 @@ func (r *repository) GetImage(request GetImageRequest) (ImageResponse, error) {
 }
 
 func (r *repository) GetByDatasetID(dID uint64, offset, limit int) ([]ImageResponse, error) {
-	if limit > MaxLimitImage {
-		return nil, errors.ImageTooManyRequest.NewWithMessage("too many image to query")
-	}
 	images, err := r.repo.GetByDataset(dID, offset, limit)
 	if err != nil {
 		return nil, err
