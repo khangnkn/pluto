@@ -31,10 +31,7 @@ type params struct {
 	ToolRepository   toolapi.Repository
 	WorkspaceService pgin.StandaloneRouter `name:"WorkspaceService"`
 	ProjectService   pgin.StandaloneRouter `name:"ProjectService"`
-	DatasetService   pgin.StandaloneRouter `name:"DatasetService"`
-	LabelService     pgin.StandaloneRouter `name:"LabelService"`
 	ToolService      pgin.StandaloneRouter `name:"ToolService"`
-	ImageService     pgin.StandaloneRouter `name:"ImageService"`
 	TaskService      pgin.StandaloneRouter `name:"TaskService"`
 }
 
@@ -42,11 +39,8 @@ func initializer(l fx.Lifecycle, p params) {
 	migrate(p.GormDB)
 	router := p.Router.Group("/pluto/api/v1")
 	p.ToolService.RegisterStandalone(router.Group("/tools"))
-	p.LabelService.RegisterStandalone(router.Group("/labels"))
 	p.ProjectService.RegisterStandalone(router.Group("/projects"))
-	p.DatasetService.RegisterStandalone(router.Group("/datasets"))
 	p.WorkspaceService.RegisterStandalone(router.Group("/workspaces"))
-	p.ImageService.RegisterStandalone(router.Group("/images"))
 	p.TaskService.RegisterStandalone(router.Group("/tasks"))
 	l.Append(
 		fx.Hook{

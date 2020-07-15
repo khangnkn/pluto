@@ -2,6 +2,7 @@ package imageapi
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/nkhang/pluto/internal/dataset/datasetapi"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
 	"github.com/spf13/cast"
@@ -15,12 +16,12 @@ func NewService(r Repository) *service {
 	return &service{repository: r}
 }
 
-const fieldImageID = "image_id"
+const fieldImageID = "imageId"
 
-func (s *service) RegisterStandalone(router gin.IRouter) {
+func (s *service) Register(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getByDataset))
-	router.GET("/:"+fieldImageID, ginwrapper.Wrap(s.get))
 	router.POST("", ginwrapper.Wrap(s.uploadByDataset))
+	router.GET("/:"+fieldImageID, ginwrapper.Wrap(s.get))
 }
 
 func (s *service) get(c *gin.Context) ginwrapper.Response {
@@ -45,6 +46,7 @@ func (s *service) get(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) getByDataset(c *gin.Context) ginwrapper.Response {
+	datasetID := uint64(c.GetInt64(datasetapi.FieldDatasetID))
 	var q ImageRequestQuery
 	err := c.ShouldBindQuery(&q)
 	if err != nil {
@@ -52,7 +54,7 @@ func (s *service) getByDataset(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.Wrap(err, "fail to bind request"),
 		}
 	}
-	responses, err := s.repository.GetByDatasetID(q.DatasetID, q.Offset, q.Limit)
+	responses, err := s.repository.GetByDatasetID(datasetID, q.Offset, q.Limit)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -65,6 +67,7 @@ func (s *service) getByDataset(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) uploadByDataset(c *gin.Context) ginwrapper.Response {
+	datasetID := uint64(c.GetInt64(datasetapi.FieldDatasetID))
 	var req UploadRequest
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -72,7 +75,7 @@ func (s *service) uploadByDataset(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.NewWithMessage("error binding request"),
 		}
 	}
-	errs := s.repository.UploadRequest(req.DatasetID, req.FileHeader)
+	errs := s.repository.UploadRequest(datasetID, req.FileHeader)
 	if len(errs) != 0 {
 		return ginwrapper.Response{
 			Error: errors.ImageErrorCreating.Wrap(err, "error reading file"),

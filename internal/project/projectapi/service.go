@@ -3,11 +3,9 @@ package projectapi
 import (
 	"net/http"
 
-	"github.com/nkhang/pluto/internal/workspace/workspaceapi/consts"
+	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
 
 	"github.com/nkhang/pluto/pkg/util/paging"
-
-	"github.com/nkhang/pluto/internal/project/projectapi/permissionapi"
 
 	"github.com/nkhang/pluto/pkg/pgin"
 
@@ -24,19 +22,23 @@ type service struct {
 	repository       Repository
 	projectRepo      project.Repository
 	permissionRouter pgin.Router
+	taskRouter       pgin.Router
+	datasetRouter    pgin.Router
+	labelRouter      pgin.Router
 }
 
 const (
 	FieldProjectID = "projectId"
 )
 
-func NewService(r Repository, projectRepo project.Repository) *service {
-	permRepo := permissionapi.NewProjectPermissionAPIRepository(projectRepo)
-	permRouter := permissionapi.NewService(permRepo)
+func NewService(r Repository, projectRepo project.Repository, permissionRouter, taskRouter, datasetRouter, labelRouter pgin.Router) *service {
 	return &service{
 		repository:       r,
 		projectRepo:      projectRepo,
-		permissionRouter: permRouter,
+		permissionRouter: permissionRouter,
+		datasetRouter:    datasetRouter,
+		taskRouter:       taskRouter,
+		labelRouter:      labelRouter,
 	}
 }
 
@@ -50,6 +52,9 @@ func (s *service) Register(router gin.IRouter) {
 		detailRouter.DELETE("", ginwrapper.Wrap(s.delete))
 	}
 	s.permissionRouter.Register(detailRouter.Group("/perms"))
+	s.taskRouter.Register(detailRouter.Group("/tasks"))
+	s.datasetRouter.Register(detailRouter.Group("/datasets"))
+	s.labelRouter.Register(detailRouter.Group("/labels"))
 }
 
 func (s *service) RegisterStandalone(router gin.IRouter) {
@@ -79,7 +84,7 @@ func (s *service) getForUser(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) getForWorkspace(c *gin.Context) ginwrapper.Response {
-	id := uint64(c.GetInt64(consts.FieldWorkspaceId))
+	id := uint64(c.GetInt64(workspaceapi.FieldWorkspaceID))
 	var pg paging.Paging
 	if err := c.ShouldBindQuery(&pg); err != nil {
 		return ginwrapper.Response{
@@ -112,7 +117,7 @@ func (s *service) get(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) create(c *gin.Context) ginwrapper.Response {
-	workspaceID := uint64(c.GetInt64(consts.FieldWorkspaceId))
+	workspaceID := uint64(c.GetInt64(workspaceapi.FieldWorkspaceID))
 	var req CreateProjectRequest
 	if err := c.ShouldBind(&req); err != nil {
 		return ginwrapper.Response{
@@ -177,8 +182,13 @@ func (s *service) verifyProjectIDMdw() gin.HandlerFunc {
 			ginwrapper.Report(c, http.StatusOK, err, nil)
 			return
 		}
-		_, err = s.projectRepo.Get(uint64(projectID))
+		p, err := s.projectRepo.Get(uint64(projectID))
 		if err != nil {
+			ginwrapper.Report(c, http.StatusOK, err, nil)
+			return
+		}
+		if workspaceID := uint64(c.GetInt64(workspaceapi.FieldWorkspaceID)); p.WorkspaceID != workspaceID {
+			err = errors.ProjectNotFound.NewWithMessageF("project %d does not belong to workspace %d", projectID, workspaceID)
 			ginwrapper.Report(c, http.StatusOK, err, nil)
 			return
 		}

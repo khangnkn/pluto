@@ -1,7 +1,13 @@
 package datasetapi
 
 import (
+	"net/http"
+
+	"github.com/nkhang/pluto/pkg/pgin"
+
 	"github.com/gin-gonic/gin"
+	"github.com/nkhang/pluto/internal/dataset"
+	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/pkg/util/idextractor"
 	"github.com/spf13/cast"
 
@@ -11,36 +17,38 @@ import (
 )
 
 const (
-	fieldDatasetID = "datasetId"
+	FieldDatasetID = "datasetId"
 )
 
 type service struct {
-	repository Repository
+	repository  Repository
+	datasetRepo dataset.Repository
+	imageRouter pgin.Router
 }
 
-func NewService(r Repository) *service {
+func NewService(r Repository, datasetRepo dataset.Repository, imageRouter pgin.Router) *service {
 	return &service{
-		repository: r,
+		repository:  r,
+		datasetRepo: datasetRepo,
+		imageRouter: imageRouter,
 	}
 }
 
-func (s *service) RegisterStandalone(router gin.IRouter) {
+func (s *service) Register(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getByProjectID))
-	router.GET("/:"+fieldDatasetID, ginwrapper.Wrap(s.getByID))
-	router.DELETE("/:"+fieldDatasetID, ginwrapper.Wrap(s.del))
-	router.POST("/:"+fieldDatasetID+"/clone", ginwrapper.Wrap(s.clone))
 	router.POST("", ginwrapper.Wrap(s.create))
+	detailRouter := router.Group("/:"+FieldDatasetID, s.verifyDataset())
+	{
+		detailRouter.GET("", ginwrapper.Wrap(s.getByID))
+		detailRouter.DELETE("", ginwrapper.Wrap(s.del))
+		detailRouter.POST("/clone", ginwrapper.Wrap(s.clone))
+	}
+	s.imageRouter.Register(detailRouter.Group("/images"))
 }
 
 func (s *service) getByID(c *gin.Context) ginwrapper.Response {
-	dIDStr := c.Param(fieldDatasetID)
-	dID, err := cast.ToUint64E(dIDStr)
-	if err != nil {
-		return ginwrapper.Response{
-			Error: errors.BadRequest.Wrap(err, "cannot get dataset id"),
-		}
-	}
-	dataset, err := s.repository.GetByID(dID)
+	datasetID := uint64(c.GetInt64(FieldDatasetID))
+	dataset, err := s.repository.GetByID(datasetID)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -53,13 +61,8 @@ func (s *service) getByID(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) getByProjectID(c *gin.Context) ginwrapper.Response {
-	var request GetDatasetRequest
-	if err := c.ShouldBind(&request); err != nil {
-		return ginwrapper.Response{
-			Error: errors.BadRequest.Wrap(err, "cannot get dataset id"),
-		}
-	}
-	datasets, err := s.repository.GetByProjectID(request.ProjectID)
+	projectID := uint64(c.GetInt64(projectapi.FieldProjectID))
+	datasets, err := s.repository.GetByProjectID(projectID)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -72,13 +75,14 @@ func (s *service) getByProjectID(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) create(c *gin.Context) ginwrapper.Response {
+	projectID := uint64(c.GetInt64(projectapi.FieldProjectID))
 	var req CreateDatasetRequest
 	if err := c.ShouldBind(&req); err != nil {
 		return ginwrapper.Response{
 			Error: errors.BadRequest.Wrap(err, "cannot bind request"),
 		}
 	}
-	dataset, err := s.repository.CreateDataset(req.Title, req.Description, req.ProjectID)
+	dataset, err := s.repository.CreateDataset(req.Title, req.Description, projectID)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -97,7 +101,7 @@ func (s *service) clone(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.Wrap(err, "cannot bind request"),
 		}
 	}
-	dIDStr := c.Param(fieldDatasetID)
+	dIDStr := c.Param(FieldDatasetID)
 	dID, err := cast.ToUint64E(dIDStr)
 	if err != nil {
 		return ginwrapper.Response{
@@ -118,15 +122,40 @@ func (s *service) clone(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) del(c *gin.Context) ginwrapper.Response {
-	id, err := idextractor.ExtractUint64Param(c, fieldDatasetID)
-	if err != nil {
-		return ginwrapper.Response{Error: err}
-	}
-	err = s.repository.Delete(id)
+	datasetID := uint64(c.GetInt64(FieldDatasetID))
+	err := s.repository.Delete(datasetID)
 	if err != nil {
 		return ginwrapper.Response{Error: err}
 	}
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("success"),
 	}
+}
+
+func (s *service) verifyDataset() gin.HandlerFunc {
+	return gin.HandlerFunc(func(c *gin.Context) {
+		datasetID, err := idextractor.ExtractInt64Param(c, FieldDatasetID)
+		if err != nil {
+			err := errors.BadRequest.NewWithMessageF("dataset %d not found", datasetID)
+			ginwrapper.Report(c, http.StatusOK, err, nil)
+			return
+		}
+		if datasetID == 0 {
+			err := errors.BadRequest.NewWithMessage("dataset ID must be other than 0")
+			ginwrapper.Report(c, http.StatusOK, err, nil)
+			return
+		}
+		p, err := s.datasetRepo.Get(uint64(datasetID))
+		if err != nil {
+			ginwrapper.Report(c, http.StatusOK, err, nil)
+			return
+		}
+		if projectID := uint64(c.GetInt64(projectapi.FieldProjectID)); p.ProjectID != projectID {
+			err = errors.ProjectNotFound.NewWithMessageF("dataset %d does not belong to project %d", datasetID, projectID)
+			ginwrapper.Report(c, http.StatusOK, err, nil)
+			return
+		}
+		c.Set(FieldDatasetID, datasetID)
+		c.Next()
+	})
 }

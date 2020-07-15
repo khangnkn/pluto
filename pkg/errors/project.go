@@ -8,6 +8,7 @@ const (
 	ProjectPermissionCannotUpdate
 	ProjectPermissionExisted
 	ProjectPermissionCreatingError
+	ProjectPermissionCannotDelete
 	ProjectCreatingError
 	ProjectCannotUpdate
 	ProjectCannotDelete

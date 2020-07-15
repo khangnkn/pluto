@@ -3,6 +3,7 @@ package workspacefx
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkhang/pluto/internal/project"
+	"github.com/nkhang/pluto/internal/workspace/workspaceapi/permissionapi"
 	"go.uber.org/fx"
 
 	"github.com/nkhang/pluto/internal/workspace"
@@ -31,5 +32,7 @@ type params struct {
 }
 
 func provideWorkspaceService(p params) pgin.StandaloneRouter {
-	return workspaceapi.NewService(p.Repository, p.Wr, p.ProjectRouter)
+	permRepo := permissionapi.NewRepository(p.Wr)
+	permRouter := permissionapi.NewService(permRepo)
+	return workspaceapi.NewService(p.Repository, p.Wr, p.ProjectRouter, permRouter)
 }

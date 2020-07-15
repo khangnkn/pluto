@@ -19,6 +19,7 @@ type Repository interface {
 	UpdatePermission(projectID, userID uint64, role Role) (Permission, error)
 	UpdateProject(projectID uint64, changes map[string]interface{}) (Project, error)
 	Delete(id uint64) error
+	DeletePermission(userID, projectID uint64) error
 	DeleteByWorkspace(workspaceID uint64) error
 }
 
@@ -260,5 +261,14 @@ func (r *repository) DeleteByWorkspace(workspaceID uint64) error {
 			logger.Errorf("error delete project %d of workspace %d", projects[i].ID, workspaceID)
 		}
 	}
+	return nil
+}
+func (r *repository) DeletePermission(userID, projectID uint64) error {
+	err := r.disk.DeletePermission(userID, projectID)
+	if err != nil {
+		return err
+	}
+	r.InvalidatePermissionForUser(userID)
+	r.InvalidatePermissionForProject(projectID)
 	return nil
 }

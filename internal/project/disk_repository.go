@@ -18,6 +18,7 @@ type DBRepository interface {
 	UpdatePermission(projectID, userID uint64, role Role) (Permission, error)
 	UpdateProject(ProjectID uint64, changes map[string]interface{}) (Project, error)
 	Delete(id uint64) error
+	DeletePermission(userID, projectID uint64) error
 }
 
 type dbRepository struct {
@@ -175,6 +176,17 @@ func (r *dbRepository) Delete(id uint64) error {
 	err = r.db.Delete(&p).Error
 	if err != nil {
 		return errors.ProjectCannotDelete.Wrap(err, "cannot delete project")
+	}
+	return nil
+}
+
+func (r *dbRepository) DeletePermission(userID, projectID uint64) error {
+	var perm Permission
+	perm.ProjectID = projectID
+	perm.UserID = userID
+	err := r.db.Model(&perm).Where(&perm).Delete(&perm).Error
+	if err != nil {
+		return errors.ProjectPermissionCannotDelete.NewWithMessageF("cannot delete permission for user %d, project %d", userID, projectID)
 	}
 	return nil
 }

@@ -3,11 +3,9 @@ package workspaceapi
 import (
 	"net/http"
 
-	"github.com/nkhang/pluto/internal/workspace/workspaceapi/permissionapi"
-
 	"github.com/gin-gonic/gin"
 	"github.com/nkhang/pluto/internal/workspace"
-	pgin "github.com/nkhang/pluto/pkg/pgin"
+	"github.com/nkhang/pluto/pkg/pgin"
 	"github.com/nkhang/pluto/pkg/util/idextractor"
 	"github.com/spf13/cast"
 
@@ -26,10 +24,8 @@ type service struct {
 	projectRouter pgin.Router
 }
 
-func NewService(r Repository,
-	workspaceRepo workspace.Repository, pr pgin.Router) *service {
-	permRepo := permissionapi.NewRepository(workspaceRepo)
-	permRouter := permissionapi.NewService(permRepo)
+func NewService(r Repository, workspaceRepo workspace.Repository,
+	pr pgin.Router, permRouter pgin.Router) *service {
 	return &service{
 		repository:    r,
 		workspaceRepo: workspaceRepo,

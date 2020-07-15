@@ -10,6 +10,7 @@ type Repository interface {
 	Create(projectID uint64, req CreatePermRequest) error
 	GetList(projectID uint64) (PermissionResponse, error)
 	Update(projectID uint64, req UpdatePermissionRequest) (PermissionObject, error)
+	Delete(projectID, userID uint64) error
 }
 
 type repository struct {
@@ -78,4 +79,8 @@ func convertPermissionObject(perm project.Permission) PermissionObject {
 		UserID:    perm.UserID,
 		Role:      perm.Role,
 	}
+}
+
+func (r *repository) Delete(projectID, userID uint64) error {
+	return r.repository.DeletePermission(userID, projectID)
 }

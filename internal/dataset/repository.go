@@ -80,6 +80,7 @@ func (r *repository) CreateDataset(title, description string, pID uint64) (Datas
 		if err != nil {
 			logger.Infof("cannot invalidate cache for all dataset by project %d", pID)
 		}
+		logger.Infof("invalidate cache for project %d", pID)
 	}()
 	return r.dbRepo.CreateDataset(title, description, pID)
 }

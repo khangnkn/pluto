@@ -10,8 +10,7 @@ type LabelRequest struct {
 }
 
 type CreateLabelRequest struct {
-	ProjectID uint64              `json:"project_id" form:"project_id" binding:"required"`
-	Labels    []CreateLabelObject `json:"labels" form:"labels"`
+	Labels []CreateLabelObject `json:"labels" form:"labels" binding:"required"`
 }
 
 type CreateLabelObject struct {

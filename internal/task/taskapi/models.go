@@ -12,7 +12,6 @@ import (
 type CreateTaskRequest struct {
 	Title       string         `json:"title" form:"title"`
 	Description string         `json:"description" form:"description"`
-	ProjectID   uint64         `json:"project_id" form:"project_id" binding:"required"`
 	DatasetID   uint64         `json:"dataset_id" form:"dataset_id" binding:"required"`
 	Assigner    uint64         `json:"assigner" form:"assigner" binding:"required"`
 	Quantity    int            `json:"quantity" form:"quantity" binding:"required"`
@@ -27,11 +26,10 @@ const (
 )
 
 type GetTasksRequest struct {
-	ProjectID uint64 `json:"project_id" form:"project_id"`
-	UserID    uint64 `json:"user_id" form:"user_id"`
-	Source    uint32 `json:"src" form:"src" binding:"required"`
-	Page      int    `json:"page" form:"page"`
-	PageSize  int    `json:"page_size" form:"page_size"`
+	UserID   uint64 `json:"user_id" form:"user_id"`
+	Source   uint32 `json:"src" form:"src" binding:"required"`
+	Page     int    `json:"page" form:"page"`
+	PageSize int    `json:"page_size" form:"page_size"`
 }
 
 type GetTaskResponse struct {

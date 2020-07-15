@@ -24,8 +24,9 @@ import (
 
 type Repository interface {
 	GetTasks(request GetTasksRequest) (response GetTaskResponse, err error)
+	GetTaskForProject(projectID uint64, pg paging.Paging) (response GetTaskResponse, err error)
 	GetTask(taskID uint64) (TaskResponse, error)
-	CreateTask(request CreateTaskRequest) error
+	CreateTask(projectID uint64, request CreateTaskRequest) error
 	DeleteTask(taskID uint64) error
 	GetTaskDetails(taskID uint64, request GetTaskDetailsRequest) ([]TaskDetailResponse, error)
 	UpdateTaskDetail(taskID, detailID uint64, request UpdateTaskDetailRequest) (TaskDetailResponse, error)
@@ -100,7 +101,7 @@ func (r *repository) GetTasks(request GetTasksRequest) (response GetTaskResponse
 	}, nil
 }
 
-func (r *repository) CreateTask(request CreateTaskRequest) error {
+func (r *repository) CreateTask(projectID uint64, request CreateTaskRequest) error {
 	imgs, err := r.imgRepo.GetAllImageByDataset(request.DatasetID)
 	if err != nil {
 		return err
@@ -117,14 +118,14 @@ func (r *repository) CreateTask(request CreateTaskRequest) error {
 		for j := range truncated {
 			ids[j] = truncated[j].ID
 		}
-		task, err := r.repository.CreateTask(request.Title, request.Description, request.Assigner, pair.Labeler, pair.Reviewer, request.ProjectID, request.DatasetID, ids)
+		task, err := r.repository.CreateTask(request.Title, request.Description, request.Assigner, pair.Labeler, pair.Reviewer, projectID, request.DatasetID, ids)
 		if err != nil {
 			errs = append(errs, err)
 		}
 		tasks = append(tasks, task)
 	}
 	if len(tasks) != 0 {
-		err := r.annotationService.CreateTask(request.ProjectID, request.DatasetID, tasks)
+		err := r.annotationService.CreateTask(projectID, request.DatasetID, tasks)
 		if err != nil {
 			logger.Error(err)
 		}
@@ -204,6 +205,22 @@ func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
 		ImageCount: imageCount,
 		CreatedAt:  clock.UnixMillisecondFromTime(t.CreatedAt),
 	}
+}
+
+func (r *repository) GetTaskForProject(projectID uint64, pg paging.Paging) (resp GetTaskResponse, err error) {
+	offset, limit := pg.Parse()
+	tasks, total, err := r.repository.GetTasksByProject(projectID, task.Any, offset, limit)
+	if err != nil {
+		return
+	}
+	responses := make([]TaskResponse, len(tasks))
+	for i := range tasks {
+		responses[i] = r.ToTaskResponse(tasks[i])
+	}
+	return GetTaskResponse{
+		Total: total,
+		Tasks: responses,
+	}, nil
 }
 
 func truncate(imgs []image.Image, cursor *int, s int) (res []image.Image) {

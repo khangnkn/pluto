@@ -2,7 +2,7 @@ package permissionapi
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/nkhang/pluto/internal/workspace/workspaceapi/consts"
+	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
 	"github.com/nkhang/pluto/pkg/logger"
@@ -27,7 +27,7 @@ func (s *service) Register(router gin.IRouter) {
 
 func (s *service) get(c *gin.Context) ginwrapper.Response {
 	var req GetPermsRequest
-	workspaceID, err := idextractor.ExtractUint64Param(c, consts.FieldWorkspaceId)
+	workspaceID, err := idextractor.ExtractUint64Param(c, workspaceapi.FieldWorkspaceID)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -50,7 +50,7 @@ func (s *service) get(c *gin.Context) ginwrapper.Response {
 
 func (s *service) create(c *gin.Context) ginwrapper.Response {
 	var req CreatePermsRequest
-	workspaceID, err := idextractor.ExtractUint64Param(c, consts.FieldWorkspaceId)
+	workspaceID, err := idextractor.ExtractUint64Param(c, workspaceapi.FieldWorkspaceID)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -71,7 +71,7 @@ func (s *service) create(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) delete(c *gin.Context) ginwrapper.Response {
-	workspaceID, err := idextractor.ExtractUint64Param(c, consts.FieldWorkspaceId)
+	workspaceID, err := idextractor.ExtractUint64Param(c, workspaceapi.FieldWorkspaceID)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,

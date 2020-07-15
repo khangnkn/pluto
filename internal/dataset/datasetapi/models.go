@@ -5,13 +5,9 @@ import (
 	"github.com/nkhang/pluto/pkg/util/clock"
 )
 
-type GetDatasetRequest struct {
-	ProjectID uint64 `json:"project_id" form:"project_id" binding:"required"`
-}
 type CreateDatasetRequest struct {
 	Title       string `form:"title" json:"title" binding:"required"`
 	Description string `form:"description" json:"description" binding:"required"`
-	ProjectID   uint64 `form:"project_id" json:"project_id" binding:"required"`
 }
 
 type CloneDatasetRequest struct {

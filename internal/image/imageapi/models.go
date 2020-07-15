@@ -8,14 +8,12 @@ import (
 )
 
 type ImageRequestQuery struct {
-	DatasetID uint64 `form:"dataset_id"`
-	Offset    int    `form:"offset"`
-	Limit     int    `form:"limit"`
+	Offset int `form:"offset"`
+	Limit  int `form:"limit"`
 }
 
 type UploadRequest struct {
 	FileHeader []*multipart.FileHeader `form:"file"`
-	DatasetID  uint64                  `form:"dataset_id"`
 }
 
 type GetImageRequest struct {

@@ -44,7 +44,9 @@ func (r *dbRepository) GetTasksByUser(userID uint64, role Role, status Status, o
 	db := r.db.Model(&Task{})
 	switch role {
 	case AnyRole:
-		db = db.Where(&Task{Labeler: userID}).Or(&Task{Reviewer: userID})
+		db = db.Where(&Task{Labeler: userID}).
+			Or(&Task{Reviewer: userID}).
+			Or(&Task{Assigner: userID})
 	case Labeler:
 		db = db.Where(&Task{Labeler: userID})
 	case Reviewer:

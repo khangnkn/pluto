@@ -2,6 +2,7 @@ package projectfx
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/nkhang/pluto/internal/project/projectapi/permissionapi"
 	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
 	"go.uber.org/fx"
 
@@ -27,11 +28,17 @@ func provideAPIRepository(r project.Repository, dr dataset.Repository, wr worksp
 type params struct {
 	fx.In
 
-	Repository  projectapi.Repository
-	ProjectRepo project.Repository
+	Repository    projectapi.Repository
+	ProjectRepo   project.Repository
+	DatasetRouter pgin.Router `name:"DatasetService"`
+	TaskRouter    pgin.Router `name:"TaskService"`
+	LabelRouter   pgin.Router `name:"LabelService"`
 }
 
 func provideService(p params) (pgin.Router, pgin.StandaloneRouter) {
-	service := projectapi.NewService(p.Repository, p.ProjectRepo)
+	permRepo := permissionapi.NewProjectPermissionAPIRepository(p.ProjectRepo)
+	permService := permissionapi.NewService(permRepo, p.ProjectRepo)
+	service := projectapi.NewService(p.Repository, p.ProjectRepo,
+		permService, p.TaskRouter, p.DatasetRouter, p.LabelRouter)
 	return service, service
 }

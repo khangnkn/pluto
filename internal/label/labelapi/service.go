@@ -2,6 +2,7 @@ package labelapi
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/nkhang/pluto/internal/project/projectapi"
 
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
@@ -18,21 +19,14 @@ func NewService(r Repository) *service {
 	}
 }
 
-func (s *service) RegisterStandalone(router gin.IRouter) {
+func (s *service) Register(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getByProjectID))
 	router.POST("", ginwrapper.Wrap(s.create))
 }
 
 func (s *service) getByProjectID(c *gin.Context) ginwrapper.Response {
-	req := LabelRequest{}
-	err := c.ShouldBindQuery(&req)
-	if err != nil {
-		logger.Error(err)
-		return ginwrapper.Response{
-			Error: errors.BadRequest.NewWithMessage("error binding request"),
-		}
-	}
-	responses, err := s.repository.GetByProject(req.ProjectID)
+	projectID := uint64(c.GetInt64(projectapi.FieldProjectID))
+	responses, err := s.repository.GetByProject(projectID)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -45,6 +39,7 @@ func (s *service) getByProjectID(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) create(c *gin.Context) ginwrapper.Response {
+	projectID := uint64(c.GetInt64(projectapi.FieldProjectID))
 	var req CreateLabelRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error("error binding request", err)
@@ -52,7 +47,7 @@ func (s *service) create(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.NewWithMessageF("error binding request. error %v", err),
 		}
 	}
-	if err := s.repository.CreateLabel(req); err != nil {
+	if err := s.repository.CreateLabel(projectID, req); err != nil {
 		return ginwrapper.Response{
 			Error: err,
 		}

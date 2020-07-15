@@ -7,7 +7,7 @@ import (
 
 type Repository interface {
 	GetByProject(pID uint64) ([]LabelResponse, error)
-	CreateLabel(r CreateLabelRequest) error
+	CreateLabel(projectID uint64, r CreateLabelRequest) error
 }
 
 type repository struct {
@@ -32,10 +32,10 @@ func (r *repository) GetByProject(pID uint64) ([]LabelResponse, error) {
 	return responses, nil
 }
 
-func (r *repository) CreateLabel(request CreateLabelRequest) error {
+func (r *repository) CreateLabel(projectID uint64, request CreateLabelRequest) error {
 	errs := make([]error, 0)
 	for _, req := range request.Labels {
-		err := r.repository.CreateLabel(req.Name, req.Color, request.ProjectID, req.ToolID)
+		err := r.repository.CreateLabel(req.Name, req.Color, projectID, req.ToolID)
 		if err != nil {
 			errs = append(errs, err)
 		}

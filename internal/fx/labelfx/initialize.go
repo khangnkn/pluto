@@ -15,7 +15,7 @@ func provideRepository(db *gorm.DB, c cache.Cache) label.Repository {
 	return label.NewRepository(dbRepo, c)
 }
 
-func provideService(r label.Repository) pgin.StandaloneRouter {
+func provideService(r label.Repository) pgin.Router {
 	repository := labelapi.NewRepository(r)
 	return labelapi.NewService(repository)
 }
