@@ -3,7 +3,6 @@ package workspace
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkhang/pluto/pkg/logger"
-	gormbulk "github.com/t-tiger/gorm-bulk-insert/v2"
 
 	"github.com/nkhang/pluto/pkg/errors"
 )
@@ -11,12 +10,13 @@ import (
 type DBRepository interface {
 	Get(id uint64) (Workspace, error)
 	GetByUserID(userID uint64, role Role, offset, limit int) ([]Workspace, int, error)
-	GetPermissionByWorkspaceID(workspaceID uint64, role Role, offset, limit int) ([]Permission, int, error)
 	Create(userID uint64, title, description, color string) (Workspace, error)
-	DeleteWorkspace(workspaceID uint64) error
-	CreatePermission(workspaceID uint64, userIDs []uint64, role Role) error
-	DeletePermission(workspaceID uint64, userID uint64) error
 	UpdateWorkspace(workspaceID uint64, changes map[string]interface{}) (Workspace, error)
+	DeleteWorkspace(workspaceID uint64) error
+	GetPermission(workspaceID, userID uint64) (Permission, error)
+	GetPermissionByWorkspaceID(workspaceID uint64, role Role, offset, limit int) ([]Permission, int, error)
+	CreatePermission(workspaceID uint64, userID uint64, role Role) error
+	DeletePermission(workspaceID uint64, userID uint64) error
 }
 
 type dbRepository struct {
@@ -123,16 +123,13 @@ func (r *dbRepository) UpdateWorkspace(workspaceID uint64, changes map[string]in
 	return workspace, nil
 }
 
-func (r *dbRepository) CreatePermission(workspaceID uint64, userIDs []uint64, role Role) error {
-	var perms = make([]interface{}, len(userIDs))
-	for i, userID := range userIDs {
-		perms[i] = Permission{
-			WorkspaceID: workspaceID,
-			Role:        role,
-			UserID:      userID,
-		}
+func (r *dbRepository) CreatePermission(workspaceID uint64, userID uint64, role Role) error {
+	perm := Permission{
+		WorkspaceID: workspaceID,
+		Role:        role,
+		UserID:      userID,
 	}
-	err := gormbulk.BulkInsert(r.db, perms, 1000)
+	err := r.db.Create(&perm).Error
 	if err != nil {
 		return errors.WorkspacePermissionErrorCreating.Wrap(err, "cannot create permissions")
 	}
@@ -166,4 +163,16 @@ func (r *dbRepository) DeleteWorkspace(workspaceID uint64) error {
 		}
 		return nil
 	})
+}
+
+func (r *dbRepository) GetPermission(workspaceID, userID uint64) (Permission, error) {
+	var perm = Permission{
+		WorkspaceID: workspaceID,
+		UserID:      userID,
+	}
+	err := r.db.Model(&Permission{}).Where(&perm).First(&perm).Error
+	if err != nil {
+		return Permission{}, errors.WorkspacePermissionNotFound.NewWithMessage("workspace permission not found")
+	}
+	return perm, nil
 }

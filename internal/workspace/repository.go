@@ -130,6 +130,10 @@ func (r *repository) Create(userID uint64, title, description, color string) (Wo
 	if err != nil {
 		return Workspace{}, err
 	}
+	err = r.CreatePermission(w.ID, []uint64{userID}, Admin)
+	if err != nil {
+		return Workspace{}, err
+	}
 	go func() {
 		r.InvalidateWorkspacesForUser(userID)
 	}()
@@ -180,7 +184,13 @@ func (r *repository) CreatePermission(workspaceID uint64, userIDs []uint64, role
 	if errors.Type(err) == errors.WorkspaceNotFound {
 		return err
 	}
-	err = r.dbRepo.CreatePermission(workspaceID, userIDs, role)
+	for _, userID := range userIDs {
+		_, err = r.dbRepo.GetPermission(workspaceID, userID)
+		if err == nil {
+			continue
+		}
+		err = r.dbRepo.CreatePermission(workspaceID, userID, role)
+	}
 	if err != nil {
 		return err
 	}
