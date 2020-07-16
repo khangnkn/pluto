@@ -167,7 +167,8 @@ func (r *dbRepository) Delete(id uint64) error {
 		if err != nil {
 			return err
 		}
-		err = tx.Where("project_id = ?", id).Delete(&Permission{}).Error
+		err = tx.Where("project_id = ?", id).
+			Delete(&Permission{}).Error
 		if err != nil {
 			return err
 		}

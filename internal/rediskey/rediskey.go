@@ -94,9 +94,10 @@ func WorkspaceByID(id uint64) string {
 	return fmt.Sprintf("pluto:workspace:id:%d", id)
 }
 
-func WorkspacesByUserID(userID uint64, role int32, offset, limit int) (string, string) {
+func WorkspacesByUserID(userID uint64, role int32, offset, limit int) (string, string, string) {
 	return fmt.Sprintf("pluto:workspaces:userid:%d:role:%d:offset:%d:limit:%d", userID, role, offset, limit),
-		fmt.Sprintf("pluto:workspaces:userid:%d:total", userID)
+		fmt.Sprintf("pluto:workspaces:userid:%d:role:%d:total", userID, role),
+		fmt.Sprintf("pluto:workspaces:userid:%d:*", userID)
 }
 
 func WorkspacesByUserIDPattern(userID uint64) string {

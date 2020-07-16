@@ -64,7 +64,7 @@ func (r *repository) GetByUserID(userID uint64, role Role, offset, limit int) ([
 		workspaces = make([]Workspace, 0)
 		total      int
 	)
-	k, totalKey := rediskey.WorkspacesByUserID(userID, int32(role), offset, limit)
+	k, totalKey, _ := rediskey.WorkspacesByUserID(userID, int32(role), offset, limit)
 	err := r.cacheRepo.Get(k, &workspaces)
 	err2 := r.cacheRepo.Get(totalKey, &total)
 	if err == nil && err2 == nil {
@@ -80,6 +80,13 @@ func (r *repository) GetByUserID(userID uint64, role Role, offset, limit int) ([
 	if err != nil {
 		return nil, 0, err
 	}
+	go func() {
+		err1 := r.cacheRepo.Set(k, workspaces)
+		err2 := r.cacheRepo.Set(totalKey, total)
+		if err1 != nil || err2 != nil {
+			logger.Error("error setting workspace to cache")
+		}
+	}()
 	logger.Infof("getting workspace for user %d successfully", userID)
 	return workspaces, total, nil
 }
@@ -140,6 +147,7 @@ func (r *repository) InvalidateWorkspacesForUser(userID uint64) {
 		return
 	}
 	err = r.cacheRepo.Del(keys...)
+	logger.Errorf("invalidate workspaces permission for users %d successfully", userID)
 	if err != nil {
 		logger.Errorf("error delete keys %v", keys)
 		return
