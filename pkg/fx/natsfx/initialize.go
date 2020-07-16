@@ -2,6 +2,7 @@ package natsfx
 
 import (
 	"context"
+	"time"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nkhang/pluto/pkg/logger"
@@ -12,7 +13,7 @@ import (
 func provideNATSClient(lc fx.Lifecycle) *nats.EncodedConn {
 	url := viper.GetString("nats.url")
 	logger.Infof("Opening connection to NATS server at %s", url)
-	nc, err := nats.Connect(url)
+	nc, err := nats.Connect(url, nats.Timeout(30*time.Second))
 	if err != nil {
 		logger.Panic(err)
 	}

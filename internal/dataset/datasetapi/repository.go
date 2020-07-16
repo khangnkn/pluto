@@ -2,6 +2,7 @@ package datasetapi
 
 import (
 	"net/url"
+	"strings"
 
 	"github.com/nkhang/pluto/internal/dataset"
 	"github.com/nkhang/pluto/internal/image"
@@ -17,9 +18,9 @@ type Repository interface {
 	GetByProjectID(pID uint64) ([]DatasetResponse, error)
 	CreateDataset(title, description string, pID uint64) (DatasetResponse, error)
 	Delete(id uint64) error
-	CloneDataset(projectID uint64, datasetID uint64) (DatasetResponse, error)
+	CloneDataset(projectID uint64, token string) (DatasetResponse, error)
 	GetLink(datasetID uint64) (string, error)
-	ParseLink(link string) (DatasetResponse, error)
+	ParseLink(link string) (GetLinkResponse, error)
 }
 
 type repository struct {
@@ -71,7 +72,16 @@ func (r *repository) CreateDataset(title, description string, pID uint64) (Datas
 	return r.ToDatasetResponse(d), nil
 }
 
-func (r *repository) CloneDataset(projectID uint64, datasetID uint64) (DatasetResponse, error) {
+func (r *repository) CloneDataset(projectID uint64, token string) (DatasetResponse, error) {
+	token = strings.TrimPrefix(token, "/")
+	idStr, err := enc.Decrypt(r.secret, token)
+	if err != nil {
+		return DatasetResponse{}, errors.DatasetLinkCannotParse.NewWithMessage("cannot parse provided link")
+	}
+	datasetID, err := cast.ToUint64E(idStr)
+	if err != nil {
+		return DatasetResponse{}, errors.DatasetLinkCannotParse.NewWithMessage("cannot parse dataset ID")
+	}
 	origin, err := r.repository.Get(datasetID)
 	if err != nil {
 		logger.Errorf("error getting dataset %d, error %v", datasetID, err)
@@ -114,12 +124,24 @@ func (r *repository) GetLink(datasetID uint64) (string, error) {
 	return r.baseURL + "/" + token, nil
 }
 
-func (r *repository) ParseLink(link string) (DatasetResponse, error) {
+func (r *repository) ParseLink(link string) (GetLinkResponse, error) {
 	URL, err := url.Parse(link)
 	if err != nil {
-		return DatasetResponse{}, errors.DatasetLinkCannotParse.NewWithMessage("cannot parse provided link")
+		return GetLinkResponse{}, errors.DatasetLinkCannotParse.NewWithMessage("cannot parse provided link")
 	}
 	token := URL.Path
-	logger.Infof(token)
-	return DatasetResponse{}, nil
+	token = strings.TrimPrefix(token, "/")
+	idStr, err := enc.Decrypt(r.secret, token)
+	if err != nil {
+		return GetLinkResponse{}, errors.DatasetLinkCannotParse.NewWithMessage("cannot parse provided link")
+	}
+	id, err := cast.ToUint64E(idStr)
+	if err != nil {
+		return GetLinkResponse{}, errors.DatasetLinkCannotParse.NewWithMessage("cannot parse provided link")
+	}
+	dataset, err := r.repository.Get(id)
+	if err != nil {
+		return GetLinkResponse{}, err
+	}
+	return r.ToDatasetResponse(dataset).WithToken(token), nil
 }

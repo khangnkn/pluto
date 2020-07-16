@@ -11,7 +11,7 @@ type CreateDatasetRequest struct {
 }
 
 type CloneDatasetRequest struct {
-	ProjectID uint64 `form:"project_id" json:"project_id" binding:"required"`
+	Token string `form:"token" json:"token"`
 }
 
 type ParseLinkRequest struct {
@@ -28,6 +28,11 @@ type DatasetResponse struct {
 	UpdatedAt   int64  `json:"updated_at"`
 }
 
+type GetLinkResponse struct {
+	DatasetResponse
+	Token string `json:"token"`
+}
+
 func (r *repository) ToDatasetResponse(d dataset.Dataset) DatasetResponse {
 	var total int
 	imgs, err := r.imgRepo.GetAllImageByDataset(d.ID)
@@ -42,5 +47,12 @@ func (r *repository) ToDatasetResponse(d dataset.Dataset) DatasetResponse {
 		ProjectID:   d.ProjectID,
 		ImageCount:  total,
 		UpdatedAt:   clock.UnixMillisecondFromTime(d.UpdatedAt),
+	}
+}
+
+func (d DatasetResponse) WithToken(token string) GetLinkResponse {
+	return GetLinkResponse{
+		DatasetResponse: d,
+		Token:           token,
 	}
 }

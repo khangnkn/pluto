@@ -9,7 +9,6 @@ import (
 	"github.com/nkhang/pluto/internal/dataset"
 	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/pkg/util/idextractor"
-	"github.com/spf13/cast"
 
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
@@ -39,9 +38,9 @@ func (s *service) Register(router gin.IRouter) {
 	router.POST("", ginwrapper.Wrap(s.create))
 	detailRouter := router.Group("/:"+FieldDatasetID, s.verifyDataset())
 	{
+		detailRouter.POST("")
 		detailRouter.GET("", ginwrapper.Wrap(s.getByID))
 		detailRouter.DELETE("", ginwrapper.Wrap(s.del))
-		detailRouter.POST("/clone", ginwrapper.Wrap(s.clone))
 		detailRouter.GET("/link", ginwrapper.Wrap(s.getLink))
 	}
 	s.imageRouter.Register(detailRouter.Group("/images"))
@@ -96,21 +95,15 @@ func (s *service) create(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) clone(c *gin.Context) ginwrapper.Response {
+	projectID := uint64(c.GetInt64(projectapi.FieldProjectID))
+	logger.Info("start cloning project")
 	var req CloneDatasetRequest
 	if err := c.ShouldBind(&req); err != nil {
 		return ginwrapper.Response{
-			Error: errors.BadRequest.Wrap(err, "cannot bind request"),
+			Error: errors.BadRequest.NewWithMessage("cannot bind clone dataset request"),
 		}
 	}
-	dIDStr := c.Param(FieldDatasetID)
-	dID, err := cast.ToUint64E(dIDStr)
-	if err != nil {
-		return ginwrapper.Response{
-			Error: errors.BadRequest.Wrap(err, "cannot get dataset id"),
-		}
-	}
-	logger.Info("start cloning project")
-	cloned, err := s.repository.CloneDataset(req.ProjectID, dID)
+	cloned, err := s.repository.CloneDataset(projectID, req.Token)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -135,6 +128,15 @@ func (s *service) del(c *gin.Context) ginwrapper.Response {
 
 func (s *service) verifyDataset() gin.HandlerFunc {
 	return gin.HandlerFunc(func(c *gin.Context) {
+		param := c.Param(FieldDatasetID)
+		if param == "parse" {
+			ginwrapper.Wrap(s.parseLink)(c)
+			return
+		}
+		if param == "clone" {
+			ginwrapper.Wrap(s.clone)(c)
+			return
+		}
 		datasetID, err := idextractor.ExtractInt64Param(c, FieldDatasetID)
 		if err != nil {
 			err := errors.BadRequest.NewWithMessageF("dataset %d not found", datasetID)
