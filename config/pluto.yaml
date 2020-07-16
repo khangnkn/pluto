@@ -24,3 +24,7 @@ annotation:
 
 nats:
   url: http://165.22.249.91:4222
+
+getlink:
+  baseurl: http://annotation.ml
+  secret: YTljMmM0ODdjMzM4

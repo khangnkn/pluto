@@ -14,6 +14,10 @@ type CloneDatasetRequest struct {
 	ProjectID uint64 `form:"project_id" json:"project_id" binding:"required"`
 }
 
+type ParseLinkRequest struct {
+	Link string `form:"link" json:"link" binding:"required"`
+}
+
 type DatasetResponse struct {
 	ID          uint64 `json:"id"`
 	Title       string `json:"title"`
@@ -26,7 +30,7 @@ type DatasetResponse struct {
 
 func (r *repository) ToDatasetResponse(d dataset.Dataset) DatasetResponse {
 	var total int
-	imgs, err := r.imgRepo.GetAllImageByDataset(d.ProjectID)
+	imgs, err := r.imgRepo.GetAllImageByDataset(d.ID)
 	if err == nil {
 		total = len(imgs)
 	}

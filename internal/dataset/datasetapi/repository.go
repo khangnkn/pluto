@@ -1,9 +1,15 @@
 package datasetapi
 
 import (
+	"net/url"
+
 	"github.com/nkhang/pluto/internal/dataset"
 	"github.com/nkhang/pluto/internal/image"
+	"github.com/nkhang/pluto/internal/tool/enc"
+	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/logger"
+	"github.com/spf13/cast"
+	"github.com/spf13/viper"
 )
 
 type Repository interface {
@@ -12,17 +18,28 @@ type Repository interface {
 	CreateDataset(title, description string, pID uint64) (DatasetResponse, error)
 	Delete(id uint64) error
 	CloneDataset(projectID uint64, datasetID uint64) (DatasetResponse, error)
+	GetLink(datasetID uint64) (string, error)
+	ParseLink(link string) (DatasetResponse, error)
 }
 
 type repository struct {
 	repository dataset.Repository
 	imgRepo    image.Repository
+	baseURL    string
+	secret     []byte
 }
 
 func NewRepository(r dataset.Repository, imgRepo image.Repository) *repository {
+	secret := viper.GetString("getlink.secret")
+	baseURL := viper.GetString("getlink.baseurl")
+	if secret == "" || baseURL == "" {
+		logger.Panic("secret empty")
+	}
 	return &repository{
 		repository: r,
 		imgRepo:    imgRepo,
+		baseURL:    baseURL,
+		secret:     []byte(secret),
 	}
 }
 
@@ -87,4 +104,22 @@ func (r *repository) CloneDataset(projectID uint64, datasetID uint64) (DatasetRe
 
 func (r *repository) Delete(id uint64) error {
 	return r.repository.DeleteDataset(id)
+}
+
+func (r *repository) GetLink(datasetID uint64) (string, error) {
+	token, err := enc.Encrypt(r.secret, cast.ToString(datasetID))
+	if err != nil {
+		return "", errors.DatasetLinkCannotParse.NewWithMessage("cannot get token")
+	}
+	return r.baseURL + "/" + token, nil
+}
+
+func (r *repository) ParseLink(link string) (DatasetResponse, error) {
+	URL, err := url.Parse(link)
+	if err != nil {
+		return DatasetResponse{}, errors.DatasetLinkCannotParse.NewWithMessage("cannot parse provided link")
+	}
+	token := URL.Path
+	logger.Infof(token)
+	return DatasetResponse{}, nil
 }

@@ -1,4 +1,4 @@
-package aes
+package enc
 
 import (
 	"crypto/aes"
@@ -9,7 +9,7 @@ import (
 	"io"
 )
 
-func encrypt(key []byte, message string) (encmess string, err error) {
+func Encrypt(key []byte, message string) (encmess string, err error) {
 	plainText := []byte(message)
 
 	block, err := aes.NewCipher(key)
@@ -33,7 +33,7 @@ func encrypt(key []byte, message string) (encmess string, err error) {
 	return
 }
 
-func decrypt(key []byte, securemess string) (decodedmess string, err error) {
+func Decrypt(key []byte, securemess string) (decodedmess string, err error) {
 	cipherText, err := base64.URLEncoding.DecodeString(securemess)
 	if err != nil {
 		return

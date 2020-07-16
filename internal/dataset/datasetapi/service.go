@@ -42,6 +42,7 @@ func (s *service) Register(router gin.IRouter) {
 		detailRouter.GET("", ginwrapper.Wrap(s.getByID))
 		detailRouter.DELETE("", ginwrapper.Wrap(s.del))
 		detailRouter.POST("/clone", ginwrapper.Wrap(s.clone))
+		detailRouter.GET("/link", ginwrapper.Wrap(s.getLink))
 	}
 	s.imageRouter.Register(detailRouter.Group("/images"))
 }
@@ -158,4 +159,37 @@ func (s *service) verifyDataset() gin.HandlerFunc {
 		c.Set(FieldDatasetID, datasetID)
 		c.Next()
 	})
+}
+
+func (s *service) getLink(c *gin.Context) ginwrapper.Response {
+	datasetID := uint64(c.GetInt64(FieldDatasetID))
+	url, err := s.repository.GetLink(datasetID)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+		Data:  url,
+	}
+}
+
+func (s *service) parseLink(c *gin.Context) ginwrapper.Response {
+	var req ParseLinkRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.NewWithMessage("error getting link to parse"),
+		}
+	}
+	resp, err := s.repository.ParseLink(req.Link)
+	if err != nil {
+		return ginwrapper.Response{
+			Error: err,
+		}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+		Data:  resp,
+	}
 }
