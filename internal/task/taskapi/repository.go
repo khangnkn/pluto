@@ -142,7 +142,7 @@ func (r *repository) DeleteTask(taskID uint64) error {
 }
 
 func (r *repository) GetTaskDetails(taskID uint64, request GetTaskDetailsRequest) ([]TaskDetailResponse, error) {
-	details, err := r.repository.GetTaskDetails(taskID, request.CurrentID, request.PageSize)
+	details, _, err := r.repository.GetTaskDetails(taskID, task.Status(request.Status), request.CurrentID, request.PageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -162,15 +162,10 @@ func (r *repository) UpdateTaskDetail(taskID, detailID uint64, request UpdateTas
 		return TaskDetailResponse{}, err
 	}
 	return ToTaskDetailResponse(detail), nil
-
 }
 
 func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
-	var imageCount int
-	details, err := r.repository.GetTaskDetails(t.ID, 0, 0)
-	if err == nil {
-		imageCount = len(details)
-	}
+	_, total, err := r.repository.GetTaskDetails(t.ID, task.Any, 0, 0)
 	dataset, err := r.datasetRepo.GetByID(t.DatasetID)
 	if err != nil {
 		logger.Errorf("cannot get dataset response. error %v", err)
@@ -202,7 +197,7 @@ func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
 		Labeler:    t.Labeler,
 		Reviewer:   t.Reviewer,
 		Status:     uint32(t.Status),
-		ImageCount: imageCount,
+		ImageCount: total,
 		CreatedAt:  clock.UnixMillisecondFromTime(t.CreatedAt),
 	}
 }

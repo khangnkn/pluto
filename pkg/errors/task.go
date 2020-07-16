@@ -5,6 +5,7 @@ const (
 	TaskCannotGet
 	TaskCannotDelete
 	TaskNotFound
+	TaskCannotUpdate
 	TaskDetailCannotGet
 	TaskDetailCannotUpdate
 	TaskDetailCannotDelete

@@ -16,7 +16,8 @@ type DBRepository interface {
 	DeleteTask(id uint64) error
 	DeleteTaskByProject(projectID uint64) error
 	AddImages(id uint64, imageIDs []uint64) error
-	GetTaskDetails(taskID uint64, currentID uint64, limit int) ([]Detail, error)
+	GetTaskDetails(taskID uint64, status Status, currentID uint64, limit int) (details []Detail, total, left int, err error)
+	UpdateTask(taskID uint64, changes map[string]interface{}) (Task, error)
 	UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error)
 }
 
@@ -154,20 +155,23 @@ func (r *dbRepository) AddImages(id uint64, imageIDs []uint64) error {
 	return nil
 }
 
-func (r *dbRepository) GetTaskDetails(taskID uint64, currentID uint64, limit int) ([]Detail, error) {
-	var details []Detail
+func (r *dbRepository) GetTaskDetails(taskID uint64, status Status, currentID uint64, limit int) (details []Detail, total, left int, err error) {
 	var tableName = Detail{TaskID: taskID}.TableName()
 	db := r.db.Table(tableName).
 		Preload("Image").
-		Where("task_id = ? and status = ?", taskID, Pending)
+		Where("task_id = ? ", taskID).
+		Count(&total).
+		Where("status = ?", status).
+		Count(&left)
 	if currentID != 0 || limit != 0 {
 		db = db.Where("id > ?", currentID).Limit(limit)
 	}
-	err := db.Find(&details).Error
+	err = db.Find(&details).Error
 	if err != nil {
-		return nil, errors.TaskDetailCannotGet.NewWithMessage("cannot get task details")
+		err = errors.TaskDetailCannotGet.NewWithMessage("cannot get task details")
+		return
 	}
-	return details, nil
+	return details, total, left, nil
 }
 
 func (r *dbRepository) UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error) {
@@ -195,4 +199,14 @@ func (r *dbRepository) DeleteTaskByProject(projectID uint64) error {
 		}
 		return nil
 	})
+}
+
+func (r *dbRepository) UpdateTask(taskID uint64, changes map[string]interface{}) (Task, error) {
+	var task = Task{}
+	task.ID = taskID
+	err := r.db.Model(&task).Update(changes).First(&task).Error
+	if err != nil {
+		return Task{}, errors.TaskCannotUpdate.Wrap(err, "cannot update task")
+	}
+	return task, nil
 }

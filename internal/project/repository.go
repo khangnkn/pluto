@@ -124,7 +124,7 @@ func (r *repository) GetUserPermissions(userID uint64, role Role, offset, limit 
 }
 
 func (r *repository) CreateProject(wID uint64, title, desc, color string) (Project, error) {
-	r.InvalidateProjectsByWorkspaceID(wID)
+	r.invalidateProjectsByWorkspaceID(wID)
 	uid := uuid.NewV4().String()
 	return r.disk.CreateProject(wID, title, desc, color, uid)
 }
@@ -183,7 +183,7 @@ func (r *repository) UpdatePermission(projectID, userID uint64, role Role) (Perm
 	return perm, nil
 }
 
-func (r *repository) InvalidateProjectsByWorkspaceID(id uint64) {
+func (r *repository) invalidateProjectsByWorkspaceID(id uint64) {
 	_, totalKey, pattern := rediskey.ProjectByWorkspaceID(id, 0, 0)
 	keys, err := r.cache.Keys(pattern)
 	if err != nil {
@@ -224,17 +224,13 @@ func (r *repository) GetPermission(userID, projectID uint64) (Permission, error)
 }
 
 func (r *repository) UpdateProject(projectID uint64, changes map[string]interface{}) (Project, error) {
-	k := rediskey.ProjectByID(projectID)
-	err := r.cache.Del(k)
-	if err != nil {
-		logger.Error(err)
-	}
+	r.invalidateProject(projectID)
 	project, err := r.disk.UpdateProject(projectID, changes)
 	if err != nil {
 		return project, errors.ProjectCannotUpdate.Wrap(err, "cannot update project")
 	}
 	go func() {
-		r.InvalidateProjectsByWorkspaceID(project.WorkspaceID)
+		r.invalidateProjectsByWorkspaceID(project.WorkspaceID)
 	}()
 	return project, nil
 }
@@ -244,13 +240,14 @@ func (r *repository) Delete(id uint64) error {
 	if err != nil {
 		return err
 	}
-	r.InvalidateProjectsByWorkspaceID(project.WorkspaceID)
+	r.invalidateProjectsByWorkspaceID(project.WorkspaceID)
 	r.InvalidatePermissionForProject(id)
+	r.invalidateProject(id)
 	return r.disk.Delete(id)
 }
 
 func (r *repository) DeleteByWorkspace(workspaceID uint64) error {
-	r.InvalidateProjectsByWorkspaceID(workspaceID)
+	r.invalidateProjectsByWorkspaceID(workspaceID)
 	projects, _, err := r.GetByWorkspaceID(workspaceID, 0, 0)
 	if err != nil {
 		return err
@@ -271,4 +268,12 @@ func (r *repository) DeletePermission(userID, projectID uint64) error {
 	r.InvalidatePermissionForUser(userID)
 	r.InvalidatePermissionForProject(projectID)
 	return nil
+}
+
+func (r *repository) invalidateProject(projectID uint64) {
+	k := rediskey.ProjectByID(projectID)
+	err := r.cache.Del(k)
+	if err != nil {
+		logger.Error(err)
+	}
 }

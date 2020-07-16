@@ -45,6 +45,7 @@ type AssigneePair struct {
 type GetTaskDetailsRequest struct {
 	CurrentID uint64 `form:"current_id" json:"current_id"`
 	PageSize  int    `form:"page_size" json:"page_size"`
+	Status    int    `form:"status" json:"status"`
 }
 
 type UpdateTaskDetailRequest struct {
