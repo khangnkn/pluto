@@ -72,7 +72,7 @@ func (r *repository) CreateDataset(title, description string, pID uint64) (Datas
 	return r.ToDatasetResponse(d), nil
 }
 
-func (r *repository) CloneDataset(projectID uint64, token string) (DatasetResponse, error) {
+func (r *repository) CloneDataset(dest uint64, token string) (DatasetResponse, error) {
 	token = strings.TrimPrefix(token, "/")
 	idStr, err := enc.Decrypt(r.secret, token)
 	if err != nil {
@@ -82,31 +82,17 @@ func (r *repository) CloneDataset(projectID uint64, token string) (DatasetRespon
 	if err != nil {
 		return DatasetResponse{}, errors.DatasetLinkCannotParse.NewWithMessage("cannot parse dataset ID")
 	}
-	origin, err := r.repository.Get(datasetID)
-	if err != nil {
-		logger.Errorf("error getting dataset %d, error %v", datasetID, err)
-		return DatasetResponse{}, err
-	}
 	images, err := r.imgRepo.GetAllImageByDataset(datasetID)
 	if err != nil {
 		logger.Error("getting all image error", err)
 		return DatasetResponse{}, nil
 	}
-	cloned, err := r.repository.CreateDataset(origin.Title, origin.Description, projectID)
+	err = r.imgRepo.BulkInsert(images, dest)
 	if err != nil {
-		logger.Errorf("cannot creating dataset")
 		return DatasetResponse{}, err
 	}
-	logger.Info("clone dataset successfully", cloned)
-	err = r.imgRepo.BulkInsert(images, cloned.ID)
+	cloned, err := r.repository.Get(dest)
 	if err != nil {
-		logger.Errorf("error inserting images for dataset %d. now rollback creating", cloned.ID)
-		go func() {
-			err := r.repository.DeleteDataset(cloned.ID)
-			if err != nil {
-				logger.Errorf("cannot delete uncompleted dataset %d, error", cloned.ID, err)
-			}
-		}()
 		return DatasetResponse{}, err
 	}
 	return r.ToDatasetResponse(cloned), nil

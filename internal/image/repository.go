@@ -118,5 +118,6 @@ func (r *repository) GetAllImageByDataset(dID uint64) ([]Image, error) {
 }
 
 func (r *repository) BulkInsert(images []Image, dID uint64) error {
+	r.InvalidateDatasetImage(dID)
 	return r.dbRepo.BulkInsert(images, dID)
 }

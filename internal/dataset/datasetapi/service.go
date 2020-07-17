@@ -42,6 +42,7 @@ func (s *service) Register(router gin.IRouter) {
 		detailRouter.GET("", ginwrapper.Wrap(s.getByID))
 		detailRouter.DELETE("", ginwrapper.Wrap(s.del))
 		detailRouter.GET("/link", ginwrapper.Wrap(s.getLink))
+		detailRouter.POST("/clone", ginwrapper.Wrap(s.clone))
 	}
 	s.imageRouter.Register(detailRouter.Group("/images"))
 }
@@ -95,7 +96,7 @@ func (s *service) create(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *service) clone(c *gin.Context) ginwrapper.Response {
-	projectID := uint64(c.GetInt64(projectapi.FieldProjectID))
+	datasetID := uint64(c.GetInt64(FieldDatasetID))
 	logger.Info("start cloning project")
 	var req CloneDatasetRequest
 	if err := c.ShouldBind(&req); err != nil {
@@ -103,7 +104,7 @@ func (s *service) clone(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.NewWithMessage("cannot bind clone dataset request"),
 		}
 	}
-	cloned, err := s.repository.CloneDataset(projectID, req.Token)
+	cloned, err := s.repository.CloneDataset(datasetID, req.Token)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -131,10 +132,6 @@ func (s *service) verifyDataset() gin.HandlerFunc {
 		param := c.Param(FieldDatasetID)
 		if param == "parse" {
 			ginwrapper.Wrap(s.parseLink)(c)
-			return
-		}
-		if param == "clone" {
-			ginwrapper.Wrap(s.clone)(c)
 			return
 		}
 		datasetID, err := idextractor.ExtractInt64Param(c, FieldDatasetID)
