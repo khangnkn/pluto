@@ -5,6 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
+
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/sd/eureka"
 
 	"github.com/spf13/cast"
 
@@ -49,14 +53,20 @@ func initialize(lc fx.Lifecycle) fargo.EurekaConnection {
 			Raw: []byte("\"instanceId\":\"vendor:" + instanceId + "\""),
 		},
 	}
-	err = conn.RegisterInstance(&ins)
-	if err != nil {
-		panic(err)
-	}
+	registrar := eureka.NewRegistrar(&conn, &ins, log.NewJSONLogger(os.Stdout))
+	//err = conn.RegisterInstance(&ins)
+	//if err != nil {
+	//	panic(err)
+	//}
 	lc.Append(
 		fx.Hook{
+			OnStart: func(ctx context.Context) error {
+				registrar.Register()
+				return nil
+			},
 			OnStop: func(ctx context.Context) error {
-				return conn.DeregisterInstance(&ins)
+				registrar.Deregister()
+				return nil
 			},
 		})
 	return conn
