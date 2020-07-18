@@ -5,10 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"os"
-
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/sd/eureka"
 
 	"github.com/spf13/cast"
 
@@ -32,13 +28,21 @@ func initialize(lc fx.Lifecycle) fargo.EurekaConnection {
 	host := viper.GetString("eureka.hostname")
 	port := viper.GetInt("service.port")
 	app := viper.GetString("eureka.app")
+	ip, err = getIPv2(host)
+	if err != nil {
+		panic(err)
+	}
+	logger.Info(ip)
 	instanceId := uuid.NewV4().String() + ":" + app + ":" + cast.ToString(port)
 	ins := fargo.Instance{
 		InstanceId:        instanceId,
 		HostName:          host,
 		App:               app,
 		IPAddr:            ip,
+		VipAddress:        "",
+		SecureVipAddress:  "",
 		Status:            fargo.UP,
+		Overriddenstatus:  "",
 		Port:              port,
 		PortEnabled:       true,
 		SecurePort:        8443,
@@ -46,14 +50,23 @@ func initialize(lc fx.Lifecycle) fargo.EurekaConnection {
 		HomePageUrl:       fmt.Sprintf("http://%s:%d/", host, port),
 		StatusPageUrl:     fmt.Sprintf("http://%s:%d/status", host, port),
 		HealthCheckUrl:    fmt.Sprintf("http://%s:%d/healthcheck", host, port),
+		CountryId:         0,
 		DataCenterInfo: fargo.DataCenterInfo{
 			Name: fargo.MyOwn,
+		},
+		LeaseInfo: fargo.LeaseInfo{
+			RenewalIntervalInSecs: 30,
+			DurationInSecs:        0,
+			RegistrationTimestamp: 0,
+			LastRenewalTimestamp:  0,
+			EvictionTimestamp:     0,
+			ServiceUpTimestamp:    0,
 		},
 		Metadata: fargo.InstanceMetadata{
 			Raw: []byte("\"instanceId\":\"vendor:" + instanceId + "\""),
 		},
+		UniqueID: nil,
 	}
-	registrar := eureka.NewRegistrar(&conn, &ins, log.NewJSONLogger(os.Stdout))
 	//err = conn.RegisterInstance(&ins)
 	//if err != nil {
 	//	panic(err)
@@ -61,11 +74,19 @@ func initialize(lc fx.Lifecycle) fargo.EurekaConnection {
 	lc.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
-				registrar.Register()
+				err := conn.RegisterInstance(&ins)
+				if err != nil {
+					return err
+				}
+				logger.Info(conn.GetApps())
 				return nil
 			},
 			OnStop: func(ctx context.Context) error {
-				registrar.Deregister()
+				err := conn.DeregisterInstance(&ins)
+				if err != nil {
+					return err
+				}
+				logger.Info(conn.GetApps())
 				return nil
 			},
 		})
@@ -97,4 +118,14 @@ func getIP() (string, error) {
 		}
 	}
 	return "", errors.New("cannot get ip")
+}
+
+func getIPv2(host string) (string, error) {
+	addr, err := net.LookupIP(host)
+	if err != nil {
+		return "", err
+	} else {
+		logger.Infof("host name resolved %v", addr)
+		return addr[len(addr)-1].String(), nil
+	}
 }
