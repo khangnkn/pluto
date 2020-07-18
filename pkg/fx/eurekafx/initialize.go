@@ -14,7 +14,7 @@ import (
 )
 
 func initialize() fargo.EurekaConnection {
-	conn := fargo.NewConn("http://localhost:8761/eureka")
+	conn := fargo.NewConn(viper.GetString("eureka.address"))
 	instanceId := uuid.NewV4().String()
 	ip, err := getIP()
 	if err != nil {
