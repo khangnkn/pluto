@@ -33,3 +33,6 @@ eureka:
   address: http://localhost:8761/eureka
   hostname: localhost
   app: pluto
+
+jwt:
+  secret: Filco-Manila-Air

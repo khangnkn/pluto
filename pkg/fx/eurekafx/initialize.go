@@ -1,9 +1,14 @@
 package eurekafx
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
+
+	"github.com/spf13/cast"
+
+	"go.uber.org/fx"
 
 	"github.com/spf13/viper"
 
@@ -13,9 +18,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func initialize() fargo.EurekaConnection {
+func initialize(lc fx.Lifecycle) fargo.EurekaConnection {
 	conn := fargo.NewConn(viper.GetString("eureka.address"))
-	instanceId := uuid.NewV4().String()
 	ip, err := getIP()
 	if err != nil {
 		panic(err)
@@ -23,10 +27,12 @@ func initialize() fargo.EurekaConnection {
 	logger.Info(ip)
 	host := viper.GetString("eureka.hostname")
 	port := viper.GetInt("service.port")
+	app := viper.GetString("eureka.app")
+	instanceId := uuid.NewV4().String() + ":" + app + ":" + cast.ToString(port)
 	ins := fargo.Instance{
 		InstanceId:        instanceId,
 		HostName:          host,
-		App:               viper.GetString("eureka.app"),
+		App:               app,
 		IPAddr:            ip,
 		Status:            fargo.UP,
 		Port:              port,
@@ -47,6 +53,12 @@ func initialize() fargo.EurekaConnection {
 	if err != nil {
 		panic(err)
 	}
+	lc.Append(
+		fx.Hook{
+			OnStop: func(ctx context.Context) error {
+				return conn.DeregisterInstance(&ins)
+			},
+		})
 	return conn
 }
 
