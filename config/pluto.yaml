@@ -28,3 +28,8 @@ nats:
 getlink:
   baseurl: http://annotation.ml
   secret: YTljMmM0ODdjMzM4
+
+eureka:
+  address: http://localhost:8761/eureka
+  hostname: localhost
+  app: pluto

@@ -10,8 +10,10 @@ require (
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.6.2
 	github.com/go-ini/ini v1.56.0 // indirect
+	github.com/go-kit/kit v0.10.0
 	github.com/go-redis/redis v6.15.7+incompatible
 	github.com/golangci/golangci-lint v1.27.0 // indirect
+	github.com/hudl/fargo v1.3.0
 	github.com/jinzhu/gorm v1.9.12
 	github.com/ltpquang/zbumper v1.0.3 // indirect
 	github.com/manifoldco/promptui v0.7.0 // indirect
@@ -34,6 +36,6 @@ require (
 	go.uber.org/fx v1.11.0
 	go.uber.org/zap v1.14.1
 	golang.org/x/tools/gopls v0.4.1 // indirect
-	google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8
+	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
 	moul.io/http2curl v1.0.0 // indirect
 )
