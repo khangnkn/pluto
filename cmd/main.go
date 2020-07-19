@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/nkhang/pluto/internal/fx/taskfx"
 	"github.com/nkhang/pluto/pkg/fx/annotationfx"
-	"github.com/nkhang/pluto/pkg/fx/eurekafx"
 	"github.com/nkhang/pluto/pkg/fx/natsfx"
 	"go.uber.org/fx"
 
@@ -36,7 +35,6 @@ func main() {
 		annotationfx.Module,
 		storagefx.Module,
 		ginfx.Module,
-		eurekafx.Initialize,
 		fx.Invoke(initializer),
 	).Run()
 }

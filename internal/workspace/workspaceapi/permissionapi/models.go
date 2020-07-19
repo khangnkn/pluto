@@ -15,10 +15,9 @@ type DeletePermRequest struct {
 }
 
 type PermissionResponse struct {
-	ID          uint64 `json:"id"`
-	UserID      uint64 `json:"user_id"`
-	WorkspaceID uint64 `json:"workspace_id"`
-	Role        int32  `json:"role"`
+	CreatedAt int64  `json:"created_at"`
+	UserID    uint64 `json:"user_id"`
+	Role      int32  `json:"role"`
 }
 
 type GetPermissionResponse struct {

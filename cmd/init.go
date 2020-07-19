@@ -20,7 +20,7 @@ import (
 	"github.com/nkhang/pluto/internal/tool/toolapi"
 	"github.com/nkhang/pluto/internal/workspace"
 	"github.com/nkhang/pluto/pkg/logger"
-	pgin "github.com/nkhang/pluto/pkg/pgin"
+	"github.com/nkhang/pluto/pkg/pgin"
 )
 
 type params struct {
@@ -66,6 +66,10 @@ func initializer(l fx.Lifecycle, p params) {
 
 func migrate(db *gorm.DB) {
 	db.AutoMigrate(&tool.Tool{})
+	db.FirstOrCreate(&tool.Tool{Name: "RECTANGLE"}, "name = ?", "RECTANGLE")
+	db.FirstOrCreate(&tool.Tool{Name: "POINT"}, "name = ?", "POINT")
+	db.FirstOrCreate(&tool.Tool{Name: "POLYLINE"}, "name = ?", "POLYLINE")
+	db.FirstOrCreate(&tool.Tool{Name: "POLYGON"}, "name = ?", "POLYGON")
 	db.AutoMigrate(&dataset.Dataset{})
 	db.AutoMigrate(&label.Label{})
 	db.AutoMigrate(&project.Project{})

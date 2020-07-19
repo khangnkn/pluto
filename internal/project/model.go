@@ -13,6 +13,7 @@ type Role int32
 
 const (
 	Any Role = iota
+	Admin
 	Manager
 	Member
 )

@@ -2,6 +2,7 @@ package permissionapi
 
 import (
 	"github.com/nkhang/pluto/internal/workspace"
+	"github.com/nkhang/pluto/pkg/util/clock"
 	"github.com/nkhang/pluto/pkg/util/paging"
 )
 
@@ -45,9 +46,8 @@ func (r *repository) DeletePermission(workspaceID uint64, userID uint64) error {
 
 func (r *repository) ToPermissionResponse(perm workspace.Permission) PermissionResponse {
 	return PermissionResponse{
-		ID:          perm.ID,
-		UserID:      perm.UserID,
-		WorkspaceID: perm.WorkspaceID,
-		Role:        int32(perm.Role),
+		CreatedAt: clock.UnixMillisecondFromTime(perm.CreatedAt),
+		UserID:    perm.UserID,
+		Role:      int32(perm.Role),
 	}
 }

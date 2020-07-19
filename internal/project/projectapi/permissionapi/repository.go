@@ -30,6 +30,9 @@ func (r *repository) Create(projectID uint64, req CreatePermRequest) error {
 		if err == nil {
 			continue
 		}
+		if p.Role == 1 { //role Admin
+			continue
+		}
 		_, err = r.repository.CreatePermission(projectID, p.UserID, project.Role(p.Role))
 		if err != nil {
 			errs = append(errs, err)
@@ -59,9 +62,9 @@ func (r *repository) GetList(projectID uint64) (PermissionResponse, error) {
 func (r *repository) Update(projectID uint64, req UpdatePermissionRequest) (PermissionObject, error) {
 	var role project.Role
 	switch req.Role {
-	case 1:
-		role = project.Manager
 	case 2:
+		role = project.Manager
+	case 3:
 		role = project.Member
 	default:
 		return PermissionObject{}, errors.ProjectRoleInvalid.NewWithMessageF("role %d is not supported", req.Role)

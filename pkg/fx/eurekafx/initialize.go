@@ -123,7 +123,7 @@ func getIP() (string, error) {
 func getIPv2(host string) (string, error) {
 	addr, err := net.LookupIP(host)
 	if err != nil {
-		return "", err
+		return "127.0.0.1", err
 	} else {
 		logger.Infof("host name resolved %v", addr)
 		return addr[len(addr)-1].String(), nil

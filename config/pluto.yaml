@@ -5,7 +5,7 @@ service:
 
 database:
   dialect: mysql
-  url: root:root@tcp(localhost:3307)/pluto?parseTime=true
+  url: root:root@tcp(localhost:3307)/pluto?charset=utf8mb4&parseTime=true
 
 redis:
   url: localhost:6379
