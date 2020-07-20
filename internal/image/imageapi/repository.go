@@ -10,6 +10,8 @@ import (
 	"mime/multipart"
 	"net/url"
 
+	"github.com/nkhang/pluto/internal/project"
+
 	"github.com/spf13/viper"
 
 	"github.com/nkhang/pluto/internal/dataset"
@@ -27,11 +29,12 @@ type Repository interface {
 type repository struct {
 	repo        image.Repository
 	datasetRepo dataset.Repository
+	projectRepo project.Repository
 	storage     objectstorage.ObjectStorage
 	conf        Config
 }
 
-func NewRepository(r image.Repository, s objectstorage.ObjectStorage, d dataset.Repository) *repository {
+func NewRepository(r image.Repository, s objectstorage.ObjectStorage, d dataset.Repository, p project.Repository) *repository {
 	var conf = Config{
 		Scheme:     viper.GetString("minio.scheme"),
 		Endpoint:   viper.GetString("minio.endpoint"),
@@ -42,6 +45,7 @@ func NewRepository(r image.Repository, s objectstorage.ObjectStorage, d dataset.
 		repo:        r,
 		storage:     s,
 		datasetRepo: d,
+		projectRepo: p,
 		conf:        conf,
 	}
 }
@@ -82,6 +86,27 @@ func (r *repository) UploadRequest(dID uint64, headers []*multipart.FileHeader) 
 		err := r.repo.InvalidateDatasetImage(dID)
 		if err != nil {
 			logger.Error("cannot invalidate dataset images", err)
+		}
+		if len(headers) > len(errs) {
+			img, err := r.repo.GetAllImageByDataset(dID)
+			if err != nil && len(img) > 0 {
+				logger.Error("cannot get image to set to dataset")
+				return
+			}
+			d, err := r.datasetRepo.Update(dID, map[string]interface{}{
+				"thumbnail": img[0].URL,
+			})
+			if err != nil {
+				logger.Errorf("cannot update dataset %d thumbnail", d.ID)
+				return
+			}
+			_, err = r.projectRepo.UpdateProject(d.ProjectID, map[string]interface{}{
+				"thumbnail": img[0].URL,
+			})
+			if err != nil {
+				logger.Errorf("cannot update project %d thumbnail", d.ID)
+				return
+			}
 		}
 	}()
 	return errs

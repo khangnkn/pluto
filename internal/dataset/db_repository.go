@@ -13,6 +13,7 @@ type DbRepository interface {
 	GetByProject(pID uint64) ([]Dataset, error)
 	CreateDataset(title, description string, pID uint64) (Dataset, error)
 	DeleteDataset(ID uint64) error
+	Update(id uint64, changes map[string]interface{}) (Dataset, error)
 }
 
 type dbRepository struct {
@@ -71,4 +72,14 @@ func (r *dbRepository) DeleteDataset(ID uint64) error {
 		return errors.DatasetCannotDelete.Wrap(err, fmt.Sprintf("cannot delete dataset %d", ID))
 	}
 	return nil
+}
+
+func (r *dbRepository) Update(id uint64, changes map[string]interface{}) (Dataset, error) {
+	var d Dataset
+	d.ID = id
+	err := r.db.Model(&d).Update(changes).First(&d, id).Error
+	if err != nil {
+		return Dataset{}, errors.ImageCannotUpdate.Wrap(err, "cannot update image")
+	}
+	return d, nil
 }

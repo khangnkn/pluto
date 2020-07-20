@@ -7,4 +7,5 @@ const (
 	ImageErrorCreating
 	ImageErrorBulkCreating
 	ImageIncrError
+	ImageCannotUpdate
 )

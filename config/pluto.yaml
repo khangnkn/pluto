@@ -12,8 +12,8 @@ redis:
 
 minio:
   scheme: http
-  endpoint: 165.22.249.91:9000
-  basepath: 165.22.249.91:9000
+  endpoint: annotation.ml:9000
+  basepath: annotation.ml:9000
   accesskey: pluto
   secretkey: dhQk@3slyUi
   usessl: false

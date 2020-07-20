@@ -91,16 +91,29 @@ func (r *repository) DeleteDataset(ID uint64) error {
 		return err
 	}
 	go func() {
-		k := rediskey.DatasetByID(ID)
-		k2 := rediskey.DatasetByProject(d.ProjectID)
-		err := r.cacheRepo.Del(k, k2)
-		if err != nil {
-			logger.Errorf("cannot delete dataset %d from cache", ID)
-		}
+		r.invalidate(ID, d.ProjectID)
 	}()
 	err = r.dbRepo.DeleteDataset(ID)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (r *repository) invalidate(datasetID, projectID uint64) {
+	k := rediskey.DatasetByID(datasetID)
+	k2 := rediskey.DatasetByProject(projectID)
+	err := r.cacheRepo.Del(k, k2)
+	if err != nil {
+		logger.Errorf("cannot delete dataset %d from cache", datasetID)
+	}
+}
+
+func (r *repository) Update(id uint64, changes map[string]interface{}) (Dataset, error) {
+	d, err := r.dbRepo.Update(id, changes)
+	if err != nil {
+		return Dataset{}, err
+	}
+	r.invalidate(d.ID, d.ProjectID)
+	return d, nil
 }

@@ -2,6 +2,7 @@ package imagefx
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/nkhang/pluto/internal/project"
 
 	"github.com/nkhang/pluto/internal/dataset"
 	"github.com/nkhang/pluto/internal/image"
@@ -16,7 +17,8 @@ func provideImageRepository(db *gorm.DB, cache cache.Cache) image.Repository {
 	return image.NewRepository(dbRepo, cache)
 }
 
-func provideService(r image.Repository, s objectstorage.ObjectStorage, d dataset.Repository) pgin.Router {
-	repository := imageapi.NewRepository(r, s, d)
+func provideService(r image.Repository, s objectstorage.ObjectStorage,
+	d dataset.Repository, p project.Repository) pgin.Router {
+	repository := imageapi.NewRepository(r, s, d, p)
 	return imageapi.NewService(repository)
 }
