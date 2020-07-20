@@ -75,7 +75,7 @@ func (s *service) uploadByDataset(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.NewWithMessage("error binding request"),
 		}
 	}
-	errs := s.repository.UploadRequest(datasetID, req.FileHeader)
+	d, errs := s.repository.UploadRequest(datasetID, req.FileHeader)
 	if len(errs) != 0 {
 		return ginwrapper.Response{
 			Error: errors.ImageErrorCreating.Wrap(err, "error reading file"),
@@ -84,5 +84,6 @@ func (s *service) uploadByDataset(c *gin.Context) ginwrapper.Response {
 	}
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("success"),
+		Data:  d,
 	}
 }

@@ -10,6 +10,9 @@ import (
 	"mime/multipart"
 	"net/url"
 
+	"github.com/nkhang/pluto/internal/dataset/datasetapi"
+	"github.com/nkhang/pluto/pkg/util/clock"
+
 	"github.com/nkhang/pluto/internal/project"
 
 	"github.com/spf13/viper"
@@ -23,7 +26,7 @@ import (
 type Repository interface {
 	GetImage(request GetImageRequest) (ImageResponse, error)
 	GetByDatasetID(dID uint64, offset, limit int) ([]ImageResponse, error)
-	UploadRequest(dID uint64, file []*multipart.FileHeader) []error
+	UploadRequest(dID uint64, headers []*multipart.FileHeader) (datasetapi.DatasetResponse, []error)
 }
 
 type repository struct {
@@ -70,11 +73,11 @@ func (r *repository) GetByDatasetID(dID uint64, offset, limit int) ([]ImageRespo
 	return responses, nil
 }
 
-func (r *repository) UploadRequest(dID uint64, headers []*multipart.FileHeader) []error {
+func (r *repository) UploadRequest(dID uint64, headers []*multipart.FileHeader) (datasetapi.DatasetResponse, []error) {
 	errs := make([]error, 0)
 	d, err := r.datasetRepo.Get(dID)
 	if err != nil {
-		return append(errs, err)
+		return datasetapi.DatasetResponse{}, append(errs, err)
 	}
 	for _, header := range headers {
 		err := r.createImage(d, header)
@@ -109,7 +112,24 @@ func (r *repository) UploadRequest(dID uint64, headers []*multipart.FileHeader) 
 			}
 		}
 	}()
-	return errs
+	d, err = r.datasetRepo.Get(dID)
+	if err != nil {
+		logger.Errorf("cannot get dataset after upload task %d", dID)
+		return datasetapi.DatasetResponse{}, errs
+	}
+	imgs, err := r.repo.GetAllImageByDataset(d.ID)
+	if err != nil {
+		return datasetapi.DatasetResponse{}, append(errs, err)
+	}
+	return datasetapi.DatasetResponse{
+		ID:          d.ID,
+		Title:       d.Title,
+		Description: d.Description,
+		Thumbnail:   d.Thumbnail,
+		ProjectID:   d.ProjectID,
+		ImageCount:  len(imgs),
+		UpdatedAt:   clock.UnixMillisecondFromTime(d.UpdatedAt),
+	}, errs
 }
 
 func (r *repository) getImageURL(collection, title string) string {
