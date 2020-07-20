@@ -6,4 +6,5 @@ const (
 	ImageTooManyRequest
 	ImageErrorCreating
 	ImageErrorBulkCreating
+	ImageIncrError
 )

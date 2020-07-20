@@ -7,6 +7,7 @@ require (
 	github.com/alvaroloes/enumer v1.1.2 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/coreos/etcd v3.3.22+incompatible
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.6.2
 	github.com/go-ini/ini v1.56.0 // indirect

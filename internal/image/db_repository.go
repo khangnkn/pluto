@@ -13,6 +13,7 @@ type DBRepository interface {
 	CreateImage(title, url string, w, h int, size int64, dataset_id uint64) (Image, error)
 	GetAllByDataset(dID uint64) (images []Image, err error)
 	BulkInsert(images []Image, dID uint64) error
+	Incr(id uint64) error
 }
 
 type dbRepository struct {
@@ -91,6 +92,16 @@ func (r *dbRepository) BulkInsert(images []Image, dID uint64) error {
 	err := gormbulk.BulkInsert(r.db, clone, 1000)
 	if err != nil {
 		return errors.ImageErrorBulkCreating.Wrap(err, "cannot creating bulk image")
+	}
+	return nil
+}
+
+func (r *dbRepository) Incr(id uint64) error {
+	img := Image{}
+	img.ID = id
+	err := r.db.Model(&img).Update("status", gorm.Expr("status + ?", 1)).Error
+	if err != nil {
+		return errors.ImageIncrError.NewWithMessage("cannot increase status count")
 	}
 	return nil
 }

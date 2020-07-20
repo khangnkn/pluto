@@ -12,6 +12,7 @@ type Repository interface {
 	GetByDataset(dID uint64, offset, limit int) (imgs []Image, err error)
 	GetAllImageByDataset(dID uint64) ([]Image, error)
 	CreateImage(title, url string, w, h int, size int64, dataset_id uint64) (Image, error)
+	Incr(id uint64) error
 	BulkInsert(images []Image, dID uint64) error
 	InvalidateDatasetImage(dID uint64) error
 }
@@ -120,4 +121,8 @@ func (r *repository) GetAllImageByDataset(dID uint64) ([]Image, error) {
 func (r *repository) BulkInsert(images []Image, dID uint64) error {
 	r.InvalidateDatasetImage(dID)
 	return r.dbRepo.BulkInsert(images, dID)
+}
+
+func (r *repository) Incr(id uint64) error {
+	return r.dbRepo.Incr(id)
 }

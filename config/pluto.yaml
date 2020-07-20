@@ -1,7 +1,7 @@
 service:
   name: PLUTO MANAGEMENT SERVICE
   production: false
-  port: 8080
+  port: 8083
 
 database:
   dialect: mysql

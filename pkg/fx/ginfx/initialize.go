@@ -3,7 +3,6 @@ package ginfx
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/nkhang/pluto/pkg/pgin"
 	"github.com/spf13/viper"
 )
 
@@ -18,6 +17,6 @@ func initializer() (*gin.Engine, gin.IRouter) {
 	//conf.AllowCredentials = true
 	conf.AllowFiles = true
 	conf.AddAllowHeaders("Authorization")
-	e.Use(cors.New(conf), pgin.ApplyVerifyToken())
+	e.Use(cors.New(conf))
 	return e, e
 }

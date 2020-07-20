@@ -161,6 +161,12 @@ func (r *repository) UpdateTaskDetail(taskID, detailID uint64, request UpdateTas
 	if err != nil {
 		return TaskDetailResponse{}, err
 	}
+	if _, ok := changes["status"]; ok && request.Status == 2 {
+		err := r.imgRepo.Incr(detail.ImageID)
+		if err != nil {
+			logger.Errorf("error increasing image status %v, id %d", err, detail.ImageID)
+		}
+	}
 	return ToTaskDetailResponse(detail), nil
 }
 

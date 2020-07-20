@@ -25,13 +25,14 @@ type service struct {
 	taskRouter       pgin.Router
 	datasetRouter    pgin.Router
 	labelRouter      pgin.Router
+	statsRouter      pgin.Router
 }
 
 const (
 	FieldProjectID = "projectId"
 )
 
-func NewService(r Repository, projectRepo project.Repository, permissionRouter, taskRouter, datasetRouter, labelRouter pgin.Router) *service {
+func NewService(r Repository, projectRepo project.Repository, permissionRouter, taskRouter, datasetRouter, labelRouter, statsRouter pgin.Router) *service {
 	return &service{
 		repository:       r,
 		projectRepo:      projectRepo,
@@ -39,6 +40,7 @@ func NewService(r Repository, projectRepo project.Repository, permissionRouter, 
 		datasetRouter:    datasetRouter,
 		taskRouter:       taskRouter,
 		labelRouter:      labelRouter,
+		statsRouter:      statsRouter,
 	}
 }
 
@@ -55,6 +57,7 @@ func (s *service) Register(router gin.IRouter) {
 	s.taskRouter.Register(detailRouter.Group("/tasks"))
 	s.datasetRouter.Register(detailRouter.Group("/datasets"))
 	s.labelRouter.Register(detailRouter.Group("/labels"))
+	s.statsRouter.Register(detailRouter.Group("/stats"))
 }
 
 func (s *service) RegisterStandalone(router gin.IRouter) {
