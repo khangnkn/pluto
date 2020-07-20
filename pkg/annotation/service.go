@@ -1,7 +1,12 @@
 package annotation
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
+	"net/url"
+
+	"github.com/spf13/cast"
 
 	"github.com/nats-io/nats.go"
 
@@ -19,6 +24,7 @@ import (
 
 type Service interface {
 	CreateTask(projectID, datasetID uint64, tasks []task.Task) error
+	GetLabelCount(projectID, labelID uint64) (int, error)
 }
 
 type service struct {
@@ -46,6 +52,31 @@ func NewService(workspaceRepo workspace.Repository,
 		nc:                 nc,
 		annotationBasePath: annotationBase,
 	}
+}
+
+func (s *service) GetLabelCount(projectID, labelID uint64) (int, error) {
+	path := s.annotationBasePath + "/stats/images"
+	u, err := url.Parse(path)
+	if err != nil {
+		return 0, errors.AnnotationCannotParseURL.WrapF(err, "cannot parse url %s", path)
+	}
+	q := u.Query()
+	q.Set("project_id", cast.ToString(projectID))
+	q.Set("label_id", cast.ToString(labelID))
+	resp, err := s.client.Get(u.String())
+	if err != nil {
+		return 0, errors.AnnotationCannotGetFromServer.WrapF(err, "cannot get annotation label statistic from server")
+	}
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return 0, errors.AnnotationCannotReadBody.Wrap(err, "cannot get response body")
+	}
+	var respObj LabelStatsResponse
+	err = json.Unmarshal(b, &respObj)
+	if err != nil {
+		return 0, errors.AnnotationCannotReadBody.Wrap(err, "cannot parse json body of response")
+	}
+	return respObj.Total, nil
 }
 
 func (s *service) CreateTask(projectID, datasetID uint64, tasks []task.Task) error {

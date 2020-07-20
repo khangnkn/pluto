@@ -33,3 +33,8 @@ func (e ErrorType) Wrap(err error, msg string) CustomError {
 		Message:   msg,
 	}
 }
+
+func (e ErrorType) WrapF(err error, tmpl string, args ...interface{}) CustomError {
+	msg := fmt.Sprintf(tmpl, args...)
+	return e.Wrap(err, msg)
+}

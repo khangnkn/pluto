@@ -44,3 +44,7 @@ type ToolObject struct {
 	ID   uint64 `json:"id"`
 	Name string `json:"name"`
 }
+
+type LabelStatsResponse struct {
+	Total int `json:"total"`
+}
