@@ -81,11 +81,11 @@ func (r *repository) BuildTaskReport(projectID uint64) ([]TaskStatusPair, error)
 		return nil, err
 	}
 	logger.Infof("retrieve %d tasks for project %d", len(tasks), projectID)
-	var lablingCount, reviewingCount, doneCount int
+	var labelingCount, reviewingCount, doneCount int
 	for _, t := range tasks {
 		switch t.Status {
 		case task.Labeling:
-			lablingCount++
+			labelingCount++
 		case task.Reviewing:
 			reviewingCount++
 		case task.Done:
@@ -95,7 +95,7 @@ func (r *repository) BuildTaskReport(projectID uint64) ([]TaskStatusPair, error)
 	return []TaskStatusPair{
 		{
 			Name:  "Labling",
-			Value: lablingCount,
+			Value: labelingCount,
 		},
 		{
 			Name:  "Reviewing",

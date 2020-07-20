@@ -119,8 +119,18 @@ func (r *repository) GetTaskDetails(taskID uint64, status Status, currentID uint
 	if err != nil {
 		return nil, 0, err
 	}
+	logger.Infof("get images of tasks %d, status %d return %d image", taskID, status, count)
 	if count == 0 {
-		_, err = r.UpdateTask(taskID, map[string]interface{}{"status": status + 1})
+		var val int32
+		switch status {
+		case 0:
+			val = 2
+		case 2:
+			val = 3
+		default:
+			val = 3
+		}
+		_, err = r.UpdateTask(taskID, map[string]interface{}{"status": val})
 		if err != nil {
 			return nil, 0, err
 		}

@@ -29,14 +29,14 @@ func Info(args ...interface{}) {
 }
 
 func Infof(template string, args ...interface{}) {
-	lg.Infof(template, args)
+	lg.Infof(template, args...)
 }
 
 func Error(args ...interface{}) {
 	lg.Error(args)
 }
 func Errorf(template string, args ...interface{}) {
-	lg.Errorf(template, args)
+	lg.Errorf(template, args...)
 }
 
 func Panic(args ...interface{}) {
