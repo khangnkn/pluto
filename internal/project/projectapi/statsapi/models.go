@@ -8,12 +8,23 @@ type DatasetStatsResponse struct {
 	AnnotatedTimes      []AnnotatedTimePair   `json:"annotated_times"`
 	AnnotatedStatusPair []AnnotatedStatusPair `json:"annotated_status"`
 }
+
+type MemberStatsResponse struct {
+	Labeler  int `json:"labeler"`
+	Reviewer int `json:"reviewer"`
+}
+
 type AnnotatedTimePair struct {
 	Times uint32 `json:"times"`
 	Count int    `json:"count"`
 }
 
 type AnnotatedStatusPair struct {
+	Name  string `json:"name"`
+	Value int    `json:"value"`
+}
+
+type TaskStatusPair struct {
 	Name  string `json:"name"`
 	Value int    `json:"value"`
 }

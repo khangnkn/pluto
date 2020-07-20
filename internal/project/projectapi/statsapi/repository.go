@@ -4,6 +4,7 @@ import (
 	"github.com/nkhang/pluto/internal/dataset"
 	"github.com/nkhang/pluto/internal/image"
 	"github.com/nkhang/pluto/internal/task"
+	"github.com/nkhang/pluto/pkg/logger"
 )
 
 type repository struct {
@@ -22,6 +23,8 @@ func NewRepository(d dataset.Repository, t task.Repository, i image.Repository) 
 
 type Repository interface {
 	BuildReport(datasetID uint64) (DatasetStatsResponse, error)
+	BuildTaskReport(projectID uint64) ([]TaskStatusPair, error)
+	BuildMemberReport(projectID uint64) (MemberStatsResponse, error)
 }
 
 func (r *repository) BuildReport(datasetID uint64) (DatasetStatsResponse, error) {
@@ -70,4 +73,53 @@ func buildAnnotatedStatusPairs(images []image.Image) []AnnotatedStatusPair {
 			Value: annotatedCount,
 		},
 	}
+}
+
+func (r *repository) BuildTaskReport(projectID uint64) ([]TaskStatusPair, error) {
+	tasks, _, err := r.taskRepo.GetTasksByProject(projectID, task.Any, 0, 0)
+	if err != nil {
+		return nil, err
+	}
+	logger.Infof("retrieve %d tasks for project %d", len(tasks), projectID)
+	var lablingCount, reviewingCount, doneCount int
+	for _, t := range tasks {
+		switch t.Status {
+		case task.Labeling:
+			lablingCount++
+		case task.Reviewing:
+			reviewingCount++
+		case task.Done:
+			doneCount++
+		}
+	}
+	return []TaskStatusPair{
+		{
+			Name:  "Labling",
+			Value: lablingCount,
+		},
+		{
+			Name:  "Reviewing",
+			Value: reviewingCount,
+		},
+		{
+			Name:  "Done",
+			Value: doneCount,
+		},
+	}, nil
+}
+
+func (r *repository) BuildMemberReport(projectID uint64) (resp MemberStatsResponse, err error) {
+	labelerMap := make(map[uint64]interface{})
+	reviewerMap := make(map[uint64]interface{})
+	tasks, _, err := r.taskRepo.GetTasksByProject(projectID, task.Any, 0, 0)
+	if err != nil {
+		return
+	}
+	for _, v := range tasks {
+		labelerMap[v.Labeler] = true
+		reviewerMap[v.Reviewer] = true
+	}
+	resp.Labeler = len(labelerMap)
+	resp.Reviewer = len(reviewerMap)
+	return
 }
