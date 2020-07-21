@@ -69,13 +69,13 @@ func (s *service) get(c *gin.Context) ginwrapper.Response {
 
 func (s *service) getByUserID(c *gin.Context) ginwrapper.Response {
 	var req GetByUserIDRequest
+	userID := pgin.ExtractUserIDFromContext(c)
 	err := c.ShouldBindQuery(&req)
 	if err != nil {
-		return ginwrapper.Response{
-			Error: errors.BadRequest.NewWithMessage("error binding user_id"),
-		}
+		err = errors.BadRequest.NewWithMessage("cannot bind param")
+		return ginwrapper.CreateError(err)
 	}
-	workspaces, err := s.repository.GetByUserID(req)
+	workspaces, err := s.repository.GetByUserID(userID, req)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -89,12 +89,13 @@ func (s *service) getByUserID(c *gin.Context) ginwrapper.Response {
 
 func (s *service) create(c *gin.Context) ginwrapper.Response {
 	var req CreateWorkspaceRequest
+	var userID = pgin.ExtractUserIDFromContext(c)
 	if err := c.ShouldBind(&req); err != nil {
 		return ginwrapper.Response{
 			Error: errors.BadRequest.Wrap(err, "cannot bind create workspace body"),
 		}
 	}
-	response, err := s.repository.CreateWorkspace(req)
+	response, err := s.repository.CreateWorkspace(userID, req)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,

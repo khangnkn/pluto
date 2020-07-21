@@ -14,9 +14,9 @@ import (
 
 type Repository interface {
 	GetByID(pID uint64) (ProjectResponse, error)
-	GetList(p GetProjectRequest) ([]ProjectResponse, int, error)
+	GetList(userID uint64, p GetProjectRequest) ([]ProjectResponse, int, error)
 	GetForWorkspace(workspaceID uint64, paging paging.Paging) (GetProjectResponse, error)
-	Create(workspaceID uint64, p CreateProjectRequest) (ProjectResponse, error)
+	Create(workspaceID, creator uint64, p CreateProjectRequest) (ProjectResponse, error)
 	UpdateProject(id uint64, request UpdateProjectRequest) (ProjectResponse, error)
 	DeleteProject(id uint64) error
 }
@@ -43,25 +43,25 @@ func (r *repository) GetByID(pID uint64) (ProjectResponse, error) {
 	return r.convertResponse(p), nil
 }
 
-func (r *repository) GetList(p GetProjectRequest) (responses []ProjectResponse, total int, err error) {
+func (r *repository) GetList(userID uint64, p GetProjectRequest) (responses []ProjectResponse, total int, err error) {
 	offset, limit := paging.Parse(p.Page, p.PageSize)
 	var projects []project.Project
 	switch p.Source {
 	case SrcAllProject:
 		var perms []project.Permission
-		perms, total, err = r.repository.GetUserPermissions(p.UserID, project.Any, offset, limit)
+		perms, total, err = r.repository.GetUserPermissions(userID, project.Any, offset, limit)
 		for i := range perms {
 			projects = append(projects, perms[i].Project)
 		}
 	case SrcMyProject:
 		var perms []project.Permission
-		perms, total, err = r.repository.GetUserPermissions(p.UserID, project.Manager, offset, limit)
+		perms, total, err = r.repository.GetUserPermissions(userID, project.Manager, offset, limit)
 		for i := range perms {
 			projects = append(projects, perms[i].Project)
 		}
 	case SrcOtherProject:
 		var perms []project.Permission
-		perms, total, err = r.repository.GetUserPermissions(p.UserID, project.Member, offset, limit)
+		perms, total, err = r.repository.GetUserPermissions(userID, project.Member, offset, limit)
 		for i := range perms {
 			projects = append(projects, perms[i].Project)
 		}
@@ -95,12 +95,16 @@ func (r *repository) GetForWorkspace(workspaceID uint64, paging paging.Paging) (
 	}, nil
 }
 
-func (r *repository) Create(workspaceID uint64, p CreateProjectRequest) (ProjectResponse, error) {
-	project, err := r.repository.CreateProject(workspaceID, p.Title, p.Description, p.Color)
+func (r *repository) Create(workspaceID, creator uint64, p CreateProjectRequest) (ProjectResponse, error) {
+	prj, err := r.repository.CreateProject(workspaceID, p.Title, p.Description, p.Color)
 	if err != nil {
 		return ProjectResponse{}, err
 	}
-	return r.convertResponse(project), nil
+	_, err = r.repository.CreatePermission(prj.ID, creator, project.Admin)
+	if err != nil {
+		logger.Errorf("error create admin permission for user %d to project %d workspace %d", creator, prj.ID, workspaceID)
+	}
+	return r.convertResponse(prj), nil
 }
 
 func (r *repository) UpdateProject(id uint64, request UpdateProjectRequest) (ProjectResponse, error) {

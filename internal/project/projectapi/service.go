@@ -66,12 +66,13 @@ func (s *service) RegisterStandalone(router gin.IRouter) {
 
 func (s *service) getForUser(c *gin.Context) ginwrapper.Response {
 	var req GetProjectRequest
+	var userID = pgin.ExtractUserIDFromContext(c)
 	if err := c.ShouldBindQuery(&req); err != nil {
 		return ginwrapper.Response{
 			Error: errors.BadRequest.NewWithMessage("error binding params"),
 		}
 	}
-	responses, total, err := s.repository.GetList(req)
+	responses, total, err := s.repository.GetList(userID, req)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -122,12 +123,13 @@ func (s *service) get(c *gin.Context) ginwrapper.Response {
 func (s *service) create(c *gin.Context) ginwrapper.Response {
 	workspaceID := uint64(c.GetInt64(workspaceapi.FieldWorkspaceID))
 	var req CreateProjectRequest
+	var creator = pgin.ExtractUserIDFromContext(c)
 	if err := c.ShouldBind(&req); err != nil {
 		return ginwrapper.Response{
 			Error: errors.BadRequest.Wrap(err, "cannot bind request params"),
 		}
 	}
-	resp, err := s.repository.Create(workspaceID, req)
+	resp, err := s.repository.Create(workspaceID, creator, req)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,

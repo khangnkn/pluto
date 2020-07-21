@@ -24,6 +24,7 @@ annotation:
 
 nats:
   url: http://165.22.249.91:4222
+  taskupdate: statusTaskDetailUpdate
 
 getlink:
   baseurl: http://annotation.ml

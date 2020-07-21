@@ -30,10 +30,10 @@ func (r *repository) Create(projectID uint64, req CreatePermRequest) error {
 		if err == nil {
 			continue
 		}
-		if p.Role == 1 { //role Admin
+		if p.Role == project.Admin { //role Admin
 			continue
 		}
-		_, err = r.repository.CreatePermission(projectID, p.UserID, project.Role(p.Role))
+		_, err = r.repository.CreatePermission(projectID, p.UserID, p.Role)
 		if err != nil {
 			errs = append(errs, err)
 		}

@@ -5,6 +5,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/nats-io/nats.go"
+	"github.com/spf13/viper"
+
 	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/pkg/util/paging"
 
@@ -21,19 +24,19 @@ const (
 	fieldTaskDetailID = "taskDetailId"
 )
 
-type service struct {
+type Service struct {
 	repository Repository
 	taskRepo   task.Repository
 }
 
-func NewService(r Repository, tr task.Repository) *service {
-	return &service{
+func NewService(r Repository, tr task.Repository) *Service {
+	return &Service{
 		repository: r,
 		taskRepo:   tr,
 	}
 }
 
-func (s *service) Register(router gin.IRouter) {
+func (s *Service) Register(router gin.IRouter) {
 	router.POST("", ginwrapper.Wrap(s.createTask))
 	router.GET("", ginwrapper.Wrap(s.getListForProject))
 	detailRouter := router.Group("/:"+fieldTaskID, s.verifyTask())
@@ -45,11 +48,37 @@ func (s *service) Register(router gin.IRouter) {
 	}
 }
 
-func (s *service) RegisterStandalone(router gin.IRouter) {
+func (s *Service) RegisterNATS(ec *nats.EncodedConn) error {
+	var topic = viper.GetString("nats.taskupdate")
+	_, err := ec.Subscribe(topic, s.handleUpdateTask)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Service) RegisterStandalone(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getListForUser))
 }
 
-func (s *service) createTask(c *gin.Context) ginwrapper.Response {
+func (s *Service) handleUpdateTask(msg *nats.Msg) {
+	b := msg.Data
+	logger.Infof("%s", b)
+	var req NATSUpdateDetailRequest
+	err := json.Unmarshal(msg.Data, &req)
+	if err != nil {
+		logger.Errorf("error unmarshal message from nats. error %v. msg %s", err, msg.Data)
+		return
+	}
+	_, err = s.repository.UpdateTaskDetail(req.TaskID, req.DetailID, UpdateTaskDetailRequest{Status: req.Status})
+	if err != nil {
+		logger.Infof("error updating task detail. task %d, detail %d, status %d, err %v", req.TaskID, req.DetailID, req.Status, err)
+		return
+	}
+	logger.Infof("update task detail successfully. task %d, detail %d, status %d", req.TaskID, req.DetailID, req.Status)
+}
+
+func (s *Service) createTask(c *gin.Context) ginwrapper.Response {
 	projectID := uint64(c.GetInt64(projectapi.FieldProjectID))
 	var req CreateTaskRequest
 	if err := c.ShouldBind(&req); err != nil {
@@ -68,7 +97,7 @@ func (s *service) createTask(c *gin.Context) ginwrapper.Response {
 	}
 }
 
-func (s *service) get(c *gin.Context) ginwrapper.Response {
+func (s *Service) get(c *gin.Context) ginwrapper.Response {
 	taskID := uint64(c.GetInt64(fieldTaskID))
 	resp, err := s.repository.GetTask(taskID)
 	if err != nil {
@@ -82,7 +111,7 @@ func (s *service) get(c *gin.Context) ginwrapper.Response {
 	}
 }
 
-func (s *service) getListForUser(c *gin.Context) ginwrapper.Response {
+func (s *Service) getListForUser(c *gin.Context) ginwrapper.Response {
 	var request GetTasksRequest
 	if err := c.ShouldBindQuery(&request); err != nil {
 		logger.Error(err)
@@ -102,7 +131,7 @@ func (s *service) getListForUser(c *gin.Context) ginwrapper.Response {
 	}
 }
 
-func (s *service) getListForProject(c *gin.Context) ginwrapper.Response {
+func (s *Service) getListForProject(c *gin.Context) ginwrapper.Response {
 	projectID := uint64(c.GetInt64(projectapi.FieldProjectID))
 	var pg paging.Paging
 	if err := c.ShouldBindQuery(&pg); err != nil {
@@ -123,7 +152,7 @@ func (s *service) getListForProject(c *gin.Context) ginwrapper.Response {
 	}
 }
 
-func (s *service) delete(c *gin.Context) ginwrapper.Response {
+func (s *Service) delete(c *gin.Context) ginwrapper.Response {
 	taskID := uint64(c.GetInt64(fieldTaskID))
 	err := s.repository.DeleteTask(uint64(taskID))
 	if err != nil {
@@ -136,7 +165,7 @@ func (s *service) delete(c *gin.Context) ginwrapper.Response {
 	}
 }
 
-func (s *service) getTaskDetails(c *gin.Context) ginwrapper.Response {
+func (s *Service) getTaskDetails(c *gin.Context) ginwrapper.Response {
 	taskID := uint64(c.GetInt64(fieldTaskID))
 	var req GetTaskDetailsRequest
 	if err := c.ShouldBind(&req); err != nil {
@@ -154,7 +183,7 @@ func (s *service) getTaskDetails(c *gin.Context) ginwrapper.Response {
 	}
 }
 
-func (s *service) updateTaskDetail(c *gin.Context) ginwrapper.Response {
+func (s *Service) updateTaskDetail(c *gin.Context) ginwrapper.Response {
 	b, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil || len(b) == 0 {
 		return ginwrapper.Response{
@@ -186,7 +215,7 @@ func (s *service) updateTaskDetail(c *gin.Context) ginwrapper.Response {
 	}
 }
 
-func (s *service) verifyTask() gin.HandlerFunc {
+func (s *Service) verifyTask() gin.HandlerFunc {
 	return gin.HandlerFunc(func(c *gin.Context) {
 		taskID, err := idextractor.ExtractInt64Param(c, fieldTaskID)
 		if err != nil {

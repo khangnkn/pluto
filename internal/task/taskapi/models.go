@@ -52,6 +52,12 @@ type UpdateTaskDetailRequest struct {
 	Status uint64 `form:"status" json:"status"`
 }
 
+type NATSUpdateDetailRequest struct {
+	TaskID   uint64 `json:"task"`
+	DetailID uint64 `json:"task_detail"`
+	Status   uint64 `form:"status" json:"status"`
+}
+
 type TaskDetailResponse struct {
 	ID     uint64                 `json:"id"`
 	Status int32                  `json:"status"`

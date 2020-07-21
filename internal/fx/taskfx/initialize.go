@@ -24,7 +24,7 @@ func provideAPIRepo(r task.Repository, ir image.Repository, datasetRepo dataseta
 	return taskapi.NewRepository(r, ir, datasetRepo, projectRepo, annotationService)
 }
 
-func provideService(r taskapi.Repository, tr task.Repository) (pgin.Router, pgin.StandaloneRouter) {
+func provideService(r taskapi.Repository, tr task.Repository) (pgin.Router, pgin.StandaloneRouter, *taskapi.Service) {
 	service := taskapi.NewService(r, tr)
-	return service, service
+	return service, service, service
 }

@@ -17,6 +17,12 @@ type response struct {
 	Data          interface{} `json:"data,omitempty"`
 }
 
+func CreateError(err error) Response {
+	return Response{
+		Error: err,
+	}
+}
+
 type GinHandlerFunc func(c *gin.Context) Response
 
 func Wrap(fn GinHandlerFunc) gin.HandlerFunc {

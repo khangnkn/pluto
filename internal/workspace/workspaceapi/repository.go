@@ -12,8 +12,8 @@ import (
 
 type Repository interface {
 	GetByID(id uint64) (WorkspaceDetailResponse, error)
-	GetByUserID(request GetByUserIDRequest) (GetByUserResponse, error)
-	CreateWorkspace(p CreateWorkspaceRequest) (WorkspaceDetailResponse, error)
+	GetByUserID(userID uint64, request GetByUserIDRequest) (GetByUserResponse, error)
+	CreateWorkspace(admin uint64, p CreateWorkspaceRequest) (WorkspaceDetailResponse, error)
 	UpdateWorkspace(id uint64, request UpdateWorkspaceRequest) (WorkspaceDetailResponse, error)
 	DeleteWorkspace(id uint64) error
 }
@@ -39,7 +39,7 @@ func (r *repository) GetByID(id uint64) (WorkspaceDetailResponse, error) {
 		w), nil
 }
 
-func (r *repository) GetByUserID(request GetByUserIDRequest) (GetByUserResponse, error) {
+func (r *repository) GetByUserID(userID uint64, request GetByUserIDRequest) (GetByUserResponse, error) {
 	offset, limit := paging.Parse(request.Page, request.PageSize)
 	var (
 		workspaces []workspace.Workspace
@@ -48,17 +48,17 @@ func (r *repository) GetByUserID(request GetByUserIDRequest) (GetByUserResponse,
 	)
 	switch request.Source {
 	case 1:
-		workspaces, total, err = r.workspaceRepository.GetByUserID(request.UserID, workspace.Any, offset, limit)
+		workspaces, total, err = r.workspaceRepository.GetByUserID(userID, workspace.Any, offset, limit)
 		if err != nil {
 			return GetByUserResponse{}, err
 		}
 	case 2:
-		workspaces, total, err = r.workspaceRepository.GetByUserID(request.UserID, workspace.Admin, offset, limit)
+		workspaces, total, err = r.workspaceRepository.GetByUserID(userID, workspace.Admin, offset, limit)
 		if err != nil {
 			return GetByUserResponse{}, err
 		}
 	case 3:
-		workspaces, total, err = r.workspaceRepository.GetByUserID(request.UserID, workspace.Member, offset, limit)
+		workspaces, total, err = r.workspaceRepository.GetByUserID(userID, workspace.Member, offset, limit)
 		if err != nil {
 			return GetByUserResponse{}, err
 		}
@@ -75,8 +75,8 @@ func (r *repository) GetByUserID(request GetByUserIDRequest) (GetByUserResponse,
 	}, nil
 }
 
-func (r *repository) CreateWorkspace(p CreateWorkspaceRequest) (WorkspaceDetailResponse, error) {
-	w, err := r.workspaceRepository.Create(p.Admin, p.Title, p.Description, p.Color)
+func (r *repository) CreateWorkspace(admin uint64, p CreateWorkspaceRequest) (WorkspaceDetailResponse, error) {
+	w, err := r.workspaceRepository.Create(admin, p.Title, p.Description, p.Color)
 	if err != nil {
 		return WorkspaceDetailResponse{}, err
 	}

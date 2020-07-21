@@ -11,10 +11,9 @@ const (
 )
 
 type GetProjectRequest struct {
-	Page     int    `form:"page" binding:"required"`
-	PageSize int    `form:"page_size" binding:"required"`
-	Source   int    `form:"src" binding:"required"`
-	UserID   uint64 `form:"user_id" binding:"required"`
+	Page     int `form:"page" binding:"required"`
+	PageSize int `form:"page_size" binding:"required"`
+	Source   int `form:"src" binding:"required"`
 }
 
 type CreateProjectRequest struct {

@@ -136,6 +136,7 @@ func NewBuilder(workspaceRepo workspace.Repository,
 func (b *builder) WithWorkspace(id uint64) *builder {
 	w, err := b.workspaceRepo.Get(id)
 	if err != nil {
+		logger.Errorf("error getting workspace %d. err %v", id, err)
 		b.errs = append(b.errs, err)
 		return b
 	}
@@ -157,12 +158,14 @@ func (b *builder) WithWorkspace(id uint64) *builder {
 func (b *builder) WithProject(id uint64) *builder {
 	p, err := b.projectRepo.Get(id)
 	if err != nil {
+		logger.Errorf("error getting project %d. err %v", id, err)
 		b.errs = append(b.errs, err)
 		return b
 	}
 	var manager uint64
 	perms, _, err := b.projectRepo.GetProjectPermissions(p.ID, project.Manager, 0, 1)
 	if err != nil || len(perms) == 0 {
+		logger.Errorf("error getting manager of project %d,. err %v", id, err)
 		b.errs = append(b.errs, errors.WorkspacePermissionErrorCreating.NewWithMessage(""))
 		return b
 	} else {
@@ -179,6 +182,7 @@ func (b *builder) WithProject(id uint64) *builder {
 func (b *builder) WithDataset(id uint64) *builder {
 	d, err := b.datasetRepo.Get(id)
 	if err != nil {
+		logger.Errorf("error get dataset %d. err %v", id, err)
 		b.errs = append(b.errs, err)
 		return b
 	}
@@ -207,6 +211,7 @@ func (b *builder) WithTasks(tasks []task.Task) *builder {
 func (b *builder) WithLabels(projectID uint64) *builder {
 	labels, err := b.labelRepo.GetByProjectId(projectID)
 	if err != nil {
+		logger.Errorf("error get project %d. err %v", projectID, err)
 		b.errs = append(b.errs, err)
 		return b
 	}
@@ -227,7 +232,7 @@ func (b *builder) WithLabels(projectID uint64) *builder {
 }
 func (b *builder) Build() (PushTaskMessage, error) {
 	if len(b.errs) != 0 {
-		logger.Errorf("error creating task %v", b.errs)
+		logger.Errorf("error creating %d task %v", len(b.errs), b.errs)
 		return PushTaskMessage{}, errors.TaskCannotCreate.NewWithMessage("cannot build push task message")
 	}
 	return PushTaskMessage{

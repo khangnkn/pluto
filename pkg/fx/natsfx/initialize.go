@@ -30,3 +30,7 @@ func provideNATSClient(lc fx.Lifecycle) *nats.EncodedConn {
 	return ec
 
 }
+
+func provideNATSMessageHandler() {
+
+}

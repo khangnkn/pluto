@@ -1,60 +1,68 @@
 package pgin
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/spf13/viper"
 
 	"github.com/dgrijalva/jwt-go"
 
+	"github.com/gin-gonic/gin"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
-	"github.com/nkhang/pluto/pkg/logger"
-
-	"github.com/gin-gonic/gin"
 )
 
 type payload struct {
 	jwt.StandardClaims
-	UserID   uint64 `json:"id"`
+	UserID   int64  `json:"id"`
 	Username string `json:"username"`
 }
+
+const (
+	FieldUserID = "userId"
+)
 
 func ApplyVerifyToken() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		reqToken := c.GetHeader("Authorization")
-		logger.Infof("Authorization header: %s", reqToken)
 		splitToken := strings.Split(reqToken, "Bearer ")
 		if len(splitToken) < 2 {
 			report(c, "authorization header not found")
 			return
 		}
 		key := viper.GetString("jwt.secret")
-		logger.Info(key)
 		tokenString := splitToken[1]
 		tok := payload{}
 		token, err := jwt.ParseWithClaims(tokenString, &tok, func(token *jwt.Token) (interface{}, error) {
 			return []byte(key), nil
 		})
 		if err != nil {
-			logger.Error(err)
-			report(c, "cannot verify user from token")
+			report(c, "cannot verify user credential")
 			return
 		}
 		if claims, ok := token.Claims.(*payload); ok && token.Valid {
-			fmt.Printf("%v %v", claims.UserID, claims.StandardClaims.ExpiresAt)
+			if claims.UserID == 0 {
+				report(c, "error user_id is not valid")
+				return
+			}
+			c.Set(FieldUserID, claims.UserID)
 		} else {
-			fmt.Println(err)
+			report(c, "claim payload is invalid")
+			return
 		}
 		c.Next()
 	}
 }
 
+func ExtractUserIDFromContext(c *gin.Context) uint64 {
+	userID := uint64(c.GetInt64(FieldUserID))
+	return userID
+}
+
 func report(c *gin.Context, msg string) {
 	ginwrapper.Wrap(func(c *gin.Context) ginwrapper.Response {
 		return ginwrapper.Response{
-			Error: errors.Unauthorize.NewWithMessage(msg),
+			Error: errors.Unauthorized.NewWithMessage(msg),
 		}
 	})(c)
 }
