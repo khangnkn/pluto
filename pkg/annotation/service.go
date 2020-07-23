@@ -103,7 +103,7 @@ func (s *service) CreateTask(projectID, datasetID uint64, tasks []task.Task) err
 
 func (s *service) push(message PushTaskMessage) error {
 	logger.Info("Publishing task...")
-	return s.nc.Publish("task.creation", &message)
+	return s.nc.Publish(viper.GetString("annotation.pushtask"), &message)
 }
 
 type builder struct {

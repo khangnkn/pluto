@@ -49,7 +49,8 @@ func (s *Service) Register(router gin.IRouter) {
 }
 
 func (s *Service) RegisterNATS(ec *nats.EncodedConn) error {
-	var topic = viper.GetString("nats.taskupdate")
+	var topic = viper.GetString("annotation.updatetask")
+	logger.Info(topic)
 	_, err := ec.Subscribe(topic, s.handleUpdateTask)
 	if err != nil {
 		return err
