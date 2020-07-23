@@ -19,6 +19,7 @@ func (s *service) Register(router gin.IRouter) {
 	router.GET("/dataset", ginwrapper.Wrap(s.getImageStats))
 	router.GET("/overall", ginwrapper.Wrap(s.getTaskStats))
 	router.GET("/member", ginwrapper.Wrap(s.getMemberStats))
+	router.GET("/labels", ginwrapper.Wrap(s.getStatsLabel))
 }
 
 func (s *service) getImageStats(c *gin.Context) ginwrapper.Response {
@@ -65,5 +66,23 @@ func (s *service) getMemberStats(c *gin.Context) ginwrapper.Response {
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("success"),
 		Data:  resp,
+	}
+}
+
+func (s *service) getStatsLabel(c *gin.Context) ginwrapper.Response {
+	projectID := uint64(c.GetInt64(projectapi.FieldProjectID))
+	var req GetLabelStatsRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		return ginwrapper.Response{
+			Error: errors.BadRequest.NewWithMessage("error binding params"),
+		}
+	}
+	stats, err := s.repository.BuildLabelReport(projectID, req.LabelID)
+	if err != nil {
+		return ginwrapper.Response{Error: err}
+	}
+	return ginwrapper.Response{
+		Error: errors.Success.NewWithMessage("success"),
+		Data:  stats,
 	}
 }

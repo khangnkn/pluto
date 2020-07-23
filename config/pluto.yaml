@@ -2,6 +2,7 @@ service:
   name: PLUTO MANAGEMENT SERVICE
   production: false
   port: 8083
+  authen: false
 
 database:
   dialect: mysql
@@ -21,6 +22,8 @@ minio:
 
 annotation:
   baseurl: http://annotation.ml:8081/annotation
+  pushtask: task.creation
+  updatetask: statusTaskDetailUpdate
 
 nats:
   url: http://165.22.249.91:4222

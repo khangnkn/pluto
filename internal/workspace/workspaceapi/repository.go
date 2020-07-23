@@ -114,10 +114,10 @@ func (r *repository) convertResponse(w workspace.Workspace) WorkspaceDetailRespo
 		logger.Error("get admin error")
 	}
 	return WorkspaceDetailResponse{
-		WorkspaceResponse: ToWorkspaceInfoResponse(w),
-		ProjectCount:      projectCount,
-		MemberCount:       permissionCount,
-		Admin:             admin,
+		WorkspaceBaseResponse: ToWorkspaceInfoResponse(w),
+		ProjectCount:          projectCount,
+		MemberCount:           permissionCount,
+		Admin:                 admin,
 	}
 }
 

@@ -185,19 +185,26 @@ func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
 		Title:       t.Title,
 		Description: t.Description,
 		Dataset:     dataset,
-		Project: projectapi.ProjectBaseResponse{
-			ID:          project.ID,
-			Title:       project.Title,
-			Description: project.Description,
-			Thumbnail:   project.Thumbnail,
-			Color:       project.Color,
+		Project: ProjectObject{
+			ProjectBaseResponse: projectapi.ProjectBaseResponse{
+				ID:          project.ID,
+				Title:       project.Title,
+				Description: project.Description,
+				Thumbnail:   project.Thumbnail,
+				Color:       project.Color,
+			},
+			ProjectManagers: project.ProjectManager,
 		},
-		Workspace: workspaceapi.WorkspaceResponse{
-			ID:          project.Workspace.ID,
-			Updated:     project.Workspace.Updated,
-			Title:       project.Workspace.Title,
-			Description: project.Workspace.Description,
-			Color:       project.Workspace.Color,
+
+		Workspace: WorkspaceObject{
+			WorkspaceBaseResponse: workspaceapi.WorkspaceBaseResponse{
+				ID:          project.Workspace.ID,
+				Updated:     project.Workspace.Updated,
+				Title:       project.Workspace.Title,
+				Description: project.Workspace.Description,
+				Color:       project.Workspace.Color,
+			},
+			Admin: project.Workspace.Admin,
 		},
 		Assigner:   t.Assigner,
 		Labeler:    t.Labeler,

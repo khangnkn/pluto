@@ -66,18 +66,28 @@ type TaskDetailResponse struct {
 }
 
 type TaskResponse struct {
-	ID          uint64                         `json:"id"`
-	Title       string                         `json:"title"`
-	Description string                         `json:"description"`
-	Project     projectapi.ProjectBaseResponse `json:"project"`
-	Workspace   workspaceapi.WorkspaceResponse `json:"workspace"`
-	Assigner    uint64                         `json:"assigner"`
-	Labeler     uint64                         `json:"labeler"`
-	Reviewer    uint64                         `json:"reviewer"`
-	Status      uint32                         `json:"status"`
-	ImageCount  int                            `json:"image_count"`
-	CreatedAt   int64                          `json:"created_at"`
-	Dataset     datasetapi.DatasetResponse     `json:"dataset"`
+	ID          uint64                     `json:"id"`
+	Title       string                     `json:"title"`
+	Description string                     `json:"description"`
+	Project     ProjectObject              `json:"project"`
+	Workspace   WorkspaceObject            `json:"workspace"`
+	Assigner    uint64                     `json:"assigner"`
+	Labeler     uint64                     `json:"labeler"`
+	Reviewer    uint64                     `json:"reviewer"`
+	Status      uint32                     `json:"status"`
+	ImageCount  int                        `json:"image_count"`
+	CreatedAt   int64                      `json:"created_at"`
+	Dataset     datasetapi.DatasetResponse `json:"dataset"`
+}
+
+type ProjectObject struct {
+	projectapi.ProjectBaseResponse
+	ProjectManagers []uint64 `json:"project_managers"`
+}
+
+type WorkspaceObject struct {
+	workspaceapi.WorkspaceBaseResponse
+	Admin uint64 `json:"admin"`
 }
 
 type PushTaskMessage struct {

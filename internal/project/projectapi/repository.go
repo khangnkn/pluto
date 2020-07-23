@@ -19,6 +19,7 @@ type Repository interface {
 	Create(workspaceID, creator uint64, p CreateProjectRequest) (ProjectResponse, error)
 	UpdateProject(id uint64, request UpdateProjectRequest) (ProjectResponse, error)
 	DeleteProject(id uint64) error
+	ConvertResponse(p project.Project) ProjectResponse
 }
 
 type repository struct {
@@ -40,7 +41,7 @@ func (r *repository) GetByID(pID uint64) (ProjectResponse, error) {
 	if err != nil {
 		return ProjectResponse{}, err
 	}
-	return r.convertResponse(p), nil
+	return r.ConvertResponse(p), nil
 }
 
 func (r *repository) GetList(userID uint64, p GetProjectRequest) (responses []ProjectResponse, total int, err error) {
@@ -74,7 +75,7 @@ func (r *repository) GetList(userID uint64, p GetProjectRequest) (responses []Pr
 	}
 	responses = make([]ProjectResponse, len(projects))
 	for i := range projects {
-		responses[i] = r.convertResponse(projects[i])
+		responses[i] = r.ConvertResponse(projects[i])
 	}
 	return responses, total, nil
 }
@@ -87,7 +88,7 @@ func (r *repository) GetForWorkspace(workspaceID uint64, paging paging.Paging) (
 	}
 	responses := make([]ProjectResponse, len(projects))
 	for i := range projects {
-		responses[i] = r.convertResponse(projects[i])
+		responses[i] = r.ConvertResponse(projects[i])
 	}
 	return GetProjectResponse{
 		Total:    total,
@@ -104,7 +105,7 @@ func (r *repository) Create(workspaceID, creator uint64, p CreateProjectRequest)
 	if err != nil {
 		logger.Errorf("error create admin permission for user %d to project %d workspace %d", creator, prj.ID, workspaceID)
 	}
-	return r.convertResponse(prj), nil
+	return r.ConvertResponse(prj), nil
 }
 
 func (r *repository) UpdateProject(id uint64, request UpdateProjectRequest) (ProjectResponse, error) {
@@ -115,14 +116,14 @@ func (r *repository) UpdateProject(id uint64, request UpdateProjectRequest) (Pro
 	if err != nil {
 		return ProjectResponse{}, nil
 	}
-	return r.convertResponse(project), nil
+	return r.ConvertResponse(project), nil
 }
 
 func (r *repository) DeleteProject(id uint64) error {
 	return r.repository.Delete(id)
 }
 
-func (r *repository) convertResponse(p project.Project) ProjectResponse {
+func (r *repository) ConvertResponse(p project.Project) ProjectResponse {
 	var datasetCount int
 	d, err := r.datasetRepo.GetByProject(p.ID)
 	if err != nil {
@@ -130,14 +131,14 @@ func (r *repository) convertResponse(p project.Project) ProjectResponse {
 	} else {
 		datasetCount = len(d)
 	}
-	var pm uint64
+	var pm = make([]uint64, 0)
 	perms, totalPerms, err := r.repository.GetProjectPermissions(p.ID, project.Any, 0, 0)
 	if err != nil {
 		logger.Error("error getting project perm")
 	}
 	for i := range perms {
 		if perms[i].Role == project.Manager {
-			pm = perms[i].UserID
+			pm = append(pm, perms[i].UserID)
 			break
 		}
 	}

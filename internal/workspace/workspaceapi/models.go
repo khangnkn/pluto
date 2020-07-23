@@ -29,13 +29,13 @@ type GetByUserResponse struct {
 }
 
 type WorkspaceDetailResponse struct {
-	WorkspaceResponse
+	WorkspaceBaseResponse
 	ProjectCount int    `json:"project_count"`
 	MemberCount  int    `json:"member_count"`
 	Admin        uint64 `json:"admin"`
 }
 
-type WorkspaceResponse struct {
+type WorkspaceBaseResponse struct {
 	ID          uint64 `json:"id"`
 	Updated     int64  `json:"updated"`
 	Title       string `json:"title"`
@@ -43,8 +43,8 @@ type WorkspaceResponse struct {
 	Color       string `json:"color"`
 }
 
-func ToWorkspaceInfoResponse(w workspace.Workspace) WorkspaceResponse {
-	return WorkspaceResponse{
+func ToWorkspaceInfoResponse(w workspace.Workspace) WorkspaceBaseResponse {
+	return WorkspaceBaseResponse{
 		ID:          w.ID,
 		Updated:     clock.UnixMillisecondFromTime(w.UpdatedAt),
 		Title:       w.Title,

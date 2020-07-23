@@ -7,6 +7,7 @@ import (
 	"github.com/nkhang/pluto/internal/project/projectapi/statsapi"
 	"github.com/nkhang/pluto/internal/task"
 	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
+	"github.com/nkhang/pluto/pkg/annotation"
 	"go.uber.org/fx"
 
 	"github.com/nkhang/pluto/internal/dataset"
@@ -28,8 +29,8 @@ func provideAPIRepository(r project.Repository, dr dataset.Repository, wr worksp
 	return projectapi.NewRepository(r, dr, wr)
 }
 
-func provideStatsAPIRepo(d dataset.Repository, t task.Repository, i image.Repository) statsapi.Repository {
-	return statsapi.NewRepository(d, t, i)
+func provideStatsAPIRepo(d dataset.Repository, t task.Repository, i image.Repository, s annotation.Service) statsapi.Repository {
+	return statsapi.NewRepository(d, t, i, s)
 }
 
 type params struct {

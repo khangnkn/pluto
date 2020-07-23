@@ -46,5 +46,6 @@ type ToolObject struct {
 }
 
 type LabelStatsResponse struct {
-	Total int `json:"total"`
+	TotalObject int `json:"total_object"`
+	TotalImage  int `json:"total_image"`
 }
