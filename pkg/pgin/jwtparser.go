@@ -36,12 +36,13 @@ func ApplyVerifyToken() gin.HandlerFunc {
 		}
 		key := viper.GetString("jwt.secret")
 		tokenString := splitToken[1]
-		logger.Infof("verifying token %s...")
+		logger.Infof("verifying token %s with secret %s", tokenString, key)
 		tok := payload{}
 		token, err := jwt.ParseWithClaims(tokenString, &tok, func(token *jwt.Token) (interface{}, error) {
 			return []byte(key), nil
 		})
 		if err != nil {
+			logger.Error("error verify credential: ", err.Error())
 			report(c, "cannot verify user credential")
 			return
 		}

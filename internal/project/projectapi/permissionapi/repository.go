@@ -60,16 +60,10 @@ func (r *repository) GetList(projectID uint64) (PermissionResponse, error) {
 }
 
 func (r *repository) Update(projectID uint64, req UpdatePermissionRequest) (PermissionObject, error) {
-	var role project.Role
-	switch req.Role {
-	case 2:
-		role = project.Manager
-	case 3:
-		role = project.Member
-	default:
-		return PermissionObject{}, errors.ProjectRoleInvalid.NewWithMessageF("role %d is not supported", req.Role)
+	if req.Role != project.Member || req.Role != project.Manager {
+		return PermissionObject{}, errors.ProjectPermissionCannotUpdate.NewWithMessage("role not supported")
 	}
-	perm, err := r.repository.UpdatePermission(projectID, req.UserID, role)
+	perm, err := r.repository.UpdatePermission(projectID, req.UserID, req.Role)
 	if err != nil {
 		return PermissionObject{}, err
 	}

@@ -23,6 +23,6 @@ type PermissionObject struct {
 }
 
 type UpdatePermissionRequest struct {
-	UserID uint64 `form:"user_id" json:"user_id" binding:"required"`
-	Role   int32  `form:"role" json:"role" binding:"required"`
+	UserID uint64       `form:"user_id" json:"user_id" binding:"required"`
+	Role   project.Role `form:"role" json:"role" binding:"required"`
 }

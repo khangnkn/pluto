@@ -2,7 +2,7 @@ service:
   name: PLUTO MANAGEMENT SERVICE
   production: false
   port: 8083
-  authen: false
+  authen: true
 
 database:
   dialect: mysql
@@ -39,4 +39,4 @@ eureka:
   app: pluto
 
 jwt:
-  secret: Filco-Manila-Air
+  secret: RmlsY28tTWFuaWxhLUFpcg==

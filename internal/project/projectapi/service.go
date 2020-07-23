@@ -89,6 +89,7 @@ func (s *service) getForUser(c *gin.Context) ginwrapper.Response {
 
 func (s *service) getForWorkspace(c *gin.Context) ginwrapper.Response {
 	id := uint64(c.GetInt64(workspaceapi.FieldWorkspaceID))
+	userID := pgin.ExtractUserIDFromContext(c)
 	var pg paging.Paging
 	if err := c.ShouldBindQuery(&pg); err != nil {
 		return ginwrapper.Response{

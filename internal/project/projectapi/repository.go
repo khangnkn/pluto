@@ -80,18 +80,25 @@ func (r *repository) GetList(userID uint64, p GetProjectRequest) (responses []Pr
 	return responses, total, nil
 }
 
-func (r *repository) GetForWorkspace(workspaceID uint64, paging paging.Paging) (resp GetProjectResponse, err error) {
+func (r *repository) GetForWorkspace(workspaceID uint64, userID uint64, paging paging.Paging) (resp GetProjectResponse, err error) {
 	offset, limit := paging.Parse()
-	projects, total, err := r.repository.GetByWorkspaceID(workspaceID, offset, limit)
+	prj := make([]project.Project, 0)
+	perms, _, err := r.repository.GetUserPermissions(userID, project.Any, 0, 0)
 	if err != nil {
 		return
 	}
+	for _, p := range perms {
+		if p.Project.WorkspaceID == workspaceID {
+			prj = append(prj, p.Project)
+		}
+	}
+	projects := slice(prj, offset, limit)
 	responses := make([]ProjectResponse, len(projects))
 	for i := range projects {
 		responses[i] = r.ConvertResponse(projects[i])
 	}
 	return GetProjectResponse{
-		Total:    total,
+		Total:    len(perms),
 		Projects: responses,
 	}, nil
 }
@@ -156,4 +163,16 @@ func (r *repository) ConvertResponse(p project.Project) ProjectResponse {
 		Workspace:      w,
 		ProjectManager: pm,
 	}
+}
+
+func slice(projects []project.Project, offset, limit int) (filtered []project.Project) {
+	l := len(projects)
+	if offset >= l {
+		return
+	}
+	if boundary := offset + limit; l >= boundary {
+		return projects[offset:boundary]
+	}
+	return projects[offset:l]
+
 }
