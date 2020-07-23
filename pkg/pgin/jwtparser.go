@@ -3,6 +3,8 @@ package pgin
 import (
 	"strings"
 
+	"github.com/nkhang/pluto/pkg/logger"
+
 	"github.com/spf13/viper"
 
 	"github.com/dgrijalva/jwt-go"
@@ -23,6 +25,8 @@ const (
 )
 
 func ApplyVerifyToken() gin.HandlerFunc {
+	key := viper.GetString("jwt.secret")
+	logger.Infof("apply verify token middleware with key %s", key)
 	return func(c *gin.Context) {
 		reqToken := c.GetHeader("Authorization")
 		splitToken := strings.Split(reqToken, "Bearer ")
@@ -32,6 +36,7 @@ func ApplyVerifyToken() gin.HandlerFunc {
 		}
 		key := viper.GetString("jwt.secret")
 		tokenString := splitToken[1]
+		logger.Infof("verifying token %s...")
 		tok := payload{}
 		token, err := jwt.ParseWithClaims(tokenString, &tok, func(token *jwt.Token) (interface{}, error) {
 			return []byte(key), nil
@@ -46,6 +51,7 @@ func ApplyVerifyToken() gin.HandlerFunc {
 				return
 			}
 			c.Set(FieldUserID, claims.UserID)
+			logger.Infof("credential passed for user %d", claims.UserID)
 		} else {
 			report(c, "claim payload is invalid")
 			return
