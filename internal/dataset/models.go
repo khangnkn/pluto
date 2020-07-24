@@ -1,7 +1,6 @@
 package dataset
 
 import (
-	"github.com/nkhang/pluto/internal/project"
 	"github.com/nkhang/pluto/pkg/gorm"
 )
 
@@ -13,7 +12,6 @@ type Dataset struct {
 	gorm.Model
 	Title       string
 	Description string
-	ProjectID   uint64
 	Thumbnail   string
-	Project     project.Project
+	ProjectID   uint64
 }

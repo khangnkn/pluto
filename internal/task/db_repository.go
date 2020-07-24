@@ -2,8 +2,6 @@ package task
 
 import (
 	"github.com/jinzhu/gorm"
-	"github.com/nkhang/pluto/internal/dataset"
-	"github.com/nkhang/pluto/internal/project"
 	"github.com/nkhang/pluto/pkg/errors"
 	gormbulk "github.com/t-tiger/gorm-bulk-insert/v2"
 )
@@ -16,7 +14,7 @@ type DBRepository interface {
 	DeleteTask(id uint64) error
 	DeleteTaskByProject(projectID uint64) error
 	AddImages(id uint64, imageIDs []uint64) error
-	GetTaskDetails(taskID uint64, status Status, currentID uint64, limit int) (details []Detail, total, left int, err error)
+	GetTaskDetails(taskID uint64, status DetailStatus, currentID uint64, limit int) (details []Detail, total, left int, err error)
 	UpdateTask(taskID uint64, changes map[string]interface{}) (Task, error)
 	UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error)
 }
@@ -99,13 +97,6 @@ func (r *dbRepository) CreateTask(title, description string, assigner, labeler, 
 		Reviewer:    reviewer,
 		Status:      Labeling,
 	}
-	if r.db.First(&project.Project{}, projectID).RecordNotFound() {
-		return Task{}, errors.TaskCannotCreate.NewWithMessage("project not found")
-	}
-	var d dataset.Dataset
-	if r.db.First(&d, datasetID).RecordNotFound() || d.ProjectID != projectID {
-		return Task{}, errors.TaskCannotCreate.NewWithMessage("dataset not found")
-	}
 	err := r.db.Create(&t).Error
 	if err != nil {
 		return Task{}, errors.TaskCannotCreate.Wrap(err, "cannot create task")
@@ -155,7 +146,7 @@ func (r *dbRepository) AddImages(id uint64, imageIDs []uint64) error {
 	return nil
 }
 
-func (r *dbRepository) GetTaskDetails(taskID uint64, status Status, currentID uint64, limit int) (details []Detail, total, left int, err error) {
+func (r *dbRepository) GetTaskDetails(taskID uint64, status DetailStatus, currentID uint64, limit int) (details []Detail, total, left int, err error) {
 	var tableName = Detail{TaskID: taskID}.TableName()
 	db := r.db.Table(tableName).
 		Preload("Image").

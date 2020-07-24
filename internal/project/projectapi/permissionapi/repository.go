@@ -2,28 +2,31 @@ package permissionapi
 
 import (
 	"github.com/nkhang/pluto/internal/project"
+	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/util/clock"
 )
 
 type Repository interface {
-	Create(projectID uint64, req CreatePermRequest) error
+	Create(projectID uint64, req CreatePermRequest) (projectapi.ProjectResponse, error)
 	GetList(projectID uint64) (PermissionResponse, error)
 	Update(projectID uint64, req UpdatePermissionRequest) (PermissionObject, error)
 	Delete(projectID, userID uint64) error
 }
 
 type repository struct {
-	repository project.Repository
+	repository  project.Repository
+	projectRepo projectapi.Repository
 }
 
-func NewProjectPermissionAPIRepository(r project.Repository) *repository {
+func NewProjectPermissionAPIRepository(r project.Repository, p projectapi.Repository) *repository {
 	return &repository{
-		repository: r,
+		repository:  r,
+		projectRepo: p,
 	}
 }
 
-func (r *repository) Create(projectID uint64, req CreatePermRequest) error {
+func (r *repository) Create(projectID uint64, req CreatePermRequest) (resp projectapi.ProjectResponse, err error) {
 	var errs = make([]error, 0)
 	for _, p := range req.Members {
 		_, err := r.repository.GetPermission(p.UserID, projectID)
@@ -39,9 +42,11 @@ func (r *repository) Create(projectID uint64, req CreatePermRequest) error {
 		}
 	}
 	if len(errs) != 0 {
-		return errors.ProjectPermissionCreatingError.NewWithMessageF("error creating %d permissions", len(errs))
+		err = errors.ProjectPermissionCreatingError.NewWithMessageF("error creating %d permissions", len(errs))
+		return
 	}
-	return nil
+	resp, err = r.projectRepo.GetByID(projectID)
+	return
 }
 
 func (r *repository) GetList(projectID uint64) (PermissionResponse, error) {
@@ -60,7 +65,7 @@ func (r *repository) GetList(projectID uint64) (PermissionResponse, error) {
 }
 
 func (r *repository) Update(projectID uint64, req UpdatePermissionRequest) (PermissionObject, error) {
-	if req.Role != project.Member || req.Role != project.Manager {
+	if req.Role != project.Member && req.Role != project.Manager {
 		return PermissionObject{}, errors.ProjectPermissionCannotUpdate.NewWithMessage("role not supported")
 	}
 	perm, err := r.repository.UpdatePermission(projectID, req.UserID, req.Role)

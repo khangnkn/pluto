@@ -13,7 +13,6 @@ type CreateTaskRequest struct {
 	Title       string         `json:"title" form:"title"`
 	Description string         `json:"description" form:"description"`
 	DatasetID   uint64         `json:"dataset_id" form:"dataset_id" binding:"required"`
-	Assigner    uint64         `json:"assigner" form:"assigner" binding:"required"`
 	Quantity    int            `json:"quantity" form:"quantity" binding:"required"`
 	Assignees   []AssigneePair `json:"assignees" form:"assignees" binding:"required"`
 }
@@ -43,9 +42,9 @@ type AssigneePair struct {
 }
 
 type GetTaskDetailsRequest struct {
-	CurrentID uint64 `form:"current_id" json:"current_id"`
-	PageSize  int    `form:"page_size" json:"page_size"`
-	Status    int    `form:"status" json:"status"`
+	CurrentID uint64            `form:"current_id" json:"current_id"`
+	PageSize  int               `form:"page_size" json:"page_size"`
+	Status    task.DetailStatus `form:"status" json:"status"`
 }
 
 type UpdateTaskDetailRequest struct {

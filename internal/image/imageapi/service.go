@@ -24,6 +24,10 @@ func (s *service) Register(router gin.IRouter) {
 	router.GET("/:"+fieldImageID, ginwrapper.Wrap(s.get))
 }
 
+func (s *service) RegisterStandalone(router gin.IRouter) {
+	router.GET("/:"+fieldImageID, ginwrapper.Wrap(s.get))
+}
+
 func (s *service) get(c *gin.Context) ginwrapper.Response {
 	idStr := c.Param(fieldImageID)
 	id, err := cast.ToUint64E(idStr)

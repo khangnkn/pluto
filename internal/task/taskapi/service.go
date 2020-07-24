@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/nkhang/pluto/pkg/pgin"
+
 	"github.com/nats-io/nats.go"
 	"github.com/spf13/viper"
 
@@ -20,32 +22,35 @@ import (
 )
 
 const (
-	fieldTaskID       = "taskId"
+	FieldTaskID       = "taskId"
 	fieldTaskDetailID = "taskDetailId"
 )
 
 type Service struct {
-	repository Repository
-	taskRepo   task.Repository
+	repository  Repository
+	taskRepo    task.Repository
+	statsRouter pgin.Router
 }
 
-func NewService(r Repository, tr task.Repository) *Service {
+func NewService(r Repository, tr task.Repository, statsRouter pgin.Router) *Service {
 	return &Service{
-		repository: r,
-		taskRepo:   tr,
+		repository:  r,
+		taskRepo:    tr,
+		statsRouter: statsRouter,
 	}
 }
 
 func (s *Service) Register(router gin.IRouter) {
 	router.POST("", ginwrapper.Wrap(s.createTask))
 	router.GET("", ginwrapper.Wrap(s.getListForProject))
-	detailRouter := router.Group("/:"+fieldTaskID, s.verifyTask())
+	detailRouter := router.Group("/:"+FieldTaskID, s.verifyTask())
 	{
 		detailRouter.DELETE("", ginwrapper.Wrap(s.delete))
 		detailRouter.GET("", ginwrapper.Wrap(s.get))
 		detailRouter.PUT("/details/:"+fieldTaskDetailID, ginwrapper.Wrap(s.updateTaskDetail))
 		detailRouter.GET("/details", ginwrapper.Wrap(s.getTaskDetails))
 	}
+	s.statsRouter.Register(detailRouter)
 }
 
 func (s *Service) RegisterNATS(ec *nats.EncodedConn) error {
@@ -81,13 +86,14 @@ func (s *Service) handleUpdateTask(msg *nats.Msg) {
 
 func (s *Service) createTask(c *gin.Context) ginwrapper.Response {
 	projectID := uint64(c.GetInt64(projectapi.FieldProjectID))
+	assigner := pgin.ExtractUserIDFromContext(c)
 	var req CreateTaskRequest
 	if err := c.ShouldBind(&req); err != nil {
 		return ginwrapper.Response{
 			Error: errors.BadRequest.NewWithMessage("error binding create task request"),
 		}
 	}
-	err := s.repository.CreateTask(projectID, req)
+	err := s.repository.CreateTask(projectID, assigner, req)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -99,7 +105,7 @@ func (s *Service) createTask(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *Service) get(c *gin.Context) ginwrapper.Response {
-	taskID := uint64(c.GetInt64(fieldTaskID))
+	taskID := uint64(c.GetInt64(FieldTaskID))
 	resp, err := s.repository.GetTask(taskID)
 	if err != nil {
 		return ginwrapper.Response{
@@ -154,7 +160,7 @@ func (s *Service) getListForProject(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *Service) delete(c *gin.Context) ginwrapper.Response {
-	taskID := uint64(c.GetInt64(fieldTaskID))
+	taskID := uint64(c.GetInt64(FieldTaskID))
 	err := s.repository.DeleteTask(uint64(taskID))
 	if err != nil {
 		return ginwrapper.Response{
@@ -167,7 +173,7 @@ func (s *Service) delete(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *Service) getTaskDetails(c *gin.Context) ginwrapper.Response {
-	taskID := uint64(c.GetInt64(fieldTaskID))
+	taskID := uint64(c.GetInt64(FieldTaskID))
 	var req GetTaskDetailsRequest
 	if err := c.ShouldBind(&req); err != nil {
 		return ginwrapper.Response{
@@ -196,7 +202,7 @@ func (s *Service) updateTaskDetail(c *gin.Context) ginwrapper.Response {
 	if err != nil {
 		return ginwrapper.Response{Error: err}
 	}
-	taskID := uint64(c.GetInt64(fieldTaskID))
+	taskID := uint64(c.GetInt64(FieldTaskID))
 	if err := json.Unmarshal(b, &request); err != nil {
 		logger.Error(err)
 		return ginwrapper.Response{
@@ -218,7 +224,7 @@ func (s *Service) updateTaskDetail(c *gin.Context) ginwrapper.Response {
 
 func (s *Service) verifyTask() gin.HandlerFunc {
 	return gin.HandlerFunc(func(c *gin.Context) {
-		taskID, err := idextractor.ExtractInt64Param(c, fieldTaskID)
+		taskID, err := idextractor.ExtractInt64Param(c, FieldTaskID)
 		if err != nil {
 			err := errors.BadRequest.NewWithMessageF("task %d not found", taskID)
 			ginwrapper.Report(c, http.StatusOK, err, nil)
@@ -234,7 +240,7 @@ func (s *Service) verifyTask() gin.HandlerFunc {
 			ginwrapper.Report(c, http.StatusOK, err, nil)
 			return
 		}
-		c.Set(fieldTaskID, taskID)
+		c.Set(FieldTaskID, taskID)
 		c.Next()
 	})
 }

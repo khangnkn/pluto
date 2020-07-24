@@ -96,7 +96,7 @@ func (s *service) getForWorkspace(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.NewWithMessage("cannot bind object"),
 		}
 	}
-	resp, err := s.repository.GetForWorkspace(id, pg)
+	resp, err := s.repository.GetForWorkspace(id, userID, pg)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,

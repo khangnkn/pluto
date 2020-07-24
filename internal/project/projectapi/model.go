@@ -24,10 +24,10 @@ type CreateProjectRequest struct {
 
 type ProjectResponse struct {
 	ProjectBaseResponse
-	DatasetCount   int                                  `json:"dataset_count"`
-	MemberCount    int                                  `json:"member_count"`
-	ProjectManager []uint64                             `json:"project_manager"`
-	Workspace      workspaceapi.WorkspaceDetailResponse `json:"workspace"`
+	DatasetCount    int                                  `json:"dataset_count"`
+	MemberCount     int                                  `json:"member_count"`
+	ProjectManagers []uint64                             `json:"project_managers"`
+	Workspace       workspaceapi.WorkspaceDetailResponse `json:"workspace"`
 }
 
 type ProjectBaseResponse struct {

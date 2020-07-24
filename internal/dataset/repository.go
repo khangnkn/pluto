@@ -117,3 +117,12 @@ func (r *repository) Update(id uint64, changes map[string]interface{}) (Dataset,
 	r.invalidate(d.ID, d.ProjectID)
 	return d, nil
 }
+
+func (r *repository) DeleteByProject(projectID uint64) error {
+	err := r.dbRepo.DeleteByProject(projectID)
+	if err != nil {
+		return err
+	}
+	r.invalidate(0, projectID)
+	return nil
+}

@@ -26,7 +26,7 @@ type Repository interface {
 	GetTasks(request GetTasksRequest) (response GetTaskResponse, err error)
 	GetTaskForProject(projectID uint64, pg paging.Paging) (response GetTaskResponse, err error)
 	GetTask(taskID uint64) (TaskResponse, error)
-	CreateTask(projectID uint64, request CreateTaskRequest) error
+	CreateTask(projectID, assigner uint64, request CreateTaskRequest) error
 	DeleteTask(taskID uint64) error
 	GetTaskDetails(taskID uint64, request GetTaskDetailsRequest) ([]TaskDetailResponse, error)
 	UpdateTaskDetail(taskID, detailID uint64, request UpdateTaskDetailRequest) (TaskDetailResponse, error)
@@ -101,7 +101,7 @@ func (r *repository) GetTasks(request GetTasksRequest) (response GetTaskResponse
 	}, nil
 }
 
-func (r *repository) CreateTask(projectID uint64, request CreateTaskRequest) error {
+func (r *repository) CreateTask(projectID, assigner uint64, request CreateTaskRequest) error {
 	imgs, err := r.imgRepo.GetAllImageByDataset(request.DatasetID)
 	if err != nil {
 		return err
@@ -118,7 +118,7 @@ func (r *repository) CreateTask(projectID uint64, request CreateTaskRequest) err
 		for j := range truncated {
 			ids[j] = truncated[j].ID
 		}
-		task, err := r.repository.CreateTask(request.Title, request.Description, request.Assigner, pair.Labeler, pair.Reviewer, projectID, request.DatasetID, ids)
+		task, err := r.repository.CreateTask(request.Title, request.Description, assigner, pair.Labeler, pair.Reviewer, projectID, request.DatasetID, ids)
 		if err != nil {
 			errs = append(errs, err)
 		}
@@ -142,7 +142,7 @@ func (r *repository) DeleteTask(taskID uint64) error {
 }
 
 func (r *repository) GetTaskDetails(taskID uint64, request GetTaskDetailsRequest) ([]TaskDetailResponse, error) {
-	details, _, err := r.repository.GetTaskDetails(taskID, task.Status(request.Status), request.CurrentID, request.PageSize)
+	details, _, err := r.repository.GetTaskDetails(taskID, request.Status, request.CurrentID, request.PageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func (r *repository) UpdateTaskDetail(taskID, detailID uint64, request UpdateTas
 }
 
 func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
-	_, total, err := r.repository.GetTaskDetails(t.ID, task.Any, 0, 0)
+	_, total, err := r.repository.GetTaskDetails(t.ID, task.Pending, 0, 0)
 	dataset, err := r.datasetRepo.GetByID(t.DatasetID)
 	if err != nil {
 		logger.Errorf("cannot get dataset response. error %v", err)
@@ -193,7 +193,7 @@ func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
 				Thumbnail:   project.Thumbnail,
 				Color:       project.Color,
 			},
-			ProjectManagers: project.ProjectManager,
+			ProjectManagers: project.ProjectManagers,
 		},
 
 		Workspace: WorkspaceObject{

@@ -1,7 +1,9 @@
 package project
 
 import (
+	"github.com/nkhang/pluto/internal/dataset"
 	"github.com/nkhang/pluto/internal/rediskey"
+	"github.com/nkhang/pluto/internal/task"
 	"github.com/nkhang/pluto/pkg/cache"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/logger"
@@ -24,14 +26,18 @@ type Repository interface {
 }
 
 type repository struct {
-	disk  DBRepository
-	cache cache.Cache
+	taskRepo    task.Repository
+	datasetRepo dataset.Repository
+	disk        DBRepository
+	cache       cache.Cache
 }
 
-func NewRepository(r DBRepository, c cache.Cache) *repository {
+func NewRepository(r DBRepository, c cache.Cache, t task.Repository, d dataset.Repository) *repository {
 	return &repository{
-		disk:  r,
-		cache: c,
+		taskRepo:    t,
+		datasetRepo: d,
+		disk:        r,
+		cache:       c,
 	}
 }
 
@@ -164,8 +170,8 @@ func (r *repository) GetProjectPermissions(pID uint64, role Role, offset, limit 
 }
 
 func (r *repository) CreatePermission(projectID, userID uint64, role Role) (Permission, error) {
-	r.InvalidatePermissionForProject(projectID)
-	r.InvalidatePermissionForUser(userID)
+	r.invalidatePermissionForProject(projectID)
+	r.invalidatePermissionForUser(userID)
 	_, err := r.Get(projectID)
 	if errors.Type(err) == errors.ProjectNotFound {
 		return Permission{}, errors.ProjectNotFound.NewWithMessageF("project %d not existed", projectID)
@@ -178,8 +184,8 @@ func (r *repository) UpdatePermission(projectID, userID uint64, role Role) (Perm
 	if err != nil {
 		return Permission{}, err
 	}
-	r.InvalidatePermissionForUser(userID)
-	r.InvalidatePermissionForProject(projectID)
+	r.invalidatePermissionForUser(userID)
+	r.invalidatePermissionForProject(projectID)
 	return perm, nil
 }
 
@@ -195,17 +201,20 @@ func (r *repository) invalidateProjectsByWorkspaceID(id uint64) {
 	}
 }
 
-func (r *repository) InvalidatePermissionForUser(userID uint64) error {
-	_, totalKey, pattern := rediskey.ProjectByWorkspaceID(userID, 0, 0)
+func (r *repository) invalidatePermissionForUser(userID uint64) {
+	pattern := rediskey.ProjectPermissionByUserPattern(userID)
 	keys, err := r.cache.Keys(pattern)
 	if err != nil {
-		return err
+		logger.Errorf("error invalidate cache for user %d. err %v", userID, err.Error())
+		return
 	}
-	keys = append(keys, totalKey)
-	return r.cache.Del(keys...)
+	err = r.cache.Del(keys...)
+	if err != nil {
+		logger.Errorf("error invalidate cache for user %d. err %v", userID, err.Error())
+	}
 }
 
-func (r *repository) InvalidatePermissionForProject(projectID uint64) {
+func (r *repository) invalidatePermissionForProject(projectID uint64) {
 	_, totalKey, pattern := rediskey.ProjectPermissionByID(projectID, 0, 0, 0)
 	keys, err := r.cache.Keys(pattern)
 	if err != nil {
@@ -241,9 +250,21 @@ func (r *repository) Delete(id uint64) error {
 		return err
 	}
 	r.invalidateProjectsByWorkspaceID(project.WorkspaceID)
-	r.InvalidatePermissionForProject(id)
+	r.invalidatePermissionForProject(id)
 	r.invalidateProject(id)
-	return r.disk.Delete(id)
+	err = r.disk.Delete(id)
+	if err != nil {
+		return err
+	}
+	err = r.taskRepo.DeleteTaskByProject(id)
+	if err != nil {
+		logger.Errorf("error deleting tasks of project %d. err %v", id, err)
+	}
+	err = r.datasetRepo.DeleteByProject(id)
+	if err != nil {
+		logger.Errorf("error deleting datasets of project %d, err %v", id, err)
+	}
+	return nil
 }
 
 func (r *repository) DeleteByWorkspace(workspaceID uint64) error {
@@ -265,8 +286,8 @@ func (r *repository) DeletePermission(userID, projectID uint64) error {
 	if err != nil {
 		return err
 	}
-	r.InvalidatePermissionForUser(userID)
-	r.InvalidatePermissionForProject(projectID)
+	r.invalidatePermissionForUser(userID)
+	r.invalidatePermissionForProject(projectID)
 	return nil
 }
 

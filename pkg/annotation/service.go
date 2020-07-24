@@ -1,6 +1,7 @@
 package annotation
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -24,7 +25,8 @@ import (
 
 type Service interface {
 	CreateTask(projectID, datasetID uint64, tasks []task.Task) error
-	GetLabelCount(projectID, labelID uint64) (LabelStatsResponse, error)
+	GetLabelCount(projectID, labelID uint64) (LabelStatsObject, error)
+	CreateTaskWithNATS(projectID, datasetID uint64, tasks []task.Task) error
 }
 
 type service struct {
@@ -54,29 +56,61 @@ func NewService(workspaceRepo workspace.Repository,
 	}
 }
 
-func (s *service) GetLabelCount(projectID, labelID uint64) (LabelStatsResponse, error) {
+func (s *service) GetLabelCount(projectID, labelID uint64) (obj LabelStatsObject, err error) {
 	path := s.annotationBasePath + "/stats/images"
 	u, err := url.Parse(path)
 	if err != nil {
-		return LabelStatsResponse{}, errors.AnnotationCannotParseURL.WrapF(err, "cannot parse url %s", path)
+		err = errors.AnnotationCannotParseURL.WrapF(err, "cannot parse url %s", path)
+		return
 	}
 	q := u.Query()
 	q.Set("project_id", cast.ToString(projectID))
 	q.Set("label_id", cast.ToString(labelID))
+	u.RawQuery = q.Encode()
+	logger.Infof("request: %s", u.String())
 	resp, err := s.client.Get(u.String())
 	if err != nil {
-		return LabelStatsResponse{}, errors.AnnotationCannotGetFromServer.WrapF(err, "cannot get annotation label statistic from server")
+		err = errors.AnnotationCannotGetFromServer.WrapF(err, "cannot get annotation label statistic from server")
+		return
 	}
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return LabelStatsResponse{}, errors.AnnotationCannotReadBody.Wrap(err, "cannot get response body")
+		err = errors.AnnotationCannotReadBody.Wrap(err, "cannot get response body")
+		return
 	}
+	logger.Infof("got: %s", b)
 	var respObj LabelStatsResponse
 	err = json.Unmarshal(b, &respObj)
 	if err != nil {
-		return LabelStatsResponse{}, errors.AnnotationCannotReadBody.Wrap(err, "cannot parse json body of response")
+		err = errors.AnnotationCannotReadBody.Wrap(err, "cannot parse json body of response")
+		return
 	}
-	return respObj, nil
+	if respObj.Status != 1 {
+		err = errors.AnnotationCannotGetFromServer.NewWithMessageF("error getting from annotation server. msg: %s", respObj.Message)
+	}
+	return respObj.Data, nil
+}
+
+func (s *service) CreateTaskWithNATS(projectID, datasetID uint64, tasks []task.Task) error {
+	p, err := s.projectRepo.Get(projectID)
+	if err != nil {
+		return err
+	}
+	message, err := NewBuilder(
+		s.workspaceRepo,
+		s.projectRepo,
+		s.datasetRepo,
+		s.labelRepo).
+		WithWorkspace(p.WorkspaceID).
+		WithProject(projectID).
+		WithDataset(datasetID).
+		WithTasks(tasks).
+		WithLabels(projectID).
+		Build()
+	if err != nil {
+		return err
+	}
+	return s.pushWithNATS(message)
 }
 
 func (s *service) CreateTask(projectID, datasetID uint64, tasks []task.Task) error {
@@ -101,9 +135,27 @@ func (s *service) CreateTask(projectID, datasetID uint64, tasks []task.Task) err
 	return s.push(message)
 }
 
-func (s *service) push(message PushTaskMessage) error {
+func (s *service) pushWithNATS(message PushTaskMessage) error {
 	logger.Info("Publishing task...")
 	return s.nc.Publish(viper.GetString("annotation.pushtask"), &message)
+}
+
+func (s *service) push(message PushTaskMessage) error {
+	path := s.annotationBasePath + "/task"
+	b, err := json.Marshal(&message)
+	if err != nil {
+		return err
+	}
+	logger.Infof("msg: %s", b)
+	resp, err := s.client.Post(path, "application/json", bytes.NewReader(b))
+	if err != nil {
+		return err
+	}
+	bb, err := ioutil.ReadAll(resp.Body)
+	if err == nil {
+		logger.Info(string(bb))
+	}
+	return nil
 }
 
 type builder struct {
@@ -162,14 +214,16 @@ func (b *builder) WithProject(id uint64) *builder {
 		b.errs = append(b.errs, err)
 		return b
 	}
-	var manager uint64
+	var manager = make([]uint64, 0)
 	perms, _, err := b.projectRepo.GetProjectPermissions(p.ID, project.Manager, 0, 1)
-	if err != nil || len(perms) == 0 {
+	if err != nil {
 		logger.Errorf("error getting manager of project %d,. err %v", id, err)
 		b.errs = append(b.errs, errors.WorkspacePermissionErrorCreating.NewWithMessage(""))
 		return b
 	} else {
-		manager = perms[0].UserID
+		for i := range perms {
+			manager = append(manager, perms[i].UserID)
+		}
 	}
 	b.project = ProjectObject{
 		ID:             p.ID,

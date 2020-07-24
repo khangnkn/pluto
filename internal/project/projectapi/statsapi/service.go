@@ -5,6 +5,7 @@ import (
 	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
+	"github.com/nkhang/pluto/pkg/util/idextractor"
 )
 
 type service struct {
@@ -16,20 +17,24 @@ func NewService(r Repository) *service {
 }
 
 func (s *service) Register(router gin.IRouter) {
-	router.GET("/dataset", ginwrapper.Wrap(s.getImageStats))
+	router.GET("/images", ginwrapper.Wrap(s.getImageStats))
 	router.GET("/overall", ginwrapper.Wrap(s.getTaskStats))
-	router.GET("/member", ginwrapper.Wrap(s.getMemberStats))
+	router.GET("/members", ginwrapper.Wrap(s.getMemberStats))
 	router.GET("/labels", ginwrapper.Wrap(s.getStatsLabel))
 }
 
 func (s *service) getImageStats(c *gin.Context) ginwrapper.Response {
 	var req GetDatasetStatsRequest
+	projectID, err := idextractor.ExtractUint64Param(c, projectapi.FieldProjectID)
+	if err != nil {
+		return ginwrapper.Response{Error: err}
+	}
 	if err := c.ShouldBindQuery(&req); err != nil {
 		return ginwrapper.Response{
 			Error: errors.BadRequest.NewWithMessage("error binding params"),
 		}
 	}
-	stats, err := s.repository.BuildReport(req.DatasetID)
+	stats, err := s.repository.BuildReport(projectID, req.DatasetID)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,

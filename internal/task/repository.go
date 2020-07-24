@@ -14,7 +14,7 @@ type Repository interface {
 	GetTasksByProject(projectID uint64, status Status, offset, limit int) (tasks []Task, total int, err error)
 	DeleteTask(taskID uint64) error
 	DeleteTaskByProject(projectID uint64) error
-	GetTaskDetails(taskID uint64, status Status, currentID uint64, limit int) ([]Detail, int, error)
+	GetTaskDetails(taskID uint64, status DetailStatus, currentID uint64, limit int) ([]Detail, int, error)
 	UpdateTask(taskID uint64, changes map[string]interface{}) (Task, error)
 	UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error)
 }
@@ -114,7 +114,7 @@ func (r *repository) DeleteTask(id uint64) error {
 	return nil
 }
 
-func (r *repository) GetTaskDetails(taskID uint64, status Status, currentID uint64, limit int) ([]Detail, int, error) {
+func (r *repository) GetTaskDetails(taskID uint64, status DetailStatus, currentID uint64, limit int) ([]Detail, int, error) {
 	details, total, count, err := r.dbRepo.GetTaskDetails(taskID, status, currentID, limit)
 	if err != nil {
 		return nil, 0, err
@@ -178,4 +178,8 @@ func (r *repository) DeleteTaskByProject(projectID uint64) error {
 
 func (r *repository) UpdateTask(taskID uint64, changes map[string]interface{}) (Task, error) {
 	return r.dbRepo.UpdateTask(taskID, changes)
+}
+
+func GetUserTaskInProject() {
+
 }

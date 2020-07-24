@@ -25,21 +25,44 @@ func NewRepository(d dataset.Repository, t task.Repository, i image.Repository, 
 }
 
 type Repository interface {
-	BuildReport(datasetID uint64) (DatasetStatsResponse, error)
+	BuildReport(projectID, datasetID uint64) (DatasetStatsResponse, error)
 	BuildTaskReport(projectID uint64) ([]TaskStatusPair, error)
 	BuildMemberReport(projectID uint64) (MemberStatsResponse, error)
 	BuildLabelReport(projectID, labelID uint64) (GetLabelStatsResponse, error)
 }
 
-func (r *repository) BuildReport(datasetID uint64) (DatasetStatsResponse, error) {
-	details, err := r.imageRepo.GetAllImageByDataset(datasetID)
+func (r *repository) BuildReport(projectId, datasetID uint64) (DatasetStatsResponse, error) {
+	var (
+		images []image.Image
+		err    error
+	)
+	if datasetID == 0 {
+		images, err = r.getAllImagesForProject(projectId)
+	} else {
+		images, err = r.imageRepo.GetAllImageByDataset(datasetID)
+	}
 	if err != nil {
 		return DatasetStatsResponse{}, err
 	}
 	return DatasetStatsResponse{
-		AnnotatedTimes:      buildAnnotatedTimesPair(details),
-		AnnotatedStatusPair: buildAnnotatedStatusPairs(details),
+		AnnotatedTimes:      buildAnnotatedTimesPair(images),
+		AnnotatedStatusPair: buildAnnotatedStatusPairs(images),
 	}, nil
+}
+
+func (r *repository) getAllImagesForProject(projectId uint64) (resp []image.Image, err error) {
+	datasets, err := r.datasetRepo.GetByProject(projectId)
+	if err != nil {
+		return nil, err
+	}
+	for i := range datasets {
+		details, err := r.imageRepo.GetAllImageByDataset(datasets[i].ID)
+		if err != nil {
+			return nil, err
+		}
+		resp = append(resp, details...)
+	}
+	return
 }
 
 func buildAnnotatedTimesPair(images []image.Image) (result []AnnotatedTimePair) {

@@ -34,3 +34,8 @@ truncate table workspace_permissions;
 
 truncate table workspaces;
 
+ALTER TABLE workspaces MODIFY description TEXT;
+ALTER TABLE projects MODIFY description TEXT;
+ALTER TABLE datasets MODIFY description TEXT;
+ALTER TABLE tasks MODIFY description TEXT;
+

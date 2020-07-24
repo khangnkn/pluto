@@ -56,7 +56,7 @@ func (s *service) createPerm(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.NewWithMessage("error binding request params"),
 		}
 	}
-	err := s.repository.Create(uint64(id), req)
+	prj, err := s.repository.Create(uint64(id), req)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -64,6 +64,7 @@ func (s *service) createPerm(c *gin.Context) ginwrapper.Response {
 	}
 	return ginwrapper.Response{
 		Error: errors.Success.NewWithMessage("success"),
+		Data:  prj,
 	}
 }
 

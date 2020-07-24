@@ -38,12 +38,17 @@ type params struct {
 	ProjectService   pgin.StandaloneRouter `name:"ProjectService"`
 	ToolService      pgin.StandaloneRouter `name:"ToolService"`
 	TaskService      pgin.StandaloneRouter `name:"TaskService"`
+	ImageService     pgin.StandaloneRouter `name:"ImageService"`
 	TaskServiceIns   *taskapi.Service      `name:"TaskService"`
 }
 
 func initializer(l fx.Lifecycle, p params) {
 	migrate(p.GormDB)
 	router := p.Router.Group("/pluto/api/v1")
+	p.ImageService.RegisterStandalone(router.Group("/images"))
+	if viper.GetBool("service.authen") {
+		router.Use(pgin.ApplyVerifyToken())
+	}
 	p.ToolService.RegisterStandalone(router.Group("/tools"))
 	p.ProjectService.RegisterStandalone(router.Group("/projects"))
 	p.WorkspaceService.RegisterStandalone(router.Group("/workspaces"))

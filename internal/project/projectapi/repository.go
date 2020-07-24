@@ -15,7 +15,7 @@ import (
 type Repository interface {
 	GetByID(pID uint64) (ProjectResponse, error)
 	GetList(userID uint64, p GetProjectRequest) ([]ProjectResponse, int, error)
-	GetForWorkspace(workspaceID uint64, paging paging.Paging) (GetProjectResponse, error)
+	GetForWorkspace(workspaceID, userID uint64, paging paging.Paging) (GetProjectResponse, error)
 	Create(workspaceID, creator uint64, p CreateProjectRequest) (ProjectResponse, error)
 	UpdateProject(id uint64, request UpdateProjectRequest) (ProjectResponse, error)
 	DeleteProject(id uint64) error
@@ -158,10 +158,10 @@ func (r *repository) ConvertResponse(p project.Project) ProjectResponse {
 			Thumbnail:   p.Thumbnail,
 			Color:       p.Color,
 		},
-		DatasetCount:   datasetCount,
-		MemberCount:    totalPerms,
-		Workspace:      w,
-		ProjectManager: pm,
+		DatasetCount:    datasetCount,
+		MemberCount:     totalPerms,
+		Workspace:       w,
+		ProjectManagers: pm,
 	}
 }
 

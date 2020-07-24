@@ -156,8 +156,11 @@ func (r *repository) createImage(d dataset.Dataset, h *multipart.FileHeader) err
 		logger.Error("error decode image", err)
 		return nil
 	}
-
-	path := fmt.Sprintf("%s/%d/%s", d.Project.Dir, d.ID, h.Filename)
+	prj, err := r.projectRepo.Get(d.ProjectID)
+	if err != nil {
+		return err
+	}
+	path := fmt.Sprintf("%s/%d/%s", prj.Dir, d.ID, h.Filename)
 	n, err := r.storage.PutImage(r.conf.BucketName, path, &buf, h.Size)
 	if err != nil {
 		logger.Error("error putting to object storage", err)

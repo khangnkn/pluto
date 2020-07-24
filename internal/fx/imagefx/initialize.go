@@ -18,7 +18,8 @@ func provideImageRepository(db *gorm.DB, cache cache.Cache) image.Repository {
 }
 
 func provideService(r image.Repository, s objectstorage.ObjectStorage,
-	d dataset.Repository, p project.Repository) pgin.Router {
+	d dataset.Repository, p project.Repository) (pgin.Router, pgin.StandaloneRouter) {
 	repository := imageapi.NewRepository(r, s, d, p)
-	return imageapi.NewService(repository)
+	router := imageapi.NewService(repository)
+	return router, router
 }

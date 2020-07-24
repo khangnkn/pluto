@@ -15,9 +15,9 @@ type WorkspaceObject struct {
 }
 
 type ProjectObject struct {
-	ID             uint64 `json:"id"`
-	Title          string `json:"title"`
-	ProjectManager uint64 `json:"project_manager"`
+	ID             uint64   `json:"id"`
+	Title          string   `json:"title"`
+	ProjectManager []uint64 `json:"project_manager"`
 }
 
 type DatasetObject struct {
@@ -45,7 +45,13 @@ type ToolObject struct {
 	Name string `json:"name"`
 }
 
+type LabelStatsObject struct {
+	TotalObject int `json:"total_objects"`
+	TotalImage  int `json:"total_images"`
+}
+
 type LabelStatsResponse struct {
-	TotalObject int `json:"total_object"`
-	TotalImage  int `json:"total_image"`
+	Status  int32            `json:"status"`
+	Message string           `json:"msg"`
+	Data    LabelStatsObject `json:"data"`
 }

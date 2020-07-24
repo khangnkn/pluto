@@ -14,6 +14,7 @@ type DbRepository interface {
 	CreateDataset(title, description string, pID uint64) (Dataset, error)
 	DeleteDataset(ID uint64) error
 	Update(id uint64, changes map[string]interface{}) (Dataset, error)
+	DeleteByProject(projectID uint64) error
 }
 
 type dbRepository struct {
@@ -27,7 +28,7 @@ func NewDbRepository(db *gorm.DB) *dbRepository {
 }
 
 func (r *dbRepository) Get(dID uint64) (d Dataset, err error) {
-	result := r.db.Preload("Project").First(&d, dID)
+	result := r.db.First(&d, dID)
 	if result.RecordNotFound() {
 		err = errors.DatasetNotFound.NewWithMessage("dataset not found")
 		return
@@ -59,7 +60,7 @@ func (r *dbRepository) CreateDataset(title, description string, pID uint64) (Dat
 	if err != nil {
 		return Dataset{}, errors.DatasetCannotCreate.Wrap(err, "cannot create dataset")
 	}
-	err = r.db.Preload("Project").First(&d, d.ID).Error
+	err = r.db.First(&d, d.ID).Error
 	if err != nil {
 		return d, errors.DatasetCannotCreate.Wrap(err, "cannot create dataset")
 	}
@@ -82,4 +83,12 @@ func (r *dbRepository) Update(id uint64, changes map[string]interface{}) (Datase
 		return Dataset{}, errors.ImageCannotUpdate.Wrap(err, "cannot update image")
 	}
 	return d, nil
+}
+
+func (r *dbRepository) DeleteByProject(projectID uint64) error {
+	err := r.db.Where("project_id = ?", projectID).Delete(&Dataset{}).Error
+	if err != nil {
+		return errors.DatasetCannotDelete.WrapF(err, "cannot delete dataset of project %d", projectID)
+	}
+	return nil
 }
