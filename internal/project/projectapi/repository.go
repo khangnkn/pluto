@@ -46,36 +46,29 @@ func (r *repository) GetByID(pID uint64) (ProjectResponse, error) {
 
 func (r *repository) GetList(userID uint64, p GetProjectRequest) (responses []ProjectResponse, total int, err error) {
 	offset, limit := paging.Parse(p.Page, p.PageSize)
-	var projects []project.Project
+	var perms = make([]project.Permission, 0)
 	switch p.Source {
 	case SrcAllProject:
-		var perms []project.Permission
 		perms, total, err = r.repository.GetUserPermissions(userID, project.Any, offset, limit)
-		for i := range perms {
-			projects = append(projects, perms[i].Project)
-		}
 	case SrcMyProject:
-		var perms []project.Permission
-		perms, total, err = r.repository.GetUserPermissions(userID, project.Manager, offset, limit)
-		for i := range perms {
-			projects = append(projects, perms[i].Project)
-		}
+		perms, total, err = r.repository.GetUserPermissions(userID, project.Admin, offset, limit)
 	case SrcOtherProject:
-		var perms []project.Permission
+		var perms2 = make([]project.Permission, 0)
 		perms, total, err = r.repository.GetUserPermissions(userID, project.Member, offset, limit)
-		for i := range perms {
-			projects = append(projects, perms[i].Project)
+		if err != nil {
+			logger.Errorf("error getting member role of project of user %d", userID)
 		}
-
+		perms2, total, err = r.repository.GetUserPermissions(userID, project.Manager, offset, limit)
+		perms = append(perms, perms2...)
 	default:
 		return nil, 0, errors.BadRequest.NewWithMessage("invalid src params")
 	}
 	if err != nil {
 		return nil, 0, err
 	}
-	responses = make([]ProjectResponse, len(projects))
-	for i := range projects {
-		responses[i] = r.ConvertResponse(projects[i])
+	responses = make([]ProjectResponse, len(perms))
+	for i := range perms {
+		responses[i] = r.ConvertResponse(perms[i].Project)
 	}
 	return responses, total, nil
 }
