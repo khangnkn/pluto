@@ -10,10 +10,8 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/spf13/viper"
 
-	"github.com/nkhang/pluto/internal/project/projectapi"
-	"github.com/nkhang/pluto/pkg/util/paging"
-
 	"github.com/gin-gonic/gin"
+	"github.com/nkhang/pluto/internal/project/projectapi"
 	"github.com/nkhang/pluto/internal/task"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/ginwrapper"
@@ -47,7 +45,6 @@ func (s *Service) Register(router gin.IRouter) {
 	{
 		detailRouter.DELETE("", ginwrapper.Wrap(s.delete))
 		detailRouter.GET("", ginwrapper.Wrap(s.get))
-		detailRouter.PUT("/details/:"+fieldTaskDetailID, ginwrapper.Wrap(s.updateTaskDetail))
 		detailRouter.GET("/details", ginwrapper.Wrap(s.getTaskDetails))
 	}
 	s.statsRouter.Register(detailRouter)
@@ -65,6 +62,13 @@ func (s *Service) RegisterNATS(ec *nats.EncodedConn) error {
 
 func (s *Service) RegisterStandalone(router gin.IRouter) {
 	router.GET("", ginwrapper.Wrap(s.getListForUser))
+}
+
+func (s *Service) RegisterInternal(router gin.IRouter) {
+	taskRouter := router.Group("/workspaces/:workspaceId/projects/:projectId/tasks/:"+FieldTaskID, s.verifyTask())
+	{
+		taskRouter.PUT("/details/:"+fieldTaskDetailID, ginwrapper.Wrap(s.updateTaskDetail))
+	}
 }
 
 func (s *Service) handleUpdateTask(msg *nats.Msg) {
@@ -119,6 +123,7 @@ func (s *Service) get(c *gin.Context) ginwrapper.Response {
 }
 
 func (s *Service) getListForUser(c *gin.Context) ginwrapper.Response {
+	userID := pgin.ExtractUserIDFromContext(c)
 	var request GetTasksRequest
 	if err := c.ShouldBindQuery(&request); err != nil {
 		logger.Error(err)
@@ -126,7 +131,7 @@ func (s *Service) getListForUser(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.NewWithMessage("error binding get tasks request"),
 		}
 	}
-	response, err := s.repository.GetTasks(request)
+	response, err := s.repository.GetTasks(userID, request)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
@@ -141,14 +146,14 @@ func (s *Service) getListForUser(c *gin.Context) ginwrapper.Response {
 func (s *Service) getListForProject(c *gin.Context) ginwrapper.Response {
 	projectID := uint64(c.GetInt64(projectapi.FieldProjectID))
 	userID := pgin.ExtractUserIDFromContext(c)
-	var pg paging.Paging
-	if err := c.ShouldBindQuery(&pg); err != nil {
+	var req GetTasksRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
 		logger.Error(err)
 		return ginwrapper.Response{
 			Error: errors.BadRequest.NewWithMessage("error binding get tasks request"),
 		}
 	}
-	response, err := s.repository.GetTaskForProject(projectID, userID, pg)
+	response, err := s.repository.GetTaskForProject(projectID, userID, req)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,

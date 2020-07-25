@@ -25,6 +25,7 @@ import (
 
 type Service interface {
 	CreateTask(projectID, datasetID uint64, tasks []task.Task) error
+	UpdateProject(projectID uint64) error
 	GetLabelCount(projectID, labelID uint64) (LabelStatsObject, error)
 	CreateTaskWithNATS(projectID, datasetID uint64, tasks []task.Task) error
 }
@@ -295,4 +296,43 @@ func (b *builder) Build() (PushTaskMessage, error) {
 		Tasks:     b.tasks,
 		Labels:    b.labels,
 	}, nil
+}
+
+func (s *service) UpdateProject(projectID uint64) error {
+	p, err := s.projectRepo.Get(projectID)
+	if err != nil {
+		logger.Errorf("error getting project %d. err %v", projectID, err)
+		return err
+	}
+	var managers = make([]uint64, 0)
+	perms, _, err := s.projectRepo.GetProjectPermissions(p.ID, project.Manager, 0, 1)
+	if err != nil {
+		logger.Errorf("error getting managers of project %d,. err %v", projectID, err)
+		return err
+	} else {
+		for i := range perms {
+			managers = append(managers, perms[i].UserID)
+		}
+	}
+	object := ProjectObject{
+		ID:             p.ID,
+		Title:          p.Title,
+		ProjectManager: managers,
+	}
+	b, err := json.Marshal(object)
+	if err != nil {
+		return errors.AnnotationCannotReadBody.NewWithMessage("error marshalling object")
+	}
+	path := s.annotationBasePath + "/project/update"
+	logger.Infof("publishing project to annotation server. path: %s. body %s", path, b)
+	resp, err := s.client.Post(path, "application/json", bytes.NewReader(b))
+	if err != nil {
+		return errors.AnnotationCannotGetFromServer.NewWithMessageF("error requesting to annotation server. err %v", err)
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.AnnotationCannotReadBody.NewWithMessageF("cannot read body from annotation server. err", err)
+	}
+	logger.Infof("update to annotation server resp %s", body)
+	return nil
 }

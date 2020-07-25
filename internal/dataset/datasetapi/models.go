@@ -7,7 +7,7 @@ import (
 
 type CreateDatasetRequest struct {
 	Title       string `form:"title" json:"title" binding:"required"`
-	Description string `form:"description" json:"description" binding:"required"`
+	Description string `form:"description" json:"description"`
 }
 
 type CloneDatasetRequest struct {

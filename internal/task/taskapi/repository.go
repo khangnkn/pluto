@@ -23,8 +23,8 @@ import (
 )
 
 type Repository interface {
-	GetTasks(request GetTasksRequest) (response GetTaskResponse, err error)
-	GetTaskForProject(projectID, userID uint64, pg paging.Paging) (response GetTaskResponse, err error)
+	GetTasks(userID uint64, request GetTasksRequest) (response GetTaskResponse, err error)
+	GetTaskForProject(projectID, userID uint64, request GetTasksRequest) (response GetTaskResponse, err error)
 	GetTask(taskID uint64) (TaskResponse, error)
 	CreateTask(projectID, assigner uint64, request CreateTaskRequest) error
 	DeleteTask(taskID uint64) error
@@ -62,7 +62,7 @@ func (r *repository) GetTask(taskID uint64) (TaskResponse, error) {
 	return r.ToTaskResponse(task), nil
 }
 
-func (r *repository) GetTasks(request GetTasksRequest) (response GetTaskResponse, err error) {
+func (r *repository) GetTasks(userID uint64, request GetTasksRequest) (response GetTaskResponse, err error) {
 	offset, limit := paging.Parse(request.Page, request.PageSize)
 	var (
 		tasks = make([]task.Task, 0)
@@ -70,26 +70,27 @@ func (r *repository) GetTasks(request GetTasksRequest) (response GetTaskResponse
 	)
 	switch request.Source {
 	case SrcAllTasks:
-		tasks, total, err = r.repository.GetTasksByUser(request.UserID, task.AnyRole, task.Any, offset, limit)
+		tasks, total, err = r.repository.GetTasksByUser(userID, task.AnyRole, task.Any, offset, limit)
 		if err != nil {
 			return GetTaskResponse{}, err
 		}
 	case SrcAssignerTasks:
-		tasks, total, err = r.repository.GetTasksByUser(request.UserID, task.Assigner, task.Any, offset, limit)
+		tasks, total, err = r.repository.GetTasksByUser(userID, task.Assigner, task.Any, offset, limit)
 		if err != nil {
 			return GetTaskResponse{}, err
 		}
 	case SrcLabelingTasks:
-		tasks, total, err = r.repository.GetTasksByUser(request.UserID, task.Labeler, task.Any, offset, limit)
+		tasks, total, err = r.repository.GetTasksByUser(userID, task.Labeler, task.Any, offset, limit)
 		if err != nil {
 			return GetTaskResponse{}, err
 		}
 	case SrcReviewingTasks:
-		tasks, total, err = r.repository.GetTasksByUser(request.UserID, task.Reviewer, task.Any, offset, limit)
+		tasks, total, err = r.repository.GetTasksByUser(userID, task.Reviewer, task.Any, offset, limit)
 		if err != nil {
 			return GetTaskResponse{}, err
 		}
-
+	default:
+		return GetTaskResponse{}, errors.TaskCannotGet.NewWithMessage("role is not supported")
 	}
 	responses := make([]TaskResponse, len(tasks))
 	for i := range tasks {
@@ -164,6 +165,10 @@ func (r *repository) UpdateTaskDetail(taskID, detailID uint64, request UpdateTas
 	if err != nil {
 		return TaskDetailResponse{}, err
 	}
+	err = r.repository.CheckTaskStatus(taskID, request.Status)
+	if err != nil {
+		logger.Error("error check update task status for task %d, detail status %d", taskID, request.Status)
+	}
 	if _, ok := changes["status"]; ok && request.Status == 2 {
 		err := r.imgRepo.Incr(detail.ImageID)
 		if err != nil {
@@ -174,7 +179,7 @@ func (r *repository) UpdateTaskDetail(taskID, detailID uint64, request UpdateTas
 }
 
 func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
-	_, total, err := r.repository.GetTaskDetails(t.ID, task.Pending, 0, 0)
+	_, total, err := r.repository.GetTaskDetails(t.ID, task.AnyStatus, 0, 0)
 	dataset, err := r.datasetRepo.GetByID(t.DatasetID)
 	if err != nil {
 		logger.Errorf("cannot get dataset response. error %v", err)
@@ -218,9 +223,25 @@ func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
 	}
 }
 
-func (r *repository) GetTaskForProject(projectID, userID uint64, pg paging.Paging) (resp GetTaskResponse, err error) {
-	offset, limit := pg.Parse()
-	tasks, total, err := r.repository.GetByProjectAndUser(projectID, userID, task.AnyRole, offset, limit)
+func (r *repository) GetTaskForProject(projectID, userID uint64, request GetTasksRequest) (resp GetTaskResponse, err error) {
+	offset, limit := paging.Parse(request.Page, request.PageSize)
+	var (
+		tasks = make([]task.Task, 0)
+		total int
+	)
+	logger.Info(request.Source)
+	switch request.Source {
+	case SrcAllTasks:
+		tasks, total, err = r.repository.GetByProjectAndUser(projectID, userID, task.AnyRole, offset, limit)
+	case SrcAssignerTasks:
+		tasks, total, err = r.repository.GetByProjectAndUser(projectID, userID, task.Assigner, offset, limit)
+	case SrcLabelingTasks:
+		tasks, total, err = r.repository.GetByProjectAndUser(projectID, userID, task.Labeler, offset, limit)
+	case SrcReviewingTasks:
+		tasks, total, err = r.repository.GetByProjectAndUser(projectID, userID, task.Reviewer, offset, limit)
+	default:
+		return GetTaskResponse{}, errors.TaskCannotGet.NewWithMessage("role is not supported")
+	}
 	if err != nil {
 		return
 	}

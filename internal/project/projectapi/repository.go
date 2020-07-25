@@ -3,6 +3,8 @@ package projectapi
 import (
 	"encoding/json"
 
+	"github.com/nkhang/pluto/pkg/annotation"
+
 	"github.com/nkhang/pluto/internal/workspace/workspaceapi"
 
 	"github.com/nkhang/pluto/internal/dataset"
@@ -23,16 +25,18 @@ type Repository interface {
 }
 
 type repository struct {
-	repository    project.Repository
-	datasetRepo   dataset.Repository
-	workspaceRepo workspaceapi.Repository
+	repository        project.Repository
+	datasetRepo       dataset.Repository
+	workspaceRepo     workspaceapi.Repository
+	annotationService annotation.Service
 }
 
-func NewRepository(r project.Repository, dr dataset.Repository, wr workspaceapi.Repository) *repository {
+func NewRepository(r project.Repository, dr dataset.Repository, wr workspaceapi.Repository, ann annotation.Service) *repository {
 	return &repository{
-		repository:    r,
-		datasetRepo:   dr,
-		workspaceRepo: wr,
+		repository:        r,
+		datasetRepo:       dr,
+		workspaceRepo:     wr,
+		annotationService: ann,
 	}
 }
 
@@ -115,6 +119,10 @@ func (r *repository) UpdateProject(id uint64, request UpdateProjectRequest) (Pro
 	project, err := r.repository.UpdateProject(id, changes)
 	if err != nil {
 		return ProjectResponse{}, nil
+	}
+	err = r.annotationService.UpdateProject(id)
+	if err != nil {
+		logger.Errorf("from project: push project to annotation server failed %v", err)
 	}
 	return r.ConvertResponse(project), nil
 }

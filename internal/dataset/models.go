@@ -6,6 +6,7 @@ import (
 
 const (
 	fieldProjectID = "project_id"
+	defaultImage   = "http://annotation.ml:9000/plutos3/placeholder.png"
 )
 
 type Dataset struct {

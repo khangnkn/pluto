@@ -18,6 +18,7 @@ type Repository interface {
 	GetTaskDetails(taskID uint64, status DetailStatus, currentID uint64, limit int) ([]Detail, int, error)
 	UpdateTask(taskID uint64, changes map[string]interface{}) (Task, error)
 	UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error)
+	CheckTaskStatus(taskID uint64, detailStatus DetailStatus) error
 }
 
 type repository struct {
@@ -120,25 +121,9 @@ func (r *repository) DeleteTask(id uint64) error {
 }
 
 func (r *repository) GetTaskDetails(taskID uint64, status DetailStatus, currentID uint64, limit int) ([]Detail, int, error) {
-	details, total, count, err := r.dbRepo.GetTaskDetails(taskID, status, currentID, limit)
+	details, total, err := r.dbRepo.GetTaskDetails(taskID, status, currentID, limit)
 	if err != nil {
 		return nil, 0, err
-	}
-	logger.Infof("get images of tasks %d, status %d return %d image", taskID, status, count)
-	if count == 0 {
-		var val int32
-		switch status {
-		case 0:
-			val = 2
-		case 2:
-			val = 3
-		default:
-			val = 3
-		}
-		_, err = r.UpdateTask(taskID, map[string]interface{}{"status": val})
-		if err != nil {
-			return nil, 0, err
-		}
 	}
 	return details, total, nil
 }
@@ -185,6 +170,26 @@ func (r *repository) UpdateTask(taskID uint64, changes map[string]interface{}) (
 	return r.dbRepo.UpdateTask(taskID, changes)
 }
 
-func GetUserTaskInProject() {
-
+func (r *repository) CheckTaskStatus(taskID uint64, detailStatus DetailStatus) (err error) {
+	rl, s := relative(detailStatus)
+	var (
+		buffer []Detail
+		images = make([]Detail, 0)
+		total  int
+	)
+	for i := range rl {
+		buffer, total, err = r.dbRepo.GetTaskDetails(taskID, rl[i], 0, 0)
+		if err != nil {
+			return err
+		}
+		images = append(images, buffer...)
+	}
+	if len(images) != total {
+		return nil
+	}
+	logger.Infof("[TASK] no more images of status %v of task %d - increasing task status...", rl, taskID)
+	_, err = r.UpdateTask(taskID, map[string]interface{}{
+		"status": s,
+	})
+	return
 }

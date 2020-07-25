@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cast"
 )
 
-type DetailStatus uint32
+type DetailStatus int32
 type Status uint32
 type Role uint32
 
@@ -18,7 +18,8 @@ const (
 )
 
 const (
-	Pending DetailStatus = iota
+	AnyStatus DetailStatus = -1 + iota
+	Pending
 	Draft
 	Labeled
 	Approved
@@ -31,6 +32,22 @@ const (
 	Reviewing
 	Done
 )
+
+var statusMap = map[Status][]DetailStatus{
+	Reviewing: {Labeled},
+	Done:      {Approved, Rejected},
+}
+
+var reverseStatusMap = map[DetailStatus]Status{
+	Labeled:  Reviewing,
+	Approved: Done,
+	Rejected: Done,
+}
+
+func relative(detailStatus DetailStatus) ([]DetailStatus, Status) {
+	status := reverseStatusMap[detailStatus]
+	return statusMap[status], status
+}
 
 type Task struct {
 	gorm.Model

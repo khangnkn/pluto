@@ -3,7 +3,9 @@ package permissionapi
 import (
 	"github.com/nkhang/pluto/internal/project"
 	"github.com/nkhang/pluto/internal/project/projectapi"
+	"github.com/nkhang/pluto/pkg/annotation"
 	"github.com/nkhang/pluto/pkg/errors"
+	"github.com/nkhang/pluto/pkg/logger"
 	"github.com/nkhang/pluto/pkg/util/clock"
 )
 
@@ -15,14 +17,16 @@ type Repository interface {
 }
 
 type repository struct {
-	repository  project.Repository
-	projectRepo projectapi.Repository
+	repository        project.Repository
+	projectRepo       projectapi.Repository
+	annotationService annotation.Service
 }
 
-func NewProjectPermissionAPIRepository(r project.Repository, p projectapi.Repository) *repository {
+func NewProjectPermissionAPIRepository(r project.Repository, p projectapi.Repository, ann annotation.Service) *repository {
 	return &repository{
-		repository:  r,
-		projectRepo: p,
+		repository:        r,
+		projectRepo:       p,
+		annotationService: ann,
 	}
 }
 
@@ -44,6 +48,10 @@ func (r *repository) Create(projectID uint64, req CreatePermRequest) (resp proje
 	if len(errs) != 0 {
 		err = errors.ProjectPermissionCreatingError.NewWithMessageF("error creating %d permissions", len(errs))
 		return
+	}
+	err = r.annotationService.UpdateProject(projectID)
+	if err != nil {
+		logger.Errorf("from project: push project to annotation server failed %v", err)
 	}
 	resp, err = r.projectRepo.GetByID(projectID)
 	return

@@ -12,11 +12,11 @@ import (
 
 type Repository interface {
 	Get(pID uint64) (Project, error)
+	CreateProject(wID uint64, title, desc, color string) (Project, error)
 	GetByWorkspaceID(id uint64, offset, limit int) ([]Project, int, error)
 	GetUserPermissions(userID uint64, role Role, offset, limit int) ([]Permission, int, error)
 	GetProjectPermissions(pID uint64, role Role, offset, limit int) ([]Permission, int, error)
 	GetPermission(userID, projectID uint64) (Permission, error)
-	CreateProject(wID uint64, title, desc, color string) (Project, error)
 	CreatePermission(projectID, userID uint64, role Role) (Permission, error)
 	UpdatePermission(projectID, userID uint64, role Role) (Permission, error)
 	UpdateProject(projectID uint64, changes map[string]interface{}) (Project, error)
@@ -301,6 +301,10 @@ func (r *repository) DeletePermission(userID, projectID uint64) error {
 	r.invalidatePermissionForUser(userID)
 	r.invalidatePermissionForProject(projectID)
 	return nil
+}
+
+func (r *repository) PickThumbnail() {
+
 }
 
 func (r *repository) invalidateProject(projectID uint64) {

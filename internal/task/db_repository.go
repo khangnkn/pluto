@@ -15,7 +15,7 @@ type DBRepository interface {
 	DeleteTask(id uint64) error
 	DeleteTaskByProject(projectID uint64) error
 	AddImages(id uint64, imageIDs []uint64) error
-	GetTaskDetails(taskID uint64, status DetailStatus, currentID uint64, limit int) (details []Detail, total, left int, err error)
+	GetTaskDetails(taskID uint64, status DetailStatus, currentID uint64, limit int) (details []Detail, total int, err error)
 	UpdateTask(taskID uint64, changes map[string]interface{}) (Task, error)
 	UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error)
 }
@@ -78,6 +78,8 @@ func (r *dbRepository) GetByProjectAndUser(projectID, userID uint64, role Role, 
 		db = db.Where(&Task{Labeler: userID}).
 			Or(&Task{Reviewer: userID}).
 			Or(&Task{Assigner: userID})
+	case Assigner:
+		db = db.Where(&Task{Assigner: userID})
 	case Labeler:
 		db = db.Where(&Task{Labeler: userID})
 	case Reviewer:
@@ -173,14 +175,15 @@ func (r *dbRepository) AddImages(id uint64, imageIDs []uint64) error {
 	return nil
 }
 
-func (r *dbRepository) GetTaskDetails(taskID uint64, status DetailStatus, currentID uint64, limit int) (details []Detail, total, left int, err error) {
+func (r *dbRepository) GetTaskDetails(taskID uint64, status DetailStatus, currentID uint64, limit int) (details []Detail, total int, err error) {
 	var tableName = Detail{TaskID: taskID}.TableName()
 	db := r.db.Table(tableName).
 		Preload("Image").
 		Where("task_id = ? ", taskID).
-		Count(&total).
-		Where("status = ?", status).
-		Count(&left)
+		Count(&total)
+	if status != AnyStatus {
+		db = db.Where("status = ?", status)
+	}
 	if currentID != 0 || limit != 0 {
 		db = db.Where("id > ?", currentID).Limit(limit)
 	}
@@ -189,7 +192,7 @@ func (r *dbRepository) GetTaskDetails(taskID uint64, status DetailStatus, curren
 		err = errors.TaskDetailCannotGet.NewWithMessage("cannot get task details")
 		return
 	}
-	return details, total, left, nil
+	return details, total, nil
 }
 
 func (r *dbRepository) UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error) {

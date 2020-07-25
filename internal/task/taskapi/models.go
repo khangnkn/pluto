@@ -25,7 +25,6 @@ const (
 )
 
 type GetTasksRequest struct {
-	UserID   uint64 `json:"user_id" form:"user_id"`
 	Source   uint32 `json:"src" form:"src" binding:"required"`
 	Page     int    `json:"page" form:"page"`
 	PageSize int    `json:"page_size" form:"page_size"`
@@ -48,13 +47,13 @@ type GetTaskDetailsRequest struct {
 }
 
 type UpdateTaskDetailRequest struct {
-	Status uint64 `form:"status" json:"status"`
+	Status task.DetailStatus `form:"status" json:"status"`
 }
 
 type NATSUpdateDetailRequest struct {
-	TaskID   uint64 `json:"task"`
-	DetailID uint64 `json:"task_detail"`
-	Status   uint64 `form:"status" json:"status"`
+	TaskID   uint64            `json:"task"`
+	DetailID uint64            `json:"task_detail"`
+	Status   task.DetailStatus `form:"status" json:"status"`
 }
 
 type TaskDetailResponse struct {

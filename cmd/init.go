@@ -43,6 +43,7 @@ func initializer(l fx.Lifecycle, p params) {
 	migrate(p.GormDB)
 	router := p.Router.Group("/pluto/api/v1")
 	p.ImageService.RegisterStandalone(router.Group("/images"))
+	p.TaskServiceIns.RegisterInternal(router.Group(""))
 	if viper.GetBool("service.authen") {
 		router.Use(pgin.ApplyVerifyToken())
 	}
