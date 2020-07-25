@@ -8,4 +8,5 @@ const (
 	ImageErrorBulkCreating
 	ImageIncrError
 	ImageCannotUpdate
+	ImageCannotDecode
 )

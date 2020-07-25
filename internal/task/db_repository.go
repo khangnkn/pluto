@@ -10,6 +10,7 @@ type DBRepository interface {
 	GetTask(taskID uint64) (Task, error)
 	GetTasksByProject(projectID uint64, status Status, offset, limit int) (tasks []Task, total int, err error)
 	GetTasksByUser(userID uint64, role Role, status Status, offset, limit int) (tasks []Task, total int, err error)
+	GetByProjectAndUser(projectID, userID uint64, role Role, offset, limit int) (tasks []Task, total int, err error)
 	CreateTask(title, description string, assigner, labeler, reviewer, projectID, datasetID uint64) (Task, error)
 	DeleteTask(id uint64) error
 	DeleteTaskByProject(projectID uint64) error
@@ -58,6 +59,32 @@ func (r *dbRepository) GetTasksByUser(userID uint64, role Role, status Status, o
 	}
 	if status != Any {
 		db.Where("status = ?", status)
+	}
+	db = db.Count(&total)
+	if offset != 0 || limit != 0 {
+		db = db.Offset(offset).Limit(limit)
+	}
+	err = db.Find(&tasks).Error
+	if err != nil {
+		return nil, 0, errors.TaskCannotGet.Wrap(err, "cannot get task")
+	}
+	return
+}
+
+func (r *dbRepository) GetByProjectAndUser(projectID, userID uint64, role Role, offset, limit int) (tasks []Task, total int, err error) {
+	db := r.db.Model(&Task{}).Where("project_id = ?", projectID)
+	switch role {
+	case AnyRole:
+		db = db.Where(&Task{Labeler: userID}).
+			Or(&Task{Reviewer: userID}).
+			Or(&Task{Assigner: userID})
+	case Labeler:
+		db = db.Where(&Task{Labeler: userID})
+	case Reviewer:
+		db = db.Where(&Task{Assigner: userID})
+	default:
+		err = errors.TaskCannotGet.NewWithMessage("role not supported")
+		return
 	}
 	db = db.Count(&total)
 	if offset != 0 || limit != 0 {

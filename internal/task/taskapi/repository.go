@@ -24,7 +24,7 @@ import (
 
 type Repository interface {
 	GetTasks(request GetTasksRequest) (response GetTaskResponse, err error)
-	GetTaskForProject(projectID uint64, pg paging.Paging) (response GetTaskResponse, err error)
+	GetTaskForProject(projectID, userID uint64, pg paging.Paging) (response GetTaskResponse, err error)
 	GetTask(taskID uint64) (TaskResponse, error)
 	CreateTask(projectID, assigner uint64, request CreateTaskRequest) error
 	DeleteTask(taskID uint64) error
@@ -127,13 +127,16 @@ func (r *repository) CreateTask(projectID, assigner uint64, request CreateTaskRe
 	if len(tasks) != 0 {
 		err := r.annotationService.CreateTask(projectID, request.DatasetID, tasks)
 		if err != nil {
-			logger.Error(err)
+			logger.Errorf("create task to annotation server error. err %v", err)
 		}
 	}
 	if len(errs) == 0 {
 		return nil
 	}
 	msg := fmt.Sprintf("failed to create %d tasks", len(errs))
+	for i := range errs {
+		logger.Infof("error creating task %v", errs[i])
+	}
 	return errors.TaskCannotCreate.NewWithMessage(msg)
 }
 
@@ -215,9 +218,9 @@ func (r *repository) ToTaskResponse(t task.Task) TaskResponse {
 	}
 }
 
-func (r *repository) GetTaskForProject(projectID uint64, pg paging.Paging) (resp GetTaskResponse, err error) {
+func (r *repository) GetTaskForProject(projectID, userID uint64, pg paging.Paging) (resp GetTaskResponse, err error) {
 	offset, limit := pg.Parse()
-	tasks, total, err := r.repository.GetTasksByProject(projectID, task.Any, offset, limit)
+	tasks, total, err := r.repository.GetByProjectAndUser(projectID, userID, task.AnyRole, offset, limit)
 	if err != nil {
 		return
 	}

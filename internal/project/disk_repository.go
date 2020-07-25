@@ -74,7 +74,7 @@ func (r *dbRepository) CreateProject(wID uint64, title, desc, color, uid string)
 
 func (r *dbRepository) GetProjectPermissions(pID uint64, role Role, offset, limit int) (perms []Permission, total int, err error) {
 	db := r.db.Model(&Permission{}).Where("project_id = ?", pID)
-	if role != 0 {
+	if role != Any {
 		db = db.Where("role = ?", role)
 	}
 	db = db.Count(&total)

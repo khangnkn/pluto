@@ -12,6 +12,7 @@ type Repository interface {
 	CreateTask(title, description string, assigner, labeler, reviewer, projectID, datasetID uint64, images []uint64) (Task, error)
 	GetTasksByUser(userID uint64, role Role, status Status, offset, limit int) (tasks []Task, total int, err error)
 	GetTasksByProject(projectID uint64, status Status, offset, limit int) (tasks []Task, total int, err error)
+	GetByProjectAndUser(projectID, userID uint64, role Role, offset, limit int) (tasks []Task, total int, err error)
 	DeleteTask(taskID uint64) error
 	DeleteTaskByProject(projectID uint64) error
 	GetTaskDetails(taskID uint64, status DetailStatus, currentID uint64, limit int) ([]Detail, int, error)
@@ -93,6 +94,10 @@ func (r *repository) GetTasksByProject(projectID uint64, status Status, offset, 
 		r.cache.Set(totalKey, &total)
 	}()
 	return
+}
+
+func (r *repository) GetByProjectAndUser(projectID, userID uint64, role Role, offset, limit int) (tasks []Task, total int, err error) {
+	return r.dbRepo.GetByProjectAndUser(projectID, userID, role, offset, limit)
 }
 
 func (r *repository) DeleteTask(id uint64) error {

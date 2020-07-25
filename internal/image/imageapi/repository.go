@@ -4,11 +4,19 @@ import (
 	"bytes"
 	"fmt"
 	gimage "image"
+	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/url"
+
+	"github.com/nkhang/pluto/pkg/errors"
+
+	"golang.org/x/image/bmp"
+
+	"golang.org/x/image/webp"
 
 	"github.com/nkhang/pluto/internal/dataset/datasetapi"
 	"github.com/nkhang/pluto/pkg/util/clock"
@@ -73,8 +81,7 @@ func (r *repository) GetByDatasetID(dID uint64, offset, limit int) ([]ImageRespo
 	return responses, nil
 }
 
-func (r *repository) UploadRequest(dID uint64, headers []*multipart.FileHeader) (datasetapi.DatasetResponse, []error) {
-	errs := make([]error, 0)
+func (r *repository) UploadRequest(dID uint64, headers []*multipart.FileHeader) (resp datasetapi.DatasetResponse, errs []error) {
 	d, err := r.datasetRepo.Get(dID)
 	if err != nil {
 		return datasetapi.DatasetResponse{}, append(errs, err)
@@ -85,51 +92,61 @@ func (r *repository) UploadRequest(dID uint64, headers []*multipart.FileHeader) 
 			errs = append(errs, err)
 		}
 	}
-	go func() {
-		err := r.repo.InvalidateDatasetImage(dID)
-		if err != nil {
-			logger.Error("cannot invalidate dataset images", err)
-		}
-		if len(headers) > len(errs) {
-			img, err := r.repo.GetAllImageByDataset(dID)
-			if err != nil && len(img) > 0 {
-				logger.Error("cannot get image to set to dataset")
-				return
-			}
-			d, err := r.datasetRepo.Update(dID, map[string]interface{}{
-				"thumbnail": img[0].URL,
-			})
-			if err != nil {
-				logger.Errorf("cannot update dataset %d thumbnail", d.ID)
-				return
-			}
-			_, err = r.projectRepo.UpdateProject(d.ProjectID, map[string]interface{}{
-				"thumbnail": img[0].URL,
-			})
-			if err != nil {
-				logger.Errorf("cannot update project %d thumbnail", d.ID)
-				return
-			}
-		}
-	}()
-	d, err = r.datasetRepo.Get(dID)
-	if err != nil {
-		logger.Errorf("cannot get dataset after upload task %d", dID)
-		return datasetapi.DatasetResponse{}, errs
-	}
-	imgs, err := r.repo.GetAllImageByDataset(d.ID)
-	if err != nil {
-		return datasetapi.DatasetResponse{}, append(errs, err)
-	}
-	return datasetapi.DatasetResponse{
+	resp = datasetapi.DatasetResponse{
 		ID:          d.ID,
 		Title:       d.Title,
 		Description: d.Description,
 		Thumbnail:   d.Thumbnail,
 		ProjectID:   d.ProjectID,
-		ImageCount:  len(imgs),
 		UpdatedAt:   clock.UnixMillisecondFromTime(d.UpdatedAt),
-	}, errs
+	}
+	imgs, err := r.repo.GetAllImageByDataset(dID)
+	if err != nil {
+		errs = append(errs, err)
+		logger.Error("cannot get image to set to dataset")
+		return
+	}
+	resp.ImageCount = len(imgs)
+	d, err = r.syncThumbnail(d.ID, imgs)
+	if err != nil {
+		errs = append(errs, err)
+		return
+	}
+	resp.Thumbnail = d.Thumbnail
+	return
+}
+
+func (r *repository) syncThumbnail(datasetID uint64, images []image.Image) (d dataset.Dataset, err error) {
+	if len(images) == 0 {
+		d, err = r.datasetRepo.Get(datasetID)
+		if err != nil {
+			logger.Errorf("cannot get dataset after upload task %d", datasetID)
+		}
+		return
+	}
+	img, err := r.repo.GetAllImageByDataset(datasetID)
+	if err != nil {
+		return
+	}
+	_, err = r.projectRepo.UpdateProject(d.ProjectID, map[string]interface{}{
+		"thumbnail": img[0].URL,
+	})
+	if err != nil {
+		logger.Errorf("cannot update project %d thumbnail", d.ID)
+	}
+	d, err = r.datasetRepo.Update(datasetID, map[string]interface{}{
+		"thumbnail": img[0].URL,
+	})
+	if err == nil {
+		return d, nil
+	}
+	logger.Errorf("cannot update dataset %d thumbnail", d.ID)
+	d, err = r.datasetRepo.Get(datasetID)
+	if err != nil {
+		logger.Errorf("cannot get dataset after upload task %d", datasetID)
+		return
+	}
+	return
 }
 
 func (r *repository) getImageURL(collection, title string) string {
@@ -151,9 +168,9 @@ func (r *repository) createImage(d dataset.Dataset, h *multipart.FileHeader) err
 	var buf bytes.Buffer
 	reader := io.TeeReader(file, &buf)
 
-	img, _, err := gimage.Decode(reader)
+	img, err := tryDecode(reader)
 	if err != nil {
-		logger.Error("error decode image", err)
+		logger.Errorf("error decode image %v. t", err)
 		return nil
 	}
 	prj, err := r.projectRepo.Get(d.ProjectID)
@@ -174,4 +191,25 @@ func (r *repository) createImage(d dataset.Dataset, h *multipart.FileHeader) err
 	u := r.getImageURL(r.conf.BucketName, path)
 	_, err = r.repo.CreateImage(h.Filename, u, width, height, size, d.ID)
 	return err
+}
+
+func tryDecode(r io.Reader) (gimage.Image, error) {
+	b, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, errors.ImageCannotDecode.NewWithMessage("cannot read images from io.Reader")
+	}
+	img, _, err := gimage.Decode(bytes.NewReader(b))
+	if err == nil {
+		return img, nil
+	}
+	logger.Infof("image decoding: len bytes after error %d", len(b))
+	img, err = webp.Decode(bytes.NewReader(b))
+	if err == nil {
+		return img, nil
+	}
+	img, err = bmp.Decode(bytes.NewReader(b))
+	if err == nil {
+		return img, nil
+	}
+	return nil, errors.ImageCannotDecode.NewWithMessage("image type not supported")
 }

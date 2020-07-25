@@ -7,8 +7,6 @@ import (
 
 	"github.com/nkhang/pluto/internal/task/taskapi"
 
-	"github.com/nats-io/nats.go"
-
 	"github.com/nkhang/pluto/internal/task"
 
 	"github.com/gin-gonic/gin"
@@ -33,7 +31,6 @@ type params struct {
 	GormDB           *gorm.DB
 	Router           *gin.Engine
 	ToolRepository   toolapi.Repository
-	NC               *nats.EncodedConn
 	WorkspaceService pgin.StandaloneRouter `name:"WorkspaceService"`
 	ProjectService   pgin.StandaloneRouter `name:"ProjectService"`
 	ToolService      pgin.StandaloneRouter `name:"ToolService"`
@@ -53,10 +50,6 @@ func initializer(l fx.Lifecycle, p params) {
 	p.ProjectService.RegisterStandalone(router.Group("/projects"))
 	p.WorkspaceService.RegisterStandalone(router.Group("/workspaces"))
 	p.TaskService.RegisterStandalone(router.Group("/tasks"))
-	err := p.TaskServiceIns.RegisterNATS(p.NC)
-	if err != nil {
-		panic(err)
-	}
 	l.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {

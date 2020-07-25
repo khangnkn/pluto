@@ -42,7 +42,7 @@ type service struct {
 func NewService(workspaceRepo workspace.Repository,
 	projectRepo project.Repository,
 	datasetRepo dataset.Repository,
-	labelRepo label.Repository, nc *nats.EncodedConn) *service {
+	labelRepo label.Repository) *service {
 	client := http.Client{}
 	annotationBase := viper.GetString("annotation.baseurl")
 	return &service{
@@ -51,7 +51,6 @@ func NewService(workspaceRepo workspace.Repository,
 		datasetRepo:        datasetRepo,
 		labelRepo:          labelRepo,
 		client:             client,
-		nc:                 nc,
 		annotationBasePath: annotationBase,
 	}
 }

@@ -249,12 +249,17 @@ func (r *repository) Delete(id uint64) error {
 	if err != nil {
 		return err
 	}
+	perms, _, err := r.GetProjectPermissions(id, Any, 0, 0)
+	if err != nil {
+		return err
+	}
 	r.invalidateProjectsByWorkspaceID(project.WorkspaceID)
 	r.invalidatePermissionForProject(id)
 	r.invalidateProject(id)
 	err = r.disk.Delete(id)
-	if err != nil {
-		return err
+
+	for _, v := range perms {
+		r.invalidatePermissionForUser(v.UserID)
 	}
 	err = r.taskRepo.DeleteTaskByProject(id)
 	if err != nil {

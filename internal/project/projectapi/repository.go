@@ -138,12 +138,19 @@ func (r *repository) ConvertResponse(p project.Project) ProjectResponse {
 	} else {
 		datasetCount = len(d)
 	}
-	var pm = make([]uint64, 0)
+	var (
+		pm    = make([]uint64, 0)
+		admin uint64
+	)
 	perms, totalPerms, err := r.repository.GetProjectPermissions(p.ID, project.Any, 0, 0)
 	if err != nil {
 		logger.Error("error getting project perm")
 	}
 	for i := range perms {
+		if perms[i].Role == project.Admin {
+			admin = perms[i].UserID
+			break
+		}
 		if perms[i].Role == project.Manager {
 			pm = append(pm, perms[i].UserID)
 			break
@@ -161,6 +168,7 @@ func (r *repository) ConvertResponse(p project.Project) ProjectResponse {
 		DatasetCount:    datasetCount,
 		MemberCount:     totalPerms,
 		Workspace:       w,
+		Admin:           admin,
 		ProjectManagers: pm,
 	}
 }

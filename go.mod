@@ -36,6 +36,8 @@ require (
 	github.com/zalando/go-keyring v0.0.0-20200121091418-667557018717 // indirect
 	go.uber.org/fx v1.11.0
 	go.uber.org/zap v1.14.1
+	golang.org/x/image v0.0.0-20200618115811-c13761719519
+	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/tools/gopls v0.4.1 // indirect
 	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
 	moul.io/http2curl v1.0.0 // indirect

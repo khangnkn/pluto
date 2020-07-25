@@ -26,6 +26,7 @@ type ProjectResponse struct {
 	ProjectBaseResponse
 	DatasetCount    int                                  `json:"dataset_count"`
 	MemberCount     int                                  `json:"member_count"`
+	Admin           uint64                               `json:"admin"`
 	ProjectManagers []uint64                             `json:"project_managers"`
 	Workspace       workspaceapi.WorkspaceDetailResponse `json:"workspace"`
 }

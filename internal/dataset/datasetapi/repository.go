@@ -91,6 +91,14 @@ func (r *repository) CloneDataset(dest uint64, token string) (DatasetResponse, e
 	if err != nil {
 		return DatasetResponse{}, err
 	}
+	if len(images) != 0 {
+		cloned, err := r.repository.Update(dest, map[string]interface{}{
+			"thumbnail": images[0].URL,
+		})
+		if err == nil {
+			return r.ToDatasetResponse(cloned), nil
+		}
+	}
 	cloned, err := r.repository.Get(dest)
 	if err != nil {
 		return DatasetResponse{}, err

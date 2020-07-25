@@ -140,6 +140,7 @@ func (s *Service) getListForUser(c *gin.Context) ginwrapper.Response {
 
 func (s *Service) getListForProject(c *gin.Context) ginwrapper.Response {
 	projectID := uint64(c.GetInt64(projectapi.FieldProjectID))
+	userID := pgin.ExtractUserIDFromContext(c)
 	var pg paging.Paging
 	if err := c.ShouldBindQuery(&pg); err != nil {
 		logger.Error(err)
@@ -147,7 +148,7 @@ func (s *Service) getListForProject(c *gin.Context) ginwrapper.Response {
 			Error: errors.BadRequest.NewWithMessage("error binding get tasks request"),
 		}
 	}
-	response, err := s.repository.GetTaskForProject(projectID, pg)
+	response, err := s.repository.GetTaskForProject(projectID, userID, pg)
 	if err != nil {
 		return ginwrapper.Response{
 			Error: err,
