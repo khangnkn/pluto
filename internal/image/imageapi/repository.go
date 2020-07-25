@@ -96,7 +96,6 @@ func (r *repository) UploadRequest(dID uint64, headers []*multipart.FileHeader) 
 		ID:          d.ID,
 		Title:       d.Title,
 		Description: d.Description,
-		Thumbnail:   d.Thumbnail,
 		ProjectID:   d.ProjectID,
 		UpdatedAt:   clock.UnixMillisecondFromTime(d.UpdatedAt),
 	}
@@ -117,11 +116,12 @@ func (r *repository) UploadRequest(dID uint64, headers []*multipart.FileHeader) 
 }
 
 func (r *repository) syncThumbnail(datasetID uint64, images []image.Image) (d dataset.Dataset, err error) {
+	d, err = r.datasetRepo.Get(datasetID)
+	if err != nil {
+		logger.Errorf("cannot get dataset after upload task %d", datasetID)
+		return
+	}
 	if len(images) == 0 {
-		d, err = r.datasetRepo.Get(datasetID)
-		if err != nil {
-			logger.Errorf("cannot get dataset after upload task %d", datasetID)
-		}
 		return
 	}
 	img, err := r.repo.GetAllImageByDataset(datasetID)

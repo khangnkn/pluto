@@ -240,6 +240,13 @@ func (r *repository) UpdateProject(projectID uint64, changes map[string]interfac
 	}
 	go func() {
 		r.invalidateProjectsByWorkspaceID(project.WorkspaceID)
+		perms, _, err := r.GetProjectPermissions(projectID, Any, 0, 0)
+		if err != nil {
+			return
+		}
+		for _, v := range perms {
+			r.invalidatePermissionForUser(v.UserID)
+		}
 	}()
 	return project, nil
 }
