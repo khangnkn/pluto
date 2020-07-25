@@ -3,6 +3,7 @@ package statsapi
 import (
 	"github.com/nkhang/pluto/internal/dataset"
 	"github.com/nkhang/pluto/internal/image"
+	"github.com/nkhang/pluto/internal/label"
 	"github.com/nkhang/pluto/internal/task"
 	"github.com/nkhang/pluto/pkg/annotation"
 	"github.com/nkhang/pluto/pkg/logger"
@@ -12,15 +13,17 @@ type repository struct {
 	datasetRepo       dataset.Repository
 	taskRepo          task.Repository
 	imageRepo         image.Repository
+	labelRepo         label.Repository
 	annotationService annotation.Service
 }
 
-func NewRepository(d dataset.Repository, t task.Repository, i image.Repository, s annotation.Service) *repository {
+func NewRepository(d dataset.Repository, t task.Repository, i image.Repository, s annotation.Service, l label.Repository) *repository {
 	return &repository{
 		datasetRepo:       d,
 		taskRepo:          t,
 		imageRepo:         i,
 		annotationService: s,
+		labelRepo:         l,
 	}
 }
 
@@ -146,8 +149,8 @@ func (r *repository) BuildMemberReport(projectID uint64) (resp MemberStatsRespon
 		labelerMap[v.Labeler] = true
 		reviewerMap[v.Reviewer] = true
 	}
-	resp.Labeler = len(labelerMap)
-	resp.Reviewer = len(reviewerMap)
+	resp.Labelers = len(labelerMap)
+	resp.Reviewers = len(reviewerMap)
 	return
 }
 
@@ -156,13 +159,16 @@ func (r *repository) BuildLabelReport(projectID, labelID uint64) (GetLabelStatsR
 	if err != nil {
 		return GetLabelStatsResponse{}, err
 	}
-	var total int
+	var images []image.Image
 	for i := range datasets {
 		imgs, err := r.imageRepo.GetAllImageByDataset(datasets[i].ID)
 		if err != nil {
 			return GetLabelStatsResponse{}, err
 		}
-		total += len(imgs)
+		images = append(images, imgs...)
+	}
+	if labelID == 0 {
+		return r.buildAllLabelReport(projectID, images)
 	}
 	stats, err := r.annotationService.GetLabelCount(projectID, labelID)
 	if err != nil {
@@ -177,7 +183,42 @@ func (r *repository) BuildLabelReport(projectID, labelID uint64) (GetLabelStatsR
 			},
 			{
 				Name:  "Don't have the label",
-				Value: total - stats.TotalImage,
+				Value: len(images) - stats.TotalImage,
+			},
+		},
+	}, nil
+}
+
+func (r *repository) buildAllLabelReport(projectID uint64, images []image.Image) (resp GetLabelStatsResponse, err error) {
+	labels, err := r.labelRepo.GetByProjectId(projectID)
+	if err != nil {
+		return
+	}
+	var totalObject int
+	for i := range labels {
+		stats, err := r.annotationService.GetLabelCount(projectID, labels[i].ID)
+		if err != nil {
+			logger.Errorf("error getting statistic from annotation service. project %d, label %d err %v", projectID, labels[i].ID, err)
+			continue
+		}
+		totalObject += stats.TotalObject
+	}
+	var labeledImages = make([]image.Image, 0)
+	for _, i := range images {
+		if i.Status != 0 {
+			labeledImages = append(labeledImages, i)
+		}
+	}
+	return GetLabelStatsResponse{
+		TotalObjects: totalObject,
+		Donut: []DonutPart{
+			{
+				Name:  "Have the label",
+				Value: len(labeledImages),
+			},
+			{
+				Name:  "Don't have the label",
+				Value: len(images) - len(labeledImages),
 			},
 		},
 	}, nil

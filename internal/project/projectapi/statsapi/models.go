@@ -5,7 +5,7 @@ type GetDatasetStatsRequest struct {
 }
 
 type GetLabelStatsRequest struct {
-	LabelID uint64 `form:"label_id" json:"label_id" binding:"required"`
+	LabelID uint64 `form:"label_id" json:"label_id"`
 }
 
 type GetLabelStatsResponse struct {
@@ -24,8 +24,8 @@ type DatasetStatsResponse struct {
 }
 
 type MemberStatsResponse struct {
-	Labeler  int `json:"labeler"`
-	Reviewer int `json:"reviewer"`
+	Labelers  int `json:"labellers"`
+	Reviewers int `json:"reviewers"`
 }
 
 type AnnotatedTimePair struct {

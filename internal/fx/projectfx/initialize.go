@@ -3,6 +3,7 @@ package projectfx
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkhang/pluto/internal/image"
+	"github.com/nkhang/pluto/internal/label"
 	"github.com/nkhang/pluto/internal/project/projectapi/permissionapi"
 	"github.com/nkhang/pluto/internal/project/projectapi/statsapi"
 	"github.com/nkhang/pluto/internal/task"
@@ -29,8 +30,8 @@ func provideAPIRepository(r project.Repository, dr dataset.Repository, wr worksp
 	return projectapi.NewRepository(r, dr, wr, ann)
 }
 
-func provideStatsAPIRepo(d dataset.Repository, t task.Repository, i image.Repository, s annotation.Service) statsapi.Repository {
-	return statsapi.NewRepository(d, t, i, s)
+func provideStatsAPIRepo(d dataset.Repository, t task.Repository, i image.Repository, s annotation.Service, l label.Repository) statsapi.Repository {
+	return statsapi.NewRepository(d, t, i, s, l)
 }
 
 type params struct {
