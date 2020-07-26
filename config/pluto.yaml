@@ -19,6 +19,7 @@ minio:
   secretkey: dhQk@3slyUi
   usessl: false
   bucketname: plutos3
+  thumbnailbucket: thumbnails
 
 annotation:
   baseurl: http://annotation.ml:8081/annotation

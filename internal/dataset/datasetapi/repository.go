@@ -97,14 +97,14 @@ func (r *repository) CloneDataset(dest uint64, token string) (DatasetResponse, e
 	}
 	if len(images) != 0 {
 		cloned, err := r.repository.Update(dest, map[string]interface{}{
-			"thumbnail": images[0].URL,
+			"thumbnail": images[0].Thumbnail,
 		})
 		if err == nil {
+			err = r.projectRepo.PickThumbnail(cloned.ProjectID)
+			if err != nil {
+				logger.Errorf("[DATASET-API] - error picking project thumbnail. err %v", err)
+			}
 			return r.ToDatasetResponse(cloned), nil
-		}
-		err = r.projectRepo.PickThumbnail(cloned.ProjectID)
-		if err != nil {
-			logger.Errorf("[DATASET-API] - error picking project thumbnail. err %v", err)
 		}
 	}
 	cloned, err := r.repository.Get(dest)
@@ -119,11 +119,15 @@ func (r *repository) Delete(id uint64) error {
 	if err != nil {
 		return err
 	}
+	err = r.repository.DeleteDataset(id)
+	if err != nil {
+		return err
+	}
 	err = r.projectRepo.PickThumbnail(d.ProjectID)
 	if err != nil {
 		logger.Errorf("[DATASET-API] - error picking project thumbnail. err %v", err)
 	}
-	return r.repository.DeleteDataset(id)
+	return nil
 }
 
 func (r *repository) GetLink(datasetID uint64) (string, error) {

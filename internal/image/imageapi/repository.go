@@ -6,11 +6,16 @@ import (
 	gimage "image"
 	_ "image/gif"
 	_ "image/jpeg"
+	"image/png"
 	_ "image/png"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/url"
+	"path/filepath"
+	"strings"
+
+	"github.com/nfnt/resize"
 
 	"github.com/nkhang/pluto/pkg/errors"
 
@@ -47,10 +52,11 @@ type repository struct {
 
 func NewRepository(r image.Repository, s objectstorage.ObjectStorage, d dataset.Repository, p project.Repository) *repository {
 	var conf = Config{
-		Scheme:     viper.GetString("minio.scheme"),
-		Endpoint:   viper.GetString("minio.endpoint"),
-		BucketName: viper.GetString("minio.bucketname"),
-		BasePath:   viper.GetString("minio.basepath"),
+		Scheme:          viper.GetString("minio.scheme"),
+		Endpoint:        viper.GetString("minio.endpoint"),
+		BucketName:      viper.GetString("minio.bucketname"),
+		ThumbnailBucket: viper.GetString("minio.thumbnailbucket"),
+		BasePath:        viper.GetString("minio.basepath"),
 	}
 	return &repository{
 		repo:        r,
@@ -129,13 +135,13 @@ func (r *repository) syncThumbnail(datasetID uint64, images []image.Image) (d da
 		return
 	}
 	_, err = r.projectRepo.UpdateProject(d.ProjectID, map[string]interface{}{
-		"thumbnail": img[0].URL,
+		"thumbnail": img[0].Thumbnail,
 	})
 	if err != nil {
 		logger.Errorf("cannot update project %d thumbnail", d.ID)
 	}
 	d, err = r.datasetRepo.Update(datasetID, map[string]interface{}{
-		"thumbnail": img[0].URL,
+		"thumbnail": img[0].Thumbnail,
 	})
 	if err == nil {
 		return d, nil
@@ -170,7 +176,7 @@ func (r *repository) createImage(d dataset.Dataset, h *multipart.FileHeader) err
 
 	img, err := tryDecode(reader)
 	if err != nil {
-		logger.Errorf("error decode image %v. t", err)
+		logger.Errorf("[IMAGE-API] - error decode image %v. t", err)
 		return nil
 	}
 	prj, err := r.projectRepo.Get(d.ProjectID)
@@ -189,7 +195,11 @@ func (r *repository) createImage(d dataset.Dataset, h *multipart.FileHeader) err
 	height := img.Bounds().Max.Y
 	size := h.Size
 	u := r.getImageURL(r.conf.BucketName, path)
-	_, err = r.repo.CreateImage(h.Filename, u, width, height, size, d.ID)
+	thumbnail, err := r.createThumbnail(img, prj, d, h.Filename)
+	if err != nil {
+		thumbnail = u
+	}
+	_, err = r.repo.CreateImage(h.Filename, u, thumbnail, width, height, size, d.ID)
 	return err
 }
 
@@ -212,4 +222,23 @@ func tryDecode(r io.Reader) (gimage.Image, error) {
 		return img, nil
 	}
 	return nil, errors.ImageCannotDecode.NewWithMessage("image type not supported")
+}
+
+func (r *repository) createThumbnail(i gimage.Image, project project.Project, dataset dataset.Dataset, filename string) (thumbnailURL string, err error) {
+	thumbnail := resize.Thumbnail(200, 200, i, resize.Lanczos2)
+	var buffer = new(bytes.Buffer)
+	err = png.Encode(buffer, thumbnail)
+	if err != nil {
+		return
+	}
+	ext := filepath.Ext(filename)
+	filename = strings.TrimSuffix(filename, ext) + ".png"
+	logger.Infof("[THUMBNAIL-API] - thumbnail filename %s", filename)
+	path := fmt.Sprintf("%s/%d/%s", project.Dir, dataset.ID, filename)
+	n, err := r.storage.PutImage(r.conf.ThumbnailBucket, path, buffer, int64(buffer.Len()))
+	if err != nil {
+		return
+	}
+	logger.Infof("[IMAGE-API] - put thumbnail %s to minio with %d bytes", n)
+	return r.getImageURL(r.conf.ThumbnailBucket, path), nil
 }

@@ -2,6 +2,7 @@ package datasetfx
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/nkhang/pluto/internal/project"
 	"go.uber.org/fx"
 
 	"github.com/nkhang/pluto/internal/dataset"
@@ -16,8 +17,8 @@ func provideRepository(db *gorm.DB, c cache.Cache) dataset.Repository {
 	return dataset.NewRepository(dbRepo, c)
 }
 
-func provideAPIRepo(r dataset.Repository, imgRepo image.Repository) datasetapi.Repository {
-	return datasetapi.NewRepository(r, imgRepo)
+func provideAPIRepo(r dataset.Repository, imgRepo image.Repository, p project.Repository) datasetapi.Repository {
+	return datasetapi.NewRepository(r, imgRepo, p)
 }
 
 type params struct {

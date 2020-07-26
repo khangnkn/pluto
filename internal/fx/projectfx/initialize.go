@@ -22,8 +22,8 @@ func provideProjectDBRepository(db *gorm.DB) project.DBRepository {
 	return project.NewDiskRepository(db)
 }
 
-func provideRepository(r project.DBRepository, c cache.Cache, t task.Repository, d dataset.Repository) project.Repository {
-	return project.NewRepository(r, c, t, d)
+func provideRepository(r project.DBRepository, c cache.Cache, t task.Repository, d dataset.Repository, i image.Repository) project.Repository {
+	return project.NewRepository(r, c, t, d, i)
 }
 
 func provideAPIRepository(r project.Repository, dr dataset.Repository, wr workspaceapi.Repository, ann annotation.Service) projectapi.Repository {

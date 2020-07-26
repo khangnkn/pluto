@@ -338,13 +338,15 @@ func (r *repository) PickThumbnail(projectID uint64) (err error) {
 	if len(datasets) == 0 {
 		logger.Infof("[PROJECT] - no dataset left to pick thumbnail")
 		thumbnail = defaultImage
+	} else {
+		logger.Infof("[PROJECT] - pick images from dataset %d", datasets[0].ID)
+		imgs, err := r.imageRepo.GetAllImageByDataset(datasets[0].ID)
+		if err == nil && len(imgs) != 0 {
+			logger.Info("[PROJECT] - get images successfully. ready to take image thumbnail")
+			thumbnail = imgs[0].Thumbnail
+		}
+		logger.Infof("[PROJECT] - setting thumbnail %s for project %d", thumbnail, projectID)
 	}
-	imgs, err := r.imageRepo.GetAllImageByDataset(datasets[0].ID)
-	if err == nil && len(imgs) != 0 {
-		logger.Info("[PROJECT] - get images successfully. ready to take image thumbnail")
-		thumbnail = imgs[0].URL
-	}
-	logger.Infof("[PROJECT] - setting thumbnail %s for project %d", thumbnail, projectID)
 	_, err = r.UpdateProject(projectID, map[string]interface{}{
 		"thumbnail": thumbnail,
 	})

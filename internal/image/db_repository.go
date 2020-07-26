@@ -10,7 +10,7 @@ import (
 type DBRepository interface {
 	Get(id uint64) (Image, error)
 	GetByDataset(dID uint64, offset, limit int) (imgs []Image, err error)
-	CreateImage(title, url string, w, h int, size int64, dataset_id uint64) (Image, error)
+	CreateImage(title, url, thumbnail string, w, h int, size int64, dataset_id uint64) (Image, error)
 	GetAllByDataset(dID uint64) (images []Image, err error)
 	BulkInsert(images []Image, dID uint64) error
 	Incr(id uint64) error
@@ -60,9 +60,10 @@ func (r *dbRepository) GetAllByDataset(dID uint64) (images []Image, err error) {
 	return
 }
 
-func (r *dbRepository) CreateImage(title, url string, w, h int, size int64, dID uint64) (Image, error) {
+func (r *dbRepository) CreateImage(title, url, thumbnail string, w, h int, size int64, dID uint64) (Image, error) {
 	img := Image{
 		URL:       url,
+		Thumbnail: thumbnail,
 		Title:     title,
 		Width:     w,
 		Height:    h,
@@ -82,6 +83,7 @@ func (r *dbRepository) BulkInsert(images []Image, dID uint64) error {
 		var img = Image{
 			Title:     images[i].Title,
 			URL:       images[i].URL,
+			Thumbnail: images[i].Thumbnail,
 			Width:     images[i].Width,
 			Height:    images[i].Height,
 			Size:      images[i].Size,

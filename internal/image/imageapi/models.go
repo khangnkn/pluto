@@ -26,16 +26,18 @@ type ImageResponse struct {
 	CreatedAt int64  `json:"created_at"`
 	Title     string `json:"title"`
 	URL       string `json:"url"`
+	Thumbnail string `json:"thumbnail"`
 	Width     int    `json:"width"`
 	Height    int    `json:"height"`
 	Size      int64  `json:"size"`
 }
 
 type Config struct {
-	Scheme     string
-	Endpoint   string
-	BucketName string
-	BasePath   string
+	Scheme          string
+	Endpoint        string
+	BucketName      string
+	ThumbnailBucket string
+	BasePath        string
 }
 
 func ToImageResponse(i image.Image) ImageResponse {
@@ -45,6 +47,7 @@ func ToImageResponse(i image.Image) ImageResponse {
 		CreatedAt: clock.UnixMillisecondFromTime(i.CreatedAt),
 		Title:     i.Title,
 		URL:       i.URL,
+		Thumbnail: i.Thumbnail,
 		Width:     i.Width,
 		Height:    i.Height,
 		Size:      i.Size,

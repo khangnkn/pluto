@@ -5,6 +5,7 @@ import "github.com/nkhang/pluto/pkg/gorm"
 type Image struct {
 	gorm.Model
 	URL       string
+	Thumbnail string
 	Status    uint32
 	Title     string
 	Width     int
