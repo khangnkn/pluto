@@ -28,6 +28,7 @@ type Service interface {
 	UpdateProject(projectID uint64) error
 	GetLabelCount(projectID, labelID uint64) (LabelStatsObject, error)
 	CreateTaskWithNATS(projectID, datasetID uint64, tasks []task.Task) error
+	GetImageStats(projectID uint64) (obj LabelStatsObject, err error)
 }
 
 type service struct {
@@ -57,7 +58,7 @@ func NewService(workspaceRepo workspace.Repository,
 }
 
 func (s *service) GetLabelCount(projectID, labelID uint64) (obj LabelStatsObject, err error) {
-	path := s.annotationBasePath + "/stats/images"
+	path := s.annotationBasePath + "/stats/labels"
 	u, err := url.Parse(path)
 	if err != nil {
 		err = errors.AnnotationCannotParseURL.WrapF(err, "cannot parse url %s", path)
@@ -79,6 +80,40 @@ func (s *service) GetLabelCount(projectID, labelID uint64) (obj LabelStatsObject
 		return
 	}
 	logger.Infof("got: %s", b)
+	var respObj LabelStatsResponse
+	err = json.Unmarshal(b, &respObj)
+	if err != nil {
+		err = errors.AnnotationCannotReadBody.Wrap(err, "cannot parse json body of response")
+		return
+	}
+	if respObj.Status != 1 {
+		err = errors.AnnotationCannotGetFromServer.NewWithMessageF("error getting from annotation server. msg: %s", respObj.Message)
+	}
+	return respObj.Data, nil
+}
+
+func (s *service) GetImageStats(projectID uint64) (obj LabelStatsObject, err error) {
+	path := s.annotationBasePath + "/stats/images"
+	u, err := url.Parse(path)
+	if err != nil {
+		err = errors.AnnotationCannotParseURL.WrapF(err, "cannot parse url %s", path)
+		return
+	}
+	q := u.Query()
+	q.Set("project_id", cast.ToString(projectID))
+	u.RawQuery = q.Encode()
+	logger.Infof("[ANNOTATION] - request URL: %s", u.String())
+	resp, err := s.client.Get(u.String())
+	if err != nil {
+		err = errors.AnnotationCannotGetFromServer.WrapF(err, "cannot get annotation label statistic from server")
+		return
+	}
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		err = errors.AnnotationCannotReadBody.Wrap(err, "cannot get response body")
+		return
+	}
+	logger.Infof("[ANNOTATION] - response: %s", b)
 	var respObj LabelStatsResponse
 	err = json.Unmarshal(b, &respObj)
 	if err != nil {

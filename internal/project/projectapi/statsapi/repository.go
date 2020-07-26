@@ -155,7 +155,7 @@ func (r *repository) BuildMemberReport(projectID uint64) (resp MemberStatsRespon
 	return
 }
 
-func (r *repository) BuildLabelReport(projectID, labelID uint64) (GetLabelStatsResponse, error) {
+func (r *repository) BuildLabelReport(projectID, labelID uint64) (resp GetLabelStatsResponse, err error) {
 	datasets, err := r.datasetRepo.GetByProject(projectID)
 	if err != nil {
 		return GetLabelStatsResponse{}, err
@@ -171,9 +171,13 @@ func (r *repository) BuildLabelReport(projectID, labelID uint64) (GetLabelStatsR
 	if labelID == 0 {
 		return r.buildAllLabelReport(projectID, images)
 	}
-	stats, err := r.annotationService.GetLabelCount(projectID, labelID)
+	return r.buildLabelReport(projectID, labelID, images)
+}
+
+func (r *repository) buildAllLabelReport(projectID uint64, images []image.Image) (resp GetLabelStatsResponse, err error) {
+	stats, err := r.annotationService.GetImageStats(projectID)
 	if err != nil {
-		return GetLabelStatsResponse{}, err
+		return
 	}
 	return GetLabelStatsResponse{
 		TotalObjects: stats.TotalObject,
@@ -190,36 +194,21 @@ func (r *repository) BuildLabelReport(projectID, labelID uint64) (GetLabelStatsR
 	}, nil
 }
 
-func (r *repository) buildAllLabelReport(projectID uint64, images []image.Image) (resp GetLabelStatsResponse, err error) {
-	labels, err := r.labelRepo.GetByProjectId(projectID)
+func (r *repository) buildLabelReport(projectID, labelID uint64, images []image.Image) (resp GetLabelStatsResponse, err error) {
+	stats, err := r.annotationService.GetLabelCount(projectID, labelID)
 	if err != nil {
 		return
 	}
-	var totalObject int
-	for i := range labels {
-		stats, err := r.annotationService.GetLabelCount(projectID, labels[i].ID)
-		if err != nil {
-			logger.Errorf("error getting statistic from annotation service. project %d, label %d err %v", projectID, labels[i].ID, err)
-			continue
-		}
-		totalObject += stats.TotalObject
-	}
-	var labeledImages = make([]image.Image, 0)
-	for _, i := range images {
-		if i.Status != 0 {
-			labeledImages = append(labeledImages, i)
-		}
-	}
 	return GetLabelStatsResponse{
-		TotalObjects: totalObject,
+		TotalObjects: stats.TotalObject,
 		Donut: []DonutPart{
 			{
 				Name:  "Have the label",
-				Value: len(labeledImages),
+				Value: stats.TotalImage,
 			},
 			{
 				Name:  "Don't have the label",
-				Value: len(images) - len(labeledImages),
+				Value: len(images) - stats.TotalImage,
 			},
 		},
 	}, nil
