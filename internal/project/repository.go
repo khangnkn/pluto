@@ -2,6 +2,7 @@ package project
 
 import (
 	"github.com/nkhang/pluto/internal/dataset"
+	"github.com/nkhang/pluto/internal/image"
 	"github.com/nkhang/pluto/internal/rediskey"
 	"github.com/nkhang/pluto/internal/task"
 	"github.com/nkhang/pluto/pkg/cache"
@@ -23,21 +24,24 @@ type Repository interface {
 	Delete(id uint64) error
 	DeletePermission(userID, projectID uint64) error
 	DeleteByWorkspace(workspaceID uint64) error
+	PickThumbnail(projectID uint64) (err error)
 }
 
 type repository struct {
 	taskRepo    task.Repository
 	datasetRepo dataset.Repository
+	imageRepo   image.Repository
 	disk        DBRepository
 	cache       cache.Cache
 }
 
-func NewRepository(r DBRepository, c cache.Cache, t task.Repository, d dataset.Repository) *repository {
+func NewRepository(r DBRepository, c cache.Cache, t task.Repository, d dataset.Repository, i image.Repository) *repository {
 	return &repository{
 		taskRepo:    t,
 		datasetRepo: d,
 		disk:        r,
 		cache:       c,
+		imageRepo:   i,
 	}
 }
 
@@ -325,8 +329,26 @@ func (r *repository) triggerDeleteTask(projectID, userID uint64) {
 	}
 }
 
-func (r *repository) PickThumbnail() {
-
+func (r *repository) PickThumbnail(projectID uint64) (err error) {
+	datasets, err := r.datasetRepo.GetByProject(projectID)
+	if err != nil {
+		return
+	}
+	var thumbnail string
+	if len(datasets) == 0 {
+		logger.Infof("[PROJECT] - no dataset left to pick thumbnail")
+		thumbnail = defaultImage
+	}
+	imgs, err := r.imageRepo.GetAllImageByDataset(datasets[0].ID)
+	if err == nil && len(imgs) != 0 {
+		logger.Info("[PROJECT] - get images successfully. ready to take image thumbnail")
+		thumbnail = imgs[0].URL
+	}
+	logger.Infof("[PROJECT] - setting thumbnail %s for project %d", thumbnail, projectID)
+	_, err = r.UpdateProject(projectID, map[string]interface{}{
+		"thumbnail": thumbnail,
+	})
+	return
 }
 
 func (r *repository) invalidateProject(projectID uint64) {

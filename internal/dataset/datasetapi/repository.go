@@ -4,6 +4,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/nkhang/pluto/internal/project"
+
 	"github.com/nkhang/pluto/internal/dataset"
 	"github.com/nkhang/pluto/internal/image"
 	"github.com/nkhang/pluto/internal/tool/enc"
@@ -24,23 +26,25 @@ type Repository interface {
 }
 
 type repository struct {
-	repository dataset.Repository
-	imgRepo    image.Repository
-	baseURL    string
-	secret     []byte
+	repository  dataset.Repository
+	imgRepo     image.Repository
+	projectRepo project.Repository
+	baseURL     string
+	secret      []byte
 }
 
-func NewRepository(r dataset.Repository, imgRepo image.Repository) *repository {
+func NewRepository(r dataset.Repository, imgRepo image.Repository, p project.Repository) *repository {
 	secret := viper.GetString("getlink.secret")
 	baseURL := viper.GetString("getlink.baseurl")
 	if secret == "" || baseURL == "" {
 		logger.Panic("secret empty")
 	}
 	return &repository{
-		repository: r,
-		imgRepo:    imgRepo,
-		baseURL:    baseURL,
-		secret:     []byte(secret),
+		repository:  r,
+		imgRepo:     imgRepo,
+		baseURL:     baseURL,
+		projectRepo: p,
+		secret:      []byte(secret),
 	}
 }
 
@@ -98,6 +102,10 @@ func (r *repository) CloneDataset(dest uint64, token string) (DatasetResponse, e
 		if err == nil {
 			return r.ToDatasetResponse(cloned), nil
 		}
+		err = r.projectRepo.PickThumbnail(cloned.ProjectID)
+		if err != nil {
+			logger.Errorf("[DATASET-API] - error picking project thumbnail. err %v", err)
+		}
 	}
 	cloned, err := r.repository.Get(dest)
 	if err != nil {
@@ -107,6 +115,14 @@ func (r *repository) CloneDataset(dest uint64, token string) (DatasetResponse, e
 }
 
 func (r *repository) Delete(id uint64) error {
+	d, err := r.repository.Get(id)
+	if err != nil {
+		return err
+	}
+	err = r.projectRepo.PickThumbnail(d.ProjectID)
+	if err != nil {
+		logger.Errorf("[DATASET-API] - error picking project thumbnail. err %v", err)
+	}
 	return r.repository.DeleteDataset(id)
 }
 
