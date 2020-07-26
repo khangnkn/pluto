@@ -229,7 +229,6 @@ func (r *repository) GetTaskForProject(projectID, userID uint64, request GetTask
 		tasks = make([]task.Task, 0)
 		total int
 	)
-	logger.Info(request.Source)
 	switch request.Source {
 	case SrcAllTasks:
 		tasks, total, err = r.repository.GetByProjectAndUser(projectID, userID, task.AnyRole, offset, limit)

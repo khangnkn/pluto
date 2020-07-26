@@ -75,15 +75,13 @@ func (r *dbRepository) GetByProjectAndUser(projectID, userID uint64, role Role, 
 	db := r.db.Model(&Task{}).Where("project_id = ?", projectID)
 	switch role {
 	case AnyRole:
-		db = db.Where(&Task{Labeler: userID}).
-			Or(&Task{Reviewer: userID}).
-			Or(&Task{Assigner: userID})
+		db = db.Where("labeler = ? or reviewer = ? or assigner = ?", userID, userID, userID)
 	case Assigner:
 		db = db.Where(&Task{Assigner: userID})
 	case Labeler:
 		db = db.Where(&Task{Labeler: userID})
 	case Reviewer:
-		db = db.Where(&Task{Assigner: userID})
+		db = db.Where(&Task{Reviewer: userID})
 	default:
 		err = errors.TaskCannotGet.NewWithMessage("role not supported")
 		return

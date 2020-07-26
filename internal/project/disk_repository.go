@@ -44,12 +44,13 @@ func (r *dbRepository) Get(pID uint64) (Project, error) {
 func (r *dbRepository) GetByWorkspaceID(wID uint64, offset, limit int) ([]Project, int, error) {
 	var projects = make([]Project, 0)
 	var total int
-	err := r.db.Model(&Project{}).
+	db := r.db.Model(&Project{}).
 		Where(fieldWorkspaceID+" = ?", wID).
-		Count(&total).
-		Offset(offset).
-		Limit(limit).
-		Find(&projects).Error
+		Count(&total)
+	if offset != 0 || limit != 0 {
+		db = db.Offset(offset).Limit(limit)
+	}
+	err := db.Find(&projects).Error
 	if err != nil {
 		return nil, 0, errors.ProjectQueryError.NewWithMessage("error getting project of workspace")
 	}

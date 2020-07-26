@@ -285,10 +285,13 @@ func (r *repository) DeleteByWorkspace(workspaceID uint64) error {
 	if err != nil {
 		return err
 	}
-	for i := range projects {
-		err = r.Delete(projects[i].ID)
+	logger.Infof("[PROJECT] starting delete %d projects of workspace %d", len(projects), workspaceID)
+	for _, p := range projects {
+		err = r.Delete(p.ID)
 		if err != nil {
-			logger.Errorf("error delete project %d of workspace %d", projects[i].ID, workspaceID)
+			logger.Errorf("error delete project %d of workspace %d", p.ID, workspaceID)
+		} else {
+			logger.Infof("[PROJECT] delete project %d of workspace %d successfully", p.ID, workspaceID)
 		}
 	}
 	return nil

@@ -69,6 +69,7 @@ func (r *repository) getAllImagesForProject(projectId uint64) (resp []image.Imag
 }
 
 func buildAnnotatedTimesPair(images []image.Image) (result []AnnotatedTimePair) {
+	result = make([]AnnotatedTimePair, 0)
 	var resMap = make(map[uint32]int)
 	for _, i := range images {
 		times := i.Status

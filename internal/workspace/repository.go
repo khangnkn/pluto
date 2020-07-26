@@ -151,11 +151,11 @@ func (r *repository) InvalidateWorkspacesForUser(userID uint64) {
 		return
 	}
 	err = r.cacheRepo.Del(keys...)
-	logger.Errorf("invalidate workspaces permission for users %d successfully", userID)
 	if err != nil {
 		logger.Errorf("error delete keys %v", keys)
 		return
 	}
+	logger.Infof("invalidate workspaces permission for users %d successfully", userID)
 }
 
 func (r *repository) InvalidatePermissionsForWorkspace(workspaceID uint64) {
@@ -225,6 +225,9 @@ func (r *repository) DeleteWorkspace(workspaceID uint64) error {
 		return err
 	}
 	err = r.projectRepo.DeleteByWorkspace(workspaceID)
+	if err != nil {
+		logger.Errorf("[WORKSPACE] error delete projects by workspace %d. err %v", workspaceID, err)
+	}
 	go func() {
 		r.InvalidatePermissionsForWorkspace(workspaceID)
 		for i := range perms {
