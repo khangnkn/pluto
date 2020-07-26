@@ -55,8 +55,8 @@ func (r *repository) CreateTask(title, description string, assigner, labeler, re
 		return Task{}, err
 	}
 	go func() {
-		r.InvalidateForUser(labeler)
-		r.InvalidateForUser(reviewer)
+		r.invalidateForUser(labeler)
+		r.invalidateForUser(reviewer)
 		_, _, pattern := rediskey.TaskByProject(projectID, 0, 0, 0)
 		keys, err := r.cache.Keys(pattern)
 		if err != nil {
@@ -107,9 +107,9 @@ func (r *repository) DeleteTask(id uint64) error {
 		return err
 	}
 	go func() {
-		r.InvalidateForUser(task.Reviewer)
-		r.InvalidateForUser(task.Labeler)
-		r.InvalidateForProject(task.ProjectID)
+		r.invalidateForUser(task.Reviewer)
+		r.invalidateForUser(task.Labeler)
+		r.invalidateForProject(task.ProjectID)
 		k := rediskey.TaskByID(id)
 		r.cache.Del(k)
 	}()
@@ -132,7 +132,7 @@ func (r *repository) UpdateTaskDetail(taskID, detailID uint64, changes map[strin
 	return r.dbRepo.UpdateTaskDetail(taskID, detailID, changes)
 }
 
-func (r *repository) InvalidateForUser(userID uint64) {
+func (r *repository) invalidateForUser(userID uint64) {
 	_, _, pattern := rediskey.TaskByUser(userID, 0, 0, 0, 0)
 	keys, err := r.cache.Keys(pattern)
 	if err != nil {
@@ -142,9 +142,11 @@ func (r *repository) InvalidateForUser(userID uint64) {
 	err = r.cache.Del(keys...)
 	if err != nil {
 		logger.Errorf("error delete keys %v", keys)
+		return
 	}
+	logger.Infof("[TASK] - invalidate tasks for user %d successfully", userID)
 }
-func (r *repository) InvalidateForProject(projectID uint64) {
+func (r *repository) invalidateForProject(projectID uint64) {
 	_, _, pattern := rediskey.TaskByProject(projectID, 0, 0, 0)
 	keys, err := r.cache.Keys(pattern)
 	if err != nil {
@@ -155,6 +157,7 @@ func (r *repository) InvalidateForProject(projectID uint64) {
 	if err != nil {
 		logger.Errorf("error delete keys %v", keys)
 	}
+	logger.Infof("[TASK] - invalidate tasks for project %d successfully", projectID)
 }
 
 func (r *repository) DeleteTaskByProject(projectID uint64) error {
@@ -162,12 +165,17 @@ func (r *repository) DeleteTaskByProject(projectID uint64) error {
 	if err != nil {
 		return err
 	}
-	r.InvalidateForProject(projectID)
+	r.invalidateForProject(projectID)
 	return nil
 }
 
 func (r *repository) UpdateTask(taskID uint64, changes map[string]interface{}) (Task, error) {
-	return r.dbRepo.UpdateTask(taskID, changes)
+	task, err := r.dbRepo.UpdateTask(taskID, changes)
+	if err != nil {
+		return Task{}, err
+	}
+	r.invalidateForProject(task.ProjectID)
+	return task, nil
 }
 
 func (r *repository) CheckTaskStatus(taskID uint64, detailStatus DetailStatus) (err error) {
