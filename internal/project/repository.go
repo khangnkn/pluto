@@ -298,9 +298,28 @@ func (r *repository) DeletePermission(userID, projectID uint64) error {
 	if err != nil {
 		return err
 	}
+	r.triggerDeleteTask(projectID, userID)
 	r.invalidatePermissionForUser(userID)
 	r.invalidatePermissionForProject(projectID)
 	return nil
+}
+
+func (r *repository) triggerDeleteTask(projectID, userID uint64) {
+	var tasks = make([]task.Task, 0)
+	t1, _, err := r.taskRepo.GetByProjectAndUser(projectID, userID, task.Labeler, 0, 0)
+	if err == nil {
+		tasks = append(tasks, t1...)
+	}
+	t2, _, err := r.taskRepo.GetByProjectAndUser(projectID, userID, task.Reviewer, 0, 0)
+	if err == nil {
+		tasks = append(tasks, t2...)
+	}
+	for _, tsk := range tasks {
+		err = r.taskRepo.DeleteTask(tsk.ID)
+		if err != nil {
+			logger.Errorf("[PROJECT] error deleting tasks for user %d when delete project %d", userID, tsk.ProjectID)
+		}
+	}
 }
 
 func (r *repository) PickThumbnail() {
