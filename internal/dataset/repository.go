@@ -2,6 +2,7 @@ package dataset
 
 import (
 	"github.com/nkhang/pluto/internal/rediskey"
+	"github.com/nkhang/pluto/internal/task"
 	"github.com/nkhang/pluto/pkg/cache"
 	"github.com/nkhang/pluto/pkg/errors"
 	"github.com/nkhang/pluto/pkg/logger"
@@ -11,13 +12,15 @@ type Repository DbRepository
 
 type repository struct {
 	dbRepo    DbRepository
+	taskRepo  task.Repository
 	cacheRepo cache.Cache
 }
 
-func NewRepository(d DbRepository, c cache.Cache) *repository {
+func NewRepository(d DbRepository, c cache.Cache, t task.Repository) *repository {
 	return &repository{
 		dbRepo:    d,
 		cacheRepo: c,
+		taskRepo:  t,
 	}
 }
 
@@ -93,6 +96,18 @@ func (r *repository) DeleteDataset(ID uint64) error {
 	go func() {
 		r.invalidate(ID, d.ProjectID)
 	}()
+	tasks, _, err := r.taskRepo.GetTasksByProject(d.ProjectID, task.Any, 0, 0)
+	if err != nil {
+		return err
+	}
+	for _, t := range tasks {
+		if t.DatasetID == ID {
+			err := r.taskRepo.DeleteTask(t.ID)
+			if err != nil {
+				logger.Errorf("[DATASET] - error delete task %d of dataset %d", t.ID, ID)
+			}
+		}
+	}
 	err = r.dbRepo.DeleteDataset(ID)
 	if err != nil {
 		return err

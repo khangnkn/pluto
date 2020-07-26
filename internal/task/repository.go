@@ -109,6 +109,7 @@ func (r *repository) DeleteTask(id uint64) error {
 	go func() {
 		r.invalidateForUser(task.Reviewer)
 		r.invalidateForUser(task.Labeler)
+		r.invalidateForUser(task.Assigner)
 		r.invalidateForProject(task.ProjectID)
 		k := rediskey.TaskByID(id)
 		r.cache.Del(k)

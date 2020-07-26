@@ -3,6 +3,7 @@ package datasetfx
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkhang/pluto/internal/project"
+	"github.com/nkhang/pluto/internal/task"
 	"go.uber.org/fx"
 
 	"github.com/nkhang/pluto/internal/dataset"
@@ -12,9 +13,9 @@ import (
 	"github.com/nkhang/pluto/pkg/pgin"
 )
 
-func provideRepository(db *gorm.DB, c cache.Cache) dataset.Repository {
+func provideRepository(db *gorm.DB, c cache.Cache, t task.Repository) dataset.Repository {
 	dbRepo := dataset.NewDbRepository(db)
-	return dataset.NewRepository(dbRepo, c)
+	return dataset.NewRepository(dbRepo, c, t)
 }
 
 func provideAPIRepo(r dataset.Repository, imgRepo image.Repository, p project.Repository) datasetapi.Repository {
