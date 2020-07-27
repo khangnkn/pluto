@@ -26,6 +26,7 @@ import (
 type Service interface {
 	CreateTask(projectID, datasetID uint64, tasks []task.Task) error
 	UpdateProject(projectID uint64) error
+	UpdateDataset(datasetID uint64) error
 	GetLabelCount(projectID, labelID uint64) (LabelStatsObject, error)
 	CreateTaskWithNATS(projectID, datasetID uint64, tasks []task.Task) error
 	GetImageStats(projectID uint64) (obj LabelStatsObject, err error)
@@ -358,7 +359,7 @@ func (s *service) UpdateProject(projectID uint64) error {
 	if err != nil {
 		return errors.AnnotationCannotReadBody.NewWithMessage("error marshalling object")
 	}
-	path := s.annotationBasePath + "/project/update"
+	path := s.annotationBasePath + "/annotation/project/update"
 	logger.Infof("publishing project to annotation server. path: %s. body %s", path, b)
 	resp, err := s.client.Post(path, "application/json", bytes.NewReader(b))
 	if err != nil {
@@ -369,5 +370,34 @@ func (s *service) UpdateProject(projectID uint64) error {
 		return errors.AnnotationCannotReadBody.NewWithMessageF("cannot read body from annotation server. err", err)
 	}
 	logger.Infof("update to annotation server resp %s", body)
+	return nil
+}
+
+func (s *service) UpdateDataset(datasetID uint64) error {
+	d, err := s.datasetRepo.Get(datasetID)
+	if err != nil {
+		logger.Errorf("[ANNOTATION] - error getting project %d. err %v", datasetID, err)
+		return err
+	}
+	object := DatasetObject{
+		ID:        d.ID,
+		Title:     d.Title,
+		ProjectID: d.ProjectID,
+	}
+	b, err := json.Marshal(object)
+	if err != nil {
+		return errors.AnnotationCannotReadBody.NewWithMessage("error marshalling object")
+	}
+	path := s.annotationBasePath + "/annotation/dataset/update"
+	logger.Infof("[ANNOTATION] - publishing project to annotation server. path: %s. body %s", path, b)
+	resp, err := s.client.Post(path, "application/json", bytes.NewReader(b))
+	if err != nil {
+		return errors.AnnotationCannotGetFromServer.NewWithMessageF("error requesting to annotation server. err %v", err)
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.AnnotationCannotReadBody.NewWithMessageF("cannot read body from annotation server. err", err)
+	}
+	logger.Infof("[ANNOTATION] - update to annotation server resp %s", body)
 	return nil
 }

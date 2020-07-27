@@ -95,23 +95,25 @@ func (r *repository) CreateWorkspace(admin uint64, p CreateWorkspaceRequest) (Wo
 }
 
 func (r *repository) convertResponse(w workspace.Workspace) WorkspaceDetailResponse {
-	logger.Infof("%+v", w)
-	_, projectCount, err := r.projectRepo.GetByWorkspaceID(w.ID, 0, 0)
-	if err != nil {
-		logger.Error("cannot get all projects by workspace")
-		projectCount = 0
-	}
-	_, permissionCount, err := r.workspaceRepository.GetPermission(w.ID, workspace.Any, 0, 0)
-	if err != nil {
-		logger.Error("cannot get all permissions by workspace")
-		permissionCount = 0
+	var projectCount int
+	projects, err := r.projectRepo.GetByWorkspaceID(w.ID)
+	if err == nil {
+		projectCount = len(projects)
+	} else {
+		logger.Errorf("[WORKSPACE-API] - cannot get all projects by workspace. err %v", err)
 	}
 	var admin uint64
-	perm, _, err := r.workspaceRepository.GetPermission(w.ID, workspace.Admin, 0, 0)
-	if err == nil && len(perm) != 0 {
-		admin = perm[0].UserID
+	perms, permissionCount, err := r.workspaceRepository.GetPermission(w.ID, workspace.Any, 0, 0)
+	if err != nil {
+		logger.Errorf("[WORKSPACE-API] - cannot get all permissions, and admin in workspace %d", w.ID)
+		permissionCount = 0
 	} else {
-		logger.Error("get admin error")
+		for _, perm := range perms {
+			if perm.Role == workspace.Admin {
+				admin = perm.UserID
+				break
+			}
+		}
 	}
 	return WorkspaceDetailResponse{
 		WorkspaceBaseResponse: ToWorkspaceInfoResponse(w),

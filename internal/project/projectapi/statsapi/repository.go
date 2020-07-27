@@ -125,7 +125,7 @@ func (r *repository) BuildTaskReport(projectID uint64) ([]TaskStatusPair, error)
 	}
 	return []TaskStatusPair{
 		{
-			Name:  "Labling",
+			Name:  "Labeling",
 			Value: labelingCount,
 		},
 		{

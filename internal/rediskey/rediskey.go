@@ -40,11 +40,8 @@ func ProjectByID(pID uint64) string {
 	return fmt.Sprintf("pluto:project:id:%d", pID)
 }
 
-func ProjectByWorkspaceID(id uint64, offset, limit int) (specKey, totalKey, pattern string) {
-	specKey = fmt.Sprintf("pluto:projects:workspace:%d:offset:%d:limit%d", id, offset, limit)
-	totalKey = fmt.Sprintf("pluto:projects:workspace:%d:count", id)
-	pattern = fmt.Sprintf("pluto:projects:workspace:%d:*", id)
-	return
+func ProjectByWorkspaceID(id uint64) string {
+	return fmt.Sprintf("pluto:projects:workspace:%d", id)
 }
 
 func ProjectCountAllByWorkspaceID(workspaceID uint64) string {

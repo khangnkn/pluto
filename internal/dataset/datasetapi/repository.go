@@ -4,6 +4,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/nkhang/pluto/pkg/annotation"
+
 	"github.com/nkhang/pluto/internal/project"
 
 	"github.com/nkhang/pluto/internal/dataset"
@@ -26,25 +28,27 @@ type Repository interface {
 }
 
 type repository struct {
-	repository  dataset.Repository
-	imgRepo     image.Repository
-	projectRepo project.Repository
-	baseURL     string
-	secret      []byte
+	repository        dataset.Repository
+	imgRepo           image.Repository
+	projectRepo       project.Repository
+	annotationService annotation.Service
+	baseURL           string
+	secret            []byte
 }
 
-func NewRepository(r dataset.Repository, imgRepo image.Repository, p project.Repository) *repository {
+func NewRepository(r dataset.Repository, imgRepo image.Repository, p project.Repository, a annotation.Service) *repository {
 	secret := viper.GetString("getlink.secret")
 	baseURL := viper.GetString("getlink.baseurl")
 	if secret == "" || baseURL == "" {
 		logger.Panic("secret empty")
 	}
 	return &repository{
-		repository:  r,
-		imgRepo:     imgRepo,
-		baseURL:     baseURL,
-		projectRepo: p,
-		secret:      []byte(secret),
+		repository:        r,
+		imgRepo:           imgRepo,
+		baseURL:           baseURL,
+		projectRepo:       p,
+		secret:            []byte(secret),
+		annotationService: a,
 	}
 }
 
@@ -73,18 +77,22 @@ func (r *repository) CreateDataset(title, description string, pID uint64) (Datas
 	if err != nil {
 		return DatasetResponse{}, err
 	}
+	err = r.annotationService.UpdateDataset(d.ID)
+	logger.Errorf("[DATASET-API] - error pushing create dataset request to annotation server. err ", err)
 	return r.ToDatasetResponse(d), nil
 }
 
-func (r *repository) CloneDataset(dest uint64, token string) (DatasetResponse, error) {
+func (r *repository) CloneDataset(dest uint64, token string) (resp DatasetResponse, err error) {
 	token = strings.TrimPrefix(token, "/")
 	idStr, err := enc.Decrypt(r.secret, token)
 	if err != nil {
-		return DatasetResponse{}, errors.DatasetLinkCannotParse.NewWithMessage("cannot parse provided link")
+		err = errors.DatasetLinkCannotParse.NewWithMessage("cannot parse provided link")
+		return
 	}
 	datasetID, err := cast.ToUint64E(idStr)
 	if err != nil {
-		return DatasetResponse{}, errors.DatasetLinkCannotParse.NewWithMessage("cannot parse dataset ID")
+		err = errors.DatasetLinkCannotParse.NewWithMessage("cannot parse dataset ID")
+		return
 	}
 	images, err := r.imgRepo.GetAllImageByDataset(datasetID)
 	if err != nil {

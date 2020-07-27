@@ -9,7 +9,7 @@ import (
 
 type DBRepository interface {
 	Get(pID uint64) (Project, error)
-	GetByWorkspaceID(wID uint64, offset, limit int) ([]Project, int, error)
+	GetByWorkspaceID(wID uint64) ([]Project, error)
 	GetProjectPermissions(pID uint64, role Role, offset, limit int) (perms []Permission, total int, err error)
 	GetUserPermissions(userID uint64, role Role, offset, limit int) ([]Permission, int, error)
 	GetPermission(userID, projectID uint64) (Permission, error)
@@ -41,20 +41,15 @@ func (r *dbRepository) Get(pID uint64) (Project, error) {
 	return p, nil
 }
 
-func (r *dbRepository) GetByWorkspaceID(wID uint64, offset, limit int) ([]Project, int, error) {
+func (r *dbRepository) GetByWorkspaceID(wID uint64) ([]Project, error) {
 	var projects = make([]Project, 0)
-	var total int
-	db := r.db.Model(&Project{}).
+	err := r.db.Model(&Project{}).
 		Where(fieldWorkspaceID+" = ?", wID).
-		Count(&total)
-	if offset != 0 || limit != 0 {
-		db = db.Offset(offset).Limit(limit)
-	}
-	err := db.Find(&projects).Error
+		Find(&projects).Error
 	if err != nil {
-		return nil, 0, errors.ProjectQueryError.NewWithMessage("error getting project of workspace")
+		return nil, errors.ProjectQueryError.NewWithMessage("error getting project of workspace")
 	}
-	return projects, total, nil
+	return projects, nil
 }
 
 func (r *dbRepository) CreateProject(wID uint64, title, desc, color, uid string) (Project, error) {

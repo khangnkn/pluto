@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkhang/pluto/internal/project"
 	"github.com/nkhang/pluto/internal/task"
+	"github.com/nkhang/pluto/pkg/annotation"
 	"go.uber.org/fx"
 
 	"github.com/nkhang/pluto/internal/dataset"
@@ -18,8 +19,8 @@ func provideRepository(db *gorm.DB, c cache.Cache, t task.Repository) dataset.Re
 	return dataset.NewRepository(dbRepo, c, t)
 }
 
-func provideAPIRepo(r dataset.Repository, imgRepo image.Repository, p project.Repository) datasetapi.Repository {
-	return datasetapi.NewRepository(r, imgRepo, p)
+func provideAPIRepo(r dataset.Repository, imgRepo image.Repository, p project.Repository, a annotation.Service) datasetapi.Repository {
+	return datasetapi.NewRepository(r, imgRepo, p, a)
 }
 
 type params struct {

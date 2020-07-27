@@ -130,6 +130,7 @@ func (r *repository) GetTaskDetails(taskID uint64, status DetailStatus, currentI
 }
 
 func (r *repository) UpdateTaskDetail(taskID, detailID uint64, changes map[string]interface{}) (Detail, error) {
+	r.invalidateTask(taskID)
 	return r.dbRepo.UpdateTaskDetail(taskID, detailID, changes)
 }
 
@@ -175,6 +176,7 @@ func (r *repository) UpdateTask(taskID uint64, changes map[string]interface{}) (
 	if err != nil {
 		return Task{}, err
 	}
+	r.invalidateTask(taskID)
 	r.invalidateForProject(task.ProjectID)
 	return task, nil
 }
@@ -201,4 +203,14 @@ func (r *repository) CheckTaskStatus(taskID uint64, detailStatus DetailStatus) (
 		"status": s,
 	})
 	return
+}
+
+func (r *repository) invalidateTask(id uint64) {
+	key := rediskey.TaskByID(id)
+	err := r.cache.Del(key)
+	if err != nil {
+		logger.Errorf("[TASK] - error deleting task %d from cache", id)
+		return
+	}
+	logger.Infof("[TASK] - task %d REMOVED from cache", id)
 }

@@ -150,11 +150,9 @@ func (r *repository) ConvertResponse(p project.Project) ProjectResponse {
 	for i := range perms {
 		if perms[i].Role == project.Admin {
 			admin = perms[i].UserID
-			break
 		}
 		if perms[i].Role == project.Manager {
 			pm = append(pm, perms[i].UserID)
-			break
 		}
 	}
 	w, _ := r.workspaceRepo.GetByID(p.WorkspaceID)

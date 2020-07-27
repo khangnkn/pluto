@@ -14,7 +14,7 @@ import (
 type Repository interface {
 	Get(pID uint64) (Project, error)
 	CreateProject(wID uint64, title, desc, color string) (Project, error)
-	GetByWorkspaceID(id uint64, offset, limit int) ([]Project, int, error)
+	GetByWorkspaceID(id uint64) ([]Project, error)
 	GetUserPermissions(userID uint64, role Role, offset, limit int) ([]Permission, int, error)
 	GetProjectPermissions(pID uint64, role Role, offset, limit int) ([]Permission, int, error)
 	GetPermission(userID, projectID uint64) (Permission, error)
@@ -71,36 +71,30 @@ func (r *repository) Get(pID uint64) (Project, error) {
 	return p, nil
 }
 
-func (r *repository) GetByWorkspaceID(id uint64, offset, limit int) ([]Project, int, error) {
+func (r *repository) GetByWorkspaceID(id uint64) ([]Project, error) {
 	var projects = make([]Project, 0)
-	var total int
-	k, totalKey, _ := rediskey.ProjectByWorkspaceID(id, offset, limit)
+	k := rediskey.ProjectByWorkspaceID(id)
 	err := r.cache.Get(k, &projects)
-	err2 := r.cache.Get(totalKey, &total)
-	if err == nil && err2 == nil {
+	if err == nil {
 		logger.Infof("cache hit for getting projects for workspace %d", id)
-		return projects, total, nil
+		return projects, nil
 	}
 	if errors.Type(err) == errors.CacheNotFound {
 		logger.Infof("cache miss for getting projects for workspace %d", id)
 	} else {
 		logger.Errorf("cannot get projects for workspace %d", id)
 	}
-	projects, total, err = r.disk.GetByWorkspaceID(id, offset, limit)
+	projects, err = r.disk.GetByWorkspaceID(id)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	go func() {
 		err := r.cache.Set(k, &projects)
 		if err != nil {
 			logger.Error(err)
 		}
-		err = r.cache.Set(totalKey, &total)
-		if err != nil {
-			logger.Error(err)
-		}
 	}()
-	return projects, total, nil
+	return projects, nil
 }
 
 func (r *repository) GetUserPermissions(userID uint64, role Role, offset, limit int) (p []Permission, total int, err error) {
@@ -194,14 +188,9 @@ func (r *repository) UpdatePermission(projectID, userID uint64, role Role) (Perm
 }
 
 func (r *repository) invalidateProjectsByWorkspaceID(id uint64) {
-	_, totalKey, pattern := rediskey.ProjectByWorkspaceID(id, 0, 0)
-	keys, err := r.cache.Keys(pattern)
-	if err != nil {
-		logger.Errorf("error getting pattern %s", pattern)
-	}
-	keys = append(keys, totalKey)
-	if err := r.cache.Del(keys...); err != nil {
-		logger.Errorf("error deleting keys %v", keys)
+	key := rediskey.ProjectByWorkspaceID(id)
+	if err := r.cache.Del(key); err != nil {
+		logger.Errorf("[WORKSPACE] - error deleting keys %v", key)
 	}
 }
 
@@ -285,7 +274,7 @@ func (r *repository) Delete(id uint64) error {
 
 func (r *repository) DeleteByWorkspace(workspaceID uint64) error {
 	r.invalidateProjectsByWorkspaceID(workspaceID)
-	projects, _, err := r.GetByWorkspaceID(workspaceID, 0, 0)
+	projects, err := r.GetByWorkspaceID(workspaceID)
 	if err != nil {
 		return err
 	}

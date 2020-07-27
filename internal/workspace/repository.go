@@ -204,7 +204,11 @@ func (r *repository) CreatePermission(workspaceID uint64, userIDs []uint64, role
 }
 
 func (r *repository) DeletePermission(workspaceID uint64, userID uint64) error {
-	err := r.dbRepo.DeletePermission(workspaceID, userID)
+	err := r.triggerDeleteProjectsPermissions(userID, workspaceID)
+	if err != nil {
+		return err
+	}
+	err = r.dbRepo.DeletePermission(workspaceID, userID)
 	if err != nil {
 		return err
 	}
@@ -234,5 +238,19 @@ func (r *repository) DeleteWorkspace(workspaceID uint64) error {
 			r.InvalidateWorkspacesForUser(perms[i].UserID)
 		}
 	}()
+	return nil
+}
+
+func (r *repository) triggerDeleteProjectsPermissions(userID, workspaceID uint64) (err error) {
+	projects, err := r.projectRepo.GetByWorkspaceID(workspaceID)
+	if err != nil {
+		return
+	}
+	for i := range projects {
+		err := r.projectRepo.DeletePermission(userID, projects[i].ID)
+		if err != nil {
+			logger.Errorf("[WORKSPACE] - error deleting project permission for user %d in project %d", userID, projects[i].ID)
+		}
+	}
 	return nil
 }

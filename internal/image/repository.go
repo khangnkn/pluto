@@ -14,7 +14,6 @@ type Repository interface {
 	CreateImage(title, url, thumbnail string, w, h int, size int64, dataset_id uint64) (Image, error)
 	Incr(id uint64) error
 	BulkInsert(images []Image, dID uint64) error
-	InvalidateDatasetImage(dID uint64) error
 }
 
 type repository struct {
@@ -79,43 +78,48 @@ func (r *repository) GetByDataset(dID uint64, offset, limit int) (images []Image
 	return
 }
 
-func (r *repository) CreateImage(title, url, thumbnail string, w, h int, size int64, dataset_id uint64) (Image, error) {
-	return r.dbRepo.CreateImage(title, url, thumbnail, w, h, size, dataset_id)
+func (r *repository) CreateImage(title, url, thumbnail string, w, h int, size int64, datasetId uint64) (Image, error) {
+	r.InvalidateDatasetImage(datasetId)
+	return r.dbRepo.CreateImage(title, url, thumbnail, w, h, size, datasetId)
 }
 
-func (r *repository) InvalidateDatasetImage(dID uint64) error {
+func (r *repository) InvalidateDatasetImage(dID uint64) {
 	pattern := rediskey.ImageByDatasetIDAllKeys(dID)
 	keys, err := r.cacheRepo.Keys(pattern)
 	if len(keys) == 0 {
-		return nil
+		logger.Info("[IMAGE] - no keys found to invalidate")
+		return
 	}
 	if err != nil {
-		logger.Error("error getting all keys from redis", err)
-		return err
+		logger.Errorf("[IMAGE] - error getting all keys from redis. err %v", err)
+		return
 	}
 	logger.Infof("the following keys will be deleted: %v", keys)
-	return r.cacheRepo.Del(keys...)
+	err = r.cacheRepo.Del(keys...)
+	if err != nil {
+		logger.Errorf("[IMAGE] - error deleting keys. err %v", err)
+	}
 }
 
 func (r *repository) GetAllImageByDataset(dID uint64) ([]Image, error) {
-	imgs := make([]Image, 0)
+	images := make([]Image, 0)
 	k := rediskey.ImageAllByDatasetID(dID)
-	err := r.cacheRepo.Get(k, &imgs)
+	err := r.cacheRepo.Get(k, &images)
 	if err == nil {
-		logger.Infof("cache hit getting all images of project %d", dID)
-		return imgs, nil
+		logger.Infof("[IMAGE] - cache hit getting all images of project %d", dID)
+		return images, nil
 	}
 	if errors.Type(err) == errors.CacheNotFound {
-		logger.Infof("cache miss getting all images of project %d", dID)
+		logger.Infof("[IMAGE] - cache miss getting all images of project %d", dID)
 	} else {
-		logger.Error("cannot get all images of dataset %d from cache. error %v", dID, err)
+		logger.Error("[IMAGE] - cannot get all images of dataset %d from cache. error %v", dID, err)
 	}
-	imgs, err = r.dbRepo.GetAllByDataset(dID)
+	images, err = r.dbRepo.GetAllByDataset(dID)
 	if err != nil {
 		return nil, err
 	}
 	logger.Infof("get all images from cache successfully")
-	return imgs, nil
+	return images, nil
 }
 
 func (r *repository) BulkInsert(images []Image, dID uint64) error {
@@ -124,5 +128,6 @@ func (r *repository) BulkInsert(images []Image, dID uint64) error {
 }
 
 func (r *repository) Incr(id uint64) error {
+	r.InvalidateDatasetImage(id)
 	return r.dbRepo.Incr(id)
 }
