@@ -78,7 +78,9 @@ func (r *repository) CreateDataset(title, description string, pID uint64) (Datas
 		return DatasetResponse{}, err
 	}
 	err = r.annotationService.UpdateDataset(d.ID)
-	logger.Errorf("[DATASET-API] - error pushing create dataset request to annotation server. err ", err)
+	if err != nil {
+		logger.Errorf("[DATASET-API] - error pushing create dataset request to annotation server. err ", err)
+	}
 	return r.ToDatasetResponse(d), nil
 }
 
